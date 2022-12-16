@@ -12,11 +12,16 @@ def predict_treatment(X, synthetic, model):
     results = pd.DataFrame()
     results['Stroke team'] = stroke_team
     results['Probability'] = probs
+    results['Probability_perc'] = probs*100.0
     results['Thrombolyse'] = probs >= 0.5
     results['Index'] = np.arange(len(results))
 
     sorted_results = results.\
         sort_values('Probability', ascending=False)
+
+    # Add column of sorted index:
+    sorted_results['Sorted rank'] = np.arange(len(results)) + 1
+
     return sorted_results
 
 
