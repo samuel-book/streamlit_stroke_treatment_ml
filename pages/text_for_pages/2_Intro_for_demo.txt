@@ -1,0 +1,6 @@
+# To be printed as markdown on the demo page. 
+# ---------------------------------------------------------------------
+
+Write a bit about what this demo does. 
+
+In this case, the user selects a feature about an animal and this is used to plot a graph. 
