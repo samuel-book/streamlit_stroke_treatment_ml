@@ -12,12 +12,14 @@ import streamlit as st
 
 # Custom functions:
 from utilities.fixed_params import page_setup
-from utilities.inputs import \
-    write_text_from_file
+# from utilities.inputs import \
+#     write_text_from_file
+import utilities.inputs
+import utilities.main_calculations
 # Containers:
 import utilities.container_inputs
 import utilities.container_results
-import utilities.container_details
+# import utilities.container_details
 
 
 # ###########################
@@ -32,9 +34,9 @@ st.info(
     ':information_source: ' +
     'For acronym reference, see the introduction page.'
     )
-# Intro text:
-write_text_from_file('pages/text_for_pages/2_Intro_for_demo.txt',
-                     head_lines_to_skip=2)
+# # Intro text:
+# write_text_from_file('pages/text_for_pages/2_Intro_for_demo.txt',
+#                      head_lines_to_skip=2)
 
 
 # ###########################
@@ -43,8 +45,41 @@ write_text_from_file('pages/text_for_pages/2_Intro_for_demo.txt',
 st.header('Setup')
 st.subheader('Inputs')
 
-# Draw the input selection boxes in this function:
-animals_df, animal, feature, row_value = utilities.container_inputs.main()
+with st.sidebar:
+    st.markdown('# Patient details')
+    user_inputs_dict = utilities.container_inputs.user_inputs()
+    st.markdown('breathing room')
+stroke_teams_list = utilities.inputs.read_stroke_teams_from_file()
+
+# Build these into a 2D DataFrame:
+synthetic = utilities.inputs.\
+    build_dataframe_from_inputs(user_inputs_dict, stroke_teams_list)
+
+# X, synthetic = utilities.inputs.import_patient_data()
+
+# Make a copy of this data that is ready for the model.
+# The same data except the Stroke Team column is one-hot-encoded.
+X = utilities.inputs.one_hot_encode_data(synthetic)
+
+model, explainer, explainer_probability = utilities.inputs.\
+    load_pretrained_models()
+
+
+# ##################################
+# ########## CALCULATIONS ##########
+# ##################################
+
+sorted_results = utilities.main_calculations.\
+    predict_treatment(X, synthetic, model)
+
+# Get index of highest probability team
+index_high = sorted_results.iloc[0]['Index']
+index_mid = sorted_results.iloc[int(len(sorted_results)/2)]['Index']
+index_low = sorted_results.iloc[-1]['Index']
+
+# Find Shapley values:
+shap_values_probability_extended, shap_values_probability = \
+    utilities.main_calculations.find_shapley_values(explainer_probability, X)
 
 
 # ###########################
@@ -52,18 +87,22 @@ animals_df, animal, feature, row_value = utilities.container_inputs.main()
 # ###########################
 st.header('Results')
 # Draw a plot in this function:
-utilities.container_results.main(row_value, animal, feature)
+utilities.container_results.main(
+    sorted_results,
+    shap_values_probability_extended,
+    [index_high, index_mid, index_low]
+    )
 
 
 # ###########################
 # ######### DETAILS #########
 # ###########################
-st.write('-'*50)
-st.header('Details of the calculation')
-st.write('The following bits detail the calculation.')
+# st.write('-'*50)
+# st.header('Details of the calculation')
+# st.write('The following bits detail the calculation.')
 
-with st.expander('Some details'):
-    # Draw the equation in this function:
-    utilities.container_details.main(animal, feature, row_value)
+# with st.expander('Some details'):
+#     # Draw the equation in this function:
+#     utilities.container_details.main(animal, feature, row_value)
 
 # ----- The end! -----

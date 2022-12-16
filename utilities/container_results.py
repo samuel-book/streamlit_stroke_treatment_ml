@@ -4,27 +4,41 @@ All of the content for the Results section.
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+import importlib
 
-# Import some fixed parameters from our file:
-from utilities.fixed_params import x_min, x_max, colours_plot
+# Import local package
+from utilities import waterfall
+# Force package to be reloaded
+importlib.reload(waterfall);
 
 
-def main(row_value, animal, feature):
-    st.write('We will draw a simple plot using our chosen value.')
+def main(sorted_results, shap_values_probability_extended,
+         indices_to_show):
+    plot_sorted_probs(sorted_results)
+    for i in indices_to_show:
+        plot_shap_waterfall(shap_values_probability_extended[i])
 
-    # Define the arrays to plot:
-    # The x_min and x_max values are defined in fixed_params
-    # so that they can be reused in multiple places.
-    x_values = np.arange(x_min, x_max)
-    y_values = (x_values/row_value)**2.0
 
-    # Make the plot using matplotlib:
-    fig, ax = plt.subplots()
-    # The colours_plot list is also defined in fixed_params.
-    ax.plot(x_values, y_values, color=colours_plot[0])
-    ax.set_ylim(-5, 90)
-    ax.set_title(f'{animal} {feature}')
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    # Call to streamlit:
+def plot_sorted_probs(sorted_results):
+
+    fig = plt.figure(figsize=(8, 5))
+    ax = fig.add_subplot()
+    x_chart = range(len(sorted_results))
+    ax.bar(x_chart, sorted_results['Probability'], width=0.5)
+    ax.plot([0, len(sorted_results)], [0.5, 0.5], c='k')
+    ax.axes.get_xaxis().set_ticks([])
+    ax.set_xlabel('Stroke team')
+    ax.set_ylabel('Probability of giving patient thrombolysis')
+
+    ax.set_ylim(0, 1)
     st.pyplot(fig)
+    plt.close(fig)
+
+
+def plot_shap_waterfall(shap_values):
+    fig = waterfall.waterfall(
+        shap_values,
+        show=False, max_display=10, y_reverse=True
+        )
+    st.pyplot(fig)
+    plt.close(fig)

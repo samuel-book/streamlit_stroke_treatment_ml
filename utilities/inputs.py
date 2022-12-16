@@ -1,5 +1,10 @@
+"""
+Import data from file.
+"""
 import streamlit as st
+import numpy as np
 import pandas as pd
+import pickle
 
 
 def write_text_from_file(filename, head_lines_to_skip=0):
@@ -20,20 +25,82 @@ def write_text_from_file(filename, head_lines_to_skip=0):
     st.markdown(f"""{text_to_print}""")
 
 
-def import_animal_data(filename, index_col=None, header='infer'):
-    """
-    Import an Animals dataframe from file.
+def import_patient_data():
+    synthetic = pd.read_csv('./data/synthetic_10_features.csv')
+    return synthetic
 
-    This example is simple, but for a more complicated case
-    it can be easier to have a separate import function for each
-    data file type. For example, perhaps the data file contains
-    data for many different scenarios and we want to extract
-    the rows or columns for just one scenario.
-    """
-    # Load mRS distributions from file:
-    df = pd.read_csv(
-        filename,
-        index_col=index_col,
-        header=header)
 
+def one_hot_encode_data(synthetic):
+    # One-hot encode hospitals
+    # Keep copy of original, with 'Stroke team' not one-hot encoded
+    X = synthetic.copy(deep=True)
+
+    # One-hot encode 'Stroke team'
+    X_hosp = pd.get_dummies(X['Stroke team'], prefix = 'team')
+    X = pd.concat([X, X_hosp], axis=1)
+    X.drop('Stroke team', axis=1, inplace=True)
+
+    return X
+
+
+def read_stroke_teams_from_file():
+    stroke_teams = pd.read_csv('./data/stroke_teams.csv')
+    return stroke_teams
+
+
+def build_dataframe_from_inputs(dict, stroke_teams_list):
+    # First build a 2D array where each row is the patient details.
+    # Column headings:
+    headers = np.array([
+        'Arrival-to-scan time',
+        'Infarction',
+        'Stroke severity',
+        'Precise onset time',
+        'Prior disability level',
+        'Stroke team',
+        'Use of AF anticoagulents',
+        'Onset-to-arrival time',
+        'Onset during sleep',
+        'Age'
+    ])
+
+    # One row of the array:
+    row = np.array([
+        dict['arrival_to_scan_time'],
+        dict['infarction'],
+        dict['stroke_severity'],
+        dict['onset_time_precise'],
+        dict['prior_disability'],
+        'temp',  # stroke team
+        dict['anticoag'],
+        dict['onset_to_arrival_time'],
+        dict['onset_during_sleep'],
+        dict['age']
+        ], dtype=object)
+
+    # Repeat these row values for the number of stroke teams:
+    table = np.tile(row, len(stroke_teams_list))
+    # Reshape to a 2D array:
+    table = table.reshape(len(stroke_teams_list), len(headers))
+    # Update the "Stroke team" column with the names:
+    table[:, 5] = stroke_teams_list.values.ravel()
+
+    # Turn this array into a DataFrame with labelled columns.
+    df = pd.DataFrame(table, columns=headers)
     return df
+
+
+def load_pretrained_models():
+    # Load XGB Model
+    filename = (f'./data/model.p')
+    with open(filename, 'rb') as filehandler:
+        model = pickle.load(filehandler)
+
+    # Load SHAP explainers
+    filename = (f'./data/shap_explainer.p')
+    with open(filename, 'rb') as filehandler:
+            explainer = pickle.load(filehandler)
+    filename = (f'./data/shap_explainer_probability.p')
+    with open(filename, 'rb') as filehandler:
+            explainer_probability = pickle.load(filehandler)
+    return model, explainer, explainer_probability
