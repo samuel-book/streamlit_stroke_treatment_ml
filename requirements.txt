@@ -8,6 +8,8 @@ shap==0.41.0
 importlib-metadata==4.11.3  
 importlib_resources==5.2.0
 pickleshare==0.7.5
+scikit-learn==1.1.3
+xgboost==1.5.0
 # Don't give a version for streamlit 
 # to ensure the app has the latest security updates. 
 streamlit
