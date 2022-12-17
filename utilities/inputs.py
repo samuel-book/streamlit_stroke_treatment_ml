@@ -35,6 +35,13 @@ def one_hot_encode_data(synthetic):
     # Keep copy of original, with 'Stroke team' not one-hot encoded
     X = synthetic.copy(deep=True)
 
+    try:
+        # Remove favourite team column
+        X = synthetic.drop(['Favourite team'], axis=1)
+    except KeyError:
+        # Nothing to see here
+        pass
+
     # One-hot encode 'Stroke team'
     X_hosp = pd.get_dummies(X['Stroke team'], prefix = 'team')
     X = pd.concat([X, X_hosp], axis=1)
@@ -45,10 +52,12 @@ def one_hot_encode_data(synthetic):
 
 def read_stroke_teams_from_file():
     stroke_teams = pd.read_csv('./data/stroke_teams.csv')
+    stroke_teams = stroke_teams.values.ravel()
     return stroke_teams
 
 
-def build_dataframe_from_inputs(dict, stroke_teams_list):
+def build_dataframe_from_inputs(
+        dict, stroke_teams_list, favourite_teams):
     # First build a 2D array where each row is the patient details.
     # Column headings:
     headers = np.array([
@@ -58,6 +67,7 @@ def build_dataframe_from_inputs(dict, stroke_teams_list):
         'Precise onset time',
         'Prior disability level',
         'Stroke team',
+        'Favourite team',
         'Use of AF anticoagulents',
         'Onset-to-arrival time',
         'Onset during sleep',
@@ -72,6 +82,7 @@ def build_dataframe_from_inputs(dict, stroke_teams_list):
         dict['onset_time_precise'],
         dict['prior_disability'],
         'temp',  # stroke team
+        '-',  # favourite stroke team
         dict['anticoag'],
         dict['onset_to_arrival_time'],
         dict['onset_during_sleep'],
@@ -83,7 +94,15 @@ def build_dataframe_from_inputs(dict, stroke_teams_list):
     # Reshape to a 2D array:
     table = table.reshape(len(stroke_teams_list), len(headers))
     # Update the "Stroke team" column with the names:
-    table[:, 5] = stroke_teams_list.values.ravel()
+    table[:, 5] = stroke_teams_list
+    # Update the "Favourite teams" column:
+    for team in favourite_teams:
+        ind_t = np.where(stroke_teams_list == team)
+        table[ind_t, 6] = team
+    # # If just need yes/no, the following works.
+    # # It doesn't return indices in the same order as favourite_teams.
+    # bool_favourites = np.in1d(stroke_teams_list, favourite_teams)
+    # table[:, 6][bool_favourites] = 'Yes'
 
     # Turn this array into a DataFrame with labelled columns.
     df = pd.DataFrame(table, columns=headers)

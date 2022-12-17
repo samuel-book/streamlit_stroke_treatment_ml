@@ -51,11 +51,15 @@ with st.sidebar:
     st.markdown('breathing room')
 stroke_teams_list = utilities.inputs.read_stroke_teams_from_file()
 
-# Build these into a 2D DataFrame:
-synthetic = utilities.inputs.\
-    build_dataframe_from_inputs(user_inputs_dict, stroke_teams_list)
+# Pick favourites:
+favourite_teams_input = utilities.container_inputs.\
+    favourite_teams(stroke_teams_list)
 
-# X, synthetic = utilities.inputs.import_patient_data()
+# Build these into a 2D DataFrame:
+synthetic = utilities.inputs.build_dataframe_from_inputs(
+        user_inputs_dict, stroke_teams_list, favourite_teams_input)
+
+# synthetic = utilities.inputs.import_patient_data()
 
 # Make a copy of this data that is ready for the model.
 # The same data except the Stroke Team column is one-hot-encoded.
@@ -76,6 +80,13 @@ sorted_results = utilities.main_calculations.\
 index_high = sorted_results.iloc[0]['Index']
 index_mid = sorted_results.iloc[int(len(sorted_results)/2)]['Index']
 index_low = sorted_results.iloc[-1]['Index']
+indices_high_mid_low = [index_high, index_mid, index_low]
+
+# Get indices of favourite teams:
+# (attempted a Pandas-esque way to do this
+# but it looks worse than numpy where)
+indices_favourites = sorted_results['Index'].loc[
+    ~sorted_results['Favourite team'].str.contains('-')]
 
 # Find Shapley values:
 shap_values_probability_extended, shap_values_probability = \
@@ -90,7 +101,8 @@ st.header('Results')
 utilities.container_results.main(
     sorted_results,
     shap_values_probability_extended,
-    [index_high, index_mid, index_low]
+    indices_high_mid_low,
+    indices_favourites
     )
 
 

@@ -73,7 +73,7 @@ def user_inputs():
     anticoag_input_str = st.radio(
         'AF Anticoagulents',
         options=['Yes', 'No'],
-        index=0,
+        index=1,
         horizontal=True,
         key='anticoag_input_str'
     )
@@ -97,7 +97,7 @@ def user_inputs():
     onset_during_sleep_input_str = st.radio(
         'Onset during sleep',
         options=['Yes', 'No'],
-        index=0,
+        index=1,
         horizontal=True,
         key='onset_during_sleep_input_str'
     )
@@ -138,3 +138,12 @@ def user_inputs():
         age=age_input
     )
     return user_input_dict
+
+
+def favourite_teams(stroke_teams_list):
+    favourite_teams_input = st.multiselect(
+        'Pick some stroke teams to highlight',
+        stroke_teams_list,
+        help='Pick up to 9 before the colours repeat.'
+    )
+    return favourite_teams_input
