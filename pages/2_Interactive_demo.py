@@ -65,6 +65,11 @@ synthetic = utilities.inputs.build_dataframe_from_inputs(
 # The same data except the Stroke Team column is one-hot-encoded.
 X = utilities.inputs.one_hot_encode_data(synthetic)
 
+# Store the column names:
+headers_synthetic = synthetic.columns
+headers_X = X.columns
+
+
 model, explainer, explainer_probability = utilities.inputs.\
     load_pretrained_models()
 
@@ -102,7 +107,8 @@ utilities.container_results.main(
     sorted_results,
     shap_values_probability_extended,
     indices_high_mid_low,
-    indices_favourites
+    indices_favourites,
+    headers_X
     )
 
 

@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
 import importlib
+import pandas as pd
 
 # Import local package
 from utilities import waterfall
@@ -14,7 +15,7 @@ importlib.reload(waterfall)
 
 
 def main(sorted_results, shap_values_probability_extended,
-         indices_high_mid_low, indices_favourites):
+         indices_high_mid_low, indices_favourites, headers_X):
     plot_sorted_probs(sorted_results)
 
     with st.expander('SHAP for max, middle, min'):
@@ -30,6 +31,7 @@ def main(sorted_results, shap_values_probability_extended,
             )
             st.markdown(title)
             # st.write(i, shap_values_probability_extended[i])
+            # st.write(shap_values_probability_extended[i].values)
             plot_shap_waterfall(shap_values_probability_extended[i])
 
     if len(indices_favourites) > 0:
@@ -39,6 +41,9 @@ def main(sorted_results, shap_values_probability_extended,
                 st.markdown(title)
                 # st.write(i, shap_values_probability_extended[i])
                 plot_shap_waterfall(shap_values_probability_extended[i])
+
+    st.markdown('# Testing below')
+    plot_heat_grid(shap_values_probability_extended, headers_X, sorted_results['Stroke team'], sorted_results['Index'])
 
 
 def plot_sorted_probs(sorted_results):
@@ -144,3 +149,155 @@ def plot_shap_waterfall(shap_values):
     # plt.xlim(-0.5, 1.5) # doesn't work fully as expected
     st.pyplot(fig)
     plt.close(fig)
+
+
+def plot_heat_grid(shap_values_probability_extended, headers, 
+                    stroke_team_list, sorted_inds):
+    # Experiment
+    n_teams = len(shap_values_probability_extended)
+    n_features = len(shap_values_probability_extended[0].values)
+    grid = np.zeros((n_features, n_teams))
+
+    # Don't fill this grid in the same order as the sorted bar chart.
+    # Rely on picking out the diagonal later.
+    for i, team in enumerate(shap_values_probability_extended):
+        values = shap_values_probability_extended[i].values
+        grid[:, i] = values
+
+
+    vlim = np.abs(np.max(np.abs(grid)))
+    fig = px.imshow(
+        grid,
+        # x=stroke_team_list,
+        # y=headers,
+        # labels=dict(
+            # x='Feature',
+            # y='Stroke team',
+            # color='Effect on probability (%)'
+        # ),
+        color_continuous_scale='rdbu_r',
+        range_color=(-vlim, vlim),
+        aspect='auto'
+        )
+    fig.update_xaxes(showticklabels=False)
+
+    # Write to streamlit:
+    st.plotly_chart(fig, use_container_width=True)
+
+
+    # Expect most of the mismatched one-hot-encoded hospitals to make
+    # only a tiny contribution to the SHAP. Moosh them down into one 
+    # column instead.
+
+    # Have 9 features other than teams. Index 9 is the first team.
+    ind_first_team = 9
+
+    # Make a new grid and copy over most of the values:
+    grid_cat = np.zeros((ind_first_team + 1, n_teams))
+    grid_cat[:ind_first_team, :] = grid[:ind_first_team, :]
+
+    # For the remaining column, loop over to pick out the value:
+    for i, sorted_ind in enumerate(sorted_inds):
+        row = i + ind_first_team
+        grid_cat[ind_first_team, i] = grid[row, i]
+
+    # Multiply values by 100 to get probability in percent:
+    grid_cat *= 100.0
+
+    # Sort the values into the same order as sorted_results:
+    grid_cat_sorted = grid_cat[:, sorted_inds]
+
+    vlim = np.abs(np.max(np.abs(grid_cat)))
+
+    headers = np.append(headers[:9], 'Stroke Team')
+
+    # df_cat = pd.DataFrame(
+    #     grid_cat.T,
+    #     columns=headers
+    # )
+
+
+    # fig, ax = plt.subplots()
+    # grid_map = ax.imshow(grid_cat, vmin=-vlim, vmax=vlim, cmap='RdBu_r')
+    # plt.colorbar(grid_map)
+
+    # ax.set_xlabel('Team')
+    # ax.set_ylabel('Feature')
+
+    # st.pyplot(fig)
+
+    # headers = headers[:ind_first_team]
+
+    # fig = px.imshow(grid_cat, color_continuous_scale='rdbu_r')
+    fig = px.imshow(
+        grid_cat_sorted,
+        x=np.arange(1, len(stroke_team_list)+1),
+        y=headers,
+        labels=dict(
+            y='Feature',
+            x=f'Rank out of {len(stroke_team_list)} stroke teams',
+            color='Effect on probability (%)'
+        ),
+        color_continuous_scale='rdbu_r',
+        range_color=(-vlim, vlim),
+        aspect='auto'
+        )
+
+    # 2D grid of stroke_teams:
+    stroke_team_2d = np.tile(stroke_team_list, len(headers)).reshape(grid_cat_sorted.shape)
+    # I don't understand why this step is necessary, but it is:
+    stroke_team_cd = np.dstack((stroke_team_2d, stroke_team_2d))
+
+    # Add this data to the figure:
+    fig.update(data=[{'customdata': stroke_team_cd}])
+
+    # Update the hover message with the stroke team:
+    fig.update_traces(hovertemplate='Team %{customdata[0]}<br>Rank: %{x}<br>Feature: %{y}<br>Effect on probability: %{z:.2f}%')
+    # fig.update_xaxes(showticklabels=False)
+
+    xmax = grid_cat_sorted.shape[1]
+    fig.update_xaxes(range=[0.0, xmax+1])
+    fig.update_layout(xaxis=dict(
+        tickmode='array',
+        tickvals=np.arange(0, grid_cat_sorted.shape[1], 10),
+        # ticktext=['0%', '25%', 'Default value, 30%',
+        #             '50%', '75%', '100%']
+        ))
+
+    # Write to streamlit:
+    st.plotly_chart(fig, use_container_width=True)
+
+
+    # Print the biggest positive and negative changes:
+    biggest_prob_change_pve = np.max(grid_cat_sorted)
+    biggest_prob_change_nve = np.min(grid_cat_sorted)
+    inds_biggest_prob_change_pve = np.where(grid_cat_sorted==biggest_prob_change_pve)
+    inds_biggest_prob_change_nve = np.where(grid_cat_sorted==biggest_prob_change_nve)
+    feature_biggest_prob_change_pve = headers[inds_biggest_prob_change_pve[0]]
+    feature_biggest_prob_change_nve = headers[inds_biggest_prob_change_nve[0]]
+    team_biggest_prob_change_pve = stroke_team_2d[inds_biggest_prob_change_pve]
+    team_biggest_prob_change_nve = stroke_team_2d[inds_biggest_prob_change_nve]
+
+    st.markdown(''.join([
+        'The biggest shift upwards in probability is ',
+        f'{biggest_prob_change_pve:.2f}% ',
+        'from the feature ',
+        f'{feature_biggest_prob_change_pve}',
+        ' for the stroke team ',
+        f'{team_biggest_prob_change_pve}',
+        ' (rank ',
+        f'{inds_biggest_prob_change_pve[1]+1}'
+        ').'
+    ]))
+
+    st.markdown(''.join([
+        'The biggest shift downwards in probability is ',
+        f'{biggest_prob_change_nve:.2f}% ',
+        'from the feature ',
+        f'{feature_biggest_prob_change_nve}',
+        ' for the stroke team ',
+        f'{team_biggest_prob_change_nve}',
+        ' (rank ',
+        f'{inds_biggest_prob_change_nve[1]+1}'
+        ').'
+    ]))
