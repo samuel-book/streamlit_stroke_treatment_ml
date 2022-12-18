@@ -29,11 +29,11 @@ page_setup()
 
 # Title:
 st.markdown('# Interactive demo')
-# Draw a blue information box:
-st.info(
-    ':information_source: ' +
-    'For acronym reference, see the introduction page.'
-    )
+# # Draw a blue information box:
+# st.info(
+#     ':information_source: ' +
+#     'For acronym reference, see the introduction page.'
+#     )
 # # Intro text:
 # write_text_from_file('pages/text_for_pages/2_Intro_for_demo.txt',
 #                      head_lines_to_skip=2)
@@ -42,8 +42,8 @@ st.info(
 # ###########################
 # ########## SETUP ##########
 # ###########################
-st.header('Setup')
-st.subheader('Inputs')
+# st.header('Setup')
+# st.subheader('Inputs')
 
 with st.sidebar:
     st.markdown('# Patient details')
@@ -51,13 +51,16 @@ with st.sidebar:
     st.markdown('breathing room')
 stroke_teams_list = utilities.inputs.read_stroke_teams_from_file()
 
+benchmark_df = utilities.inputs.import_benchmark_data()
+
 # Pick favourites:
 favourite_teams_input = utilities.container_inputs.\
     favourite_teams(stroke_teams_list)
 
 # Build these into a 2D DataFrame:
 synthetic = utilities.inputs.build_dataframe_from_inputs(
-        user_inputs_dict, stroke_teams_list, favourite_teams_input)
+        user_inputs_dict, stroke_teams_list, favourite_teams_input,
+        benchmark_df)
 
 # synthetic = utilities.inputs.import_patient_data()
 

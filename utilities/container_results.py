@@ -16,6 +16,7 @@ importlib.reload(waterfall)
 
 def main(sorted_results, shap_values_probability_extended,
          indices_high_mid_low, indices_favourites, headers_X):
+    show_metrics_benchmarks(sorted_results)
     plot_sorted_probs(sorted_results)
 
     with st.expander('SHAP for max, middle, min'):
@@ -149,6 +150,54 @@ def plot_shap_waterfall(shap_values):
     # plt.xlim(-0.5, 1.5) # doesn't work fully as expected
     st.pyplot(fig)
     plt.close(fig)
+
+
+def show_metrics_benchmarks(sorted_results):
+    # Benchmark teams:
+    sorted_results['Benchmark rank']
+
+    inds_benchmark = sorted_results['Benchmark rank'] <= 30
+
+    results_all = sorted_results
+    results_benchmark = sorted_results.loc[inds_benchmark]
+    results_non_benchmark = sorted_results.loc[~inds_benchmark]
+
+    # Number of entries that would thrombolyse:
+    n_thrombolyse_all = results_all.Thrombolyse.sum()
+    n_thrombolyse_benchmark = results_benchmark.Thrombolyse.sum()
+    n_thrombolyse_non_benchmark = results_non_benchmark.Thrombolyse.sum()
+
+    # Total number of entries:
+    n_all = len(results_all)
+    n_benchmark = len(results_benchmark)
+    n_non_benchmark = len(results_non_benchmark)
+
+    # Percentage of entries that would thrombolyse:
+    perc_thrombolyse_all = 100.0 * n_thrombolyse_all / n_all
+    perc_thrombolyse_benchmark = 100.0 * n_thrombolyse_benchmark / n_benchmark
+    perc_thrombolyse_non_benchmark = 100.0 * n_thrombolyse_non_benchmark / n_non_benchmark
+
+    cols = st.columns(3)
+    with cols[0]:
+        st.metric(
+            'All stroke teams',
+            f'{perc_thrombolyse_all:.0f}%'
+            )
+        st.write(f'{n_thrombolyse_all} of {n_all} stroke teams would thrombolyse.')
+
+    with cols[1]:
+        st.metric(
+            'Benchmark stroke teams',
+            f'{perc_thrombolyse_benchmark:.0f}%'
+            )
+        st.write(f'{n_thrombolyse_benchmark} of {n_benchmark} stroke teams would thrombolyse.')
+   
+    with cols[2]:
+        st.metric(
+            'Non-benchmark stroke teams',
+            f'{perc_thrombolyse_non_benchmark:.0f}%'
+            )
+        st.write(f'{n_thrombolyse_non_benchmark} of {n_non_benchmark} stroke teams would thrombolyse.')
 
 
 def plot_heat_grid(shap_values_probability_extended, headers, 

@@ -30,6 +30,16 @@ def import_patient_data():
     return synthetic
 
 
+def import_benchmark_data():
+    all_teams_and_probs = pd.read_csv('./data/hospital_10k_thrombolysis.csv')
+    # Add an index row to rank the teams:
+    all_teams_and_probs['Rank'] = np.arange(1, len(all_teams_and_probs['stroke_team'])+1)
+    # all_teams = all_teams_and_probs['stroke_team'].values
+    # benchmark_teams = all_teams[:30]
+    # non_benchmark_teams = all_teams[30:]
+    return all_teams_and_probs  # benchmark_teams, non_benchmark_teams
+
+
 def one_hot_encode_data(synthetic):
     # One-hot encode hospitals
     # Keep copy of original, with 'Stroke team' not one-hot encoded
@@ -37,7 +47,7 @@ def one_hot_encode_data(synthetic):
 
     try:
         # Remove favourite team column
-        X = synthetic.drop(['Favourite team'], axis=1)
+        X = synthetic.drop(['Favourite team', 'Benchmark rank'], axis=1)
     except KeyError:
         # Nothing to see here
         pass
@@ -57,7 +67,7 @@ def read_stroke_teams_from_file():
 
 
 def build_dataframe_from_inputs(
-        dict, stroke_teams_list, favourite_teams):
+        dict, stroke_teams_list, favourite_teams, benchmark_df):
     # First build a 2D array where each row is the patient details.
     # Column headings:
     headers = np.array([
@@ -68,6 +78,7 @@ def build_dataframe_from_inputs(
         'Prior disability level',
         'Stroke team',
         'Favourite team',
+        'Benchmark rank',
         'Use of AF anticoagulents',
         'Onset-to-arrival time',
         'Onset during sleep',
@@ -82,7 +93,8 @@ def build_dataframe_from_inputs(
         dict['onset_time_precise'],
         dict['prior_disability'],
         'temp',  # stroke team
-        '-',  # favourite stroke team
+        '-',   # favourite stroke team
+        0,
         dict['anticoag'],
         dict['onset_to_arrival_time'],
         dict['onset_during_sleep'],
@@ -99,6 +111,10 @@ def build_dataframe_from_inputs(
     for team in favourite_teams:
         ind_t = np.where(stroke_teams_list == team)
         table[ind_t, 6] = team
+
+    # Update the "Benchmark teams" column:
+    # (original data is sorted alphabetically by stroke team)
+    table[:, 7] = benchmark_df.sort_values('stroke_team')['Rank']
     # # If just need yes/no, the following works.
     # # It doesn't return indices in the same order as favourite_teams.
     # bool_favourites = np.in1d(stroke_teams_list, favourite_teams)

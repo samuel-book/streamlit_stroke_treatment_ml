@@ -9,10 +9,13 @@ import pandas as pd
 def predict_treatment(X, synthetic, model):
     stroke_team = synthetic['Stroke team']
     favourite_team = synthetic['Favourite team']
+    benchmark_rank = synthetic['Benchmark rank']
+
     probs = model.predict_proba(X)[:, 1]
     results = pd.DataFrame()
     results['Stroke team'] = stroke_team
     results['Favourite team'] = favourite_team
+    results['Benchmark rank'] = benchmark_rank
     results['Probability'] = probs
     results['Probability_perc'] = probs*100.0
     results['Thrombolyse'] = probs >= 0.5
