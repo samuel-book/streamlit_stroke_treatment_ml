@@ -199,6 +199,10 @@ def show_metrics_benchmarks(sorted_results):
             )
         st.write(f'{n_thrombolyse_non_benchmark} of {n_non_benchmark} stroke teams would thrombolyse.')
 
+    # Write benchmark decision:
+    extra_str = '' if perc_thrombolyse_benchmark >= 50.0 else 'do not '
+    st.markdown('__Benchmark decision:__ ' + extra_str + 'thrombolyse this patient.')
+
 
 def plot_heat_grid(shap_values_probability_extended, headers, 
                     stroke_team_list, sorted_inds):
