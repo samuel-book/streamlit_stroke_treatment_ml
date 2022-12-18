@@ -107,14 +107,17 @@ def build_dataframe_from_inputs(
     table = table.reshape(len(stroke_teams_list), len(headers))
     # Update the "Stroke team" column with the names:
     table[:, 5] = stroke_teams_list
+    # Update the "Benchmark teams" column:
+    # (original data is sorted alphabetically by stroke team)
+    table[:, 7] = benchmark_df.sort_values('stroke_team')['Rank']
     # Update the "Favourite teams" column:
+    # Label benchmarks:
+    # table[np.where(table[:, 7] <= 30), 6] = 'Benchmark'
+    # Put in selected favourites (overwrites benchmarks):
     for team in favourite_teams:
         ind_t = np.where(stroke_teams_list == team)
         table[ind_t, 6] = team
 
-    # Update the "Benchmark teams" column:
-    # (original data is sorted alphabetically by stroke team)
-    table[:, 7] = benchmark_df.sort_values('stroke_team')['Rank']
     # # If just need yes/no, the following works.
     # # It doesn't return indices in the same order as favourite_teams.
     # bool_favourites = np.in1d(stroke_teams_list, favourite_teams)

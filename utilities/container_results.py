@@ -43,21 +43,43 @@ def main(sorted_results, shap_values_probability_extended,
                 # st.write(i, shap_values_probability_extended[i])
                 plot_shap_waterfall(shap_values_probability_extended[i])
 
-    st.markdown('# Testing below')
-    plot_heat_grid(shap_values_probability_extended, headers_X, sorted_results['Stroke team'], sorted_results['Index'])
+    if st.checkbox('Testing:'):
+        st.markdown('# Testing below')
+        plot_heat_grid(shap_values_probability_extended, headers_X, sorted_results['Stroke team'], sorted_results['Index'])
 
 
 def plot_sorted_probs(sorted_results):
     base_values = 0.2995270168908044
 
     # x_chart = range(len(sorted_results))
+    # Add column of '*' for benchmark rank in top 30:
+    benchmark_bool = []
+    for i in sorted_results['Benchmark rank']:
+        val = '\U00002605' if i <= 30 else ''
+        benchmark_bool.append(val)
+    sorted_results['Benchmark'] = benchmark_bool
+
+    # Add column of str to print when thrombolysed or not
+    thrombolyse_str = np.full(len(sorted_results), 'No ')
+    thrombolyse_str[np.where(sorted_results['Thrombolyse'])] = 'Yes'
+    sorted_results['Thrombolyse_str'] = thrombolyse_str
 
     fig = px.bar(
         sorted_results,
         x='Sorted rank',
         y='Probability_perc',
-        custom_data=['Stroke team'],
-        color='Favourite team'
+        custom_data=['Stroke team', 'Thrombolyse_str', 'Benchmark'],
+        color='Favourite team',
+        text='Benchmark',
+        # color_discrete_map= {'Benchmark': 'yellow'}
+        )
+
+    # Update text at top of bar chart:
+    fig.update_traces(
+        textfont_size=20,
+        textposition='outside',
+        cliponaxis=False,
+        # marker_line=dict(width=2, color='black')
         )
 
     # ax.axes.get_xaxis().set_ticks([])
@@ -107,10 +129,16 @@ def plot_sorted_probs(sorted_results):
             '%{customdata[0]}' +
             '<br>'
             '%{y:>.2f}%' +
+            '<br>' +
+            'Thrombolysis: %{customdata[1]}' +
+            '<br>' + 
+            '%{customdata[2]}'
             '<extra></extra>'
             )
         )
 
+    # Add horizontal line at prob=0.5, the decision to thrombolyse:
+    fig.add_hline(y=50.0)
     # Add horizontal line at prob=0.3, the SHAP starting point:
     fig.add_hline(y=base_values*100.0)#,
     #             annotation_text='Starting probability')
@@ -204,8 +232,8 @@ def show_metrics_benchmarks(sorted_results):
     st.markdown('__Benchmark decision:__ ' + extra_str + 'thrombolyse this patient.')
 
 
-def plot_heat_grid(shap_values_probability_extended, headers, 
-                    stroke_team_list, sorted_inds):
+def plot_heat_grid(shap_values_probability_extended, headers,
+                   stroke_team_list, sorted_inds):
     # Experiment
     n_teams = len(shap_values_probability_extended)
     n_features = len(shap_values_probability_extended[0].values)
@@ -239,7 +267,7 @@ def plot_heat_grid(shap_values_probability_extended, headers,
 
 
     # Expect most of the mismatched one-hot-encoded hospitals to make
-    # only a tiny contribution to the SHAP. Moosh them down into one 
+    # only a tiny contribution to the SHAP. Moosh them down into one
     # column instead.
 
     # Have 9 features other than teams. Index 9 is the first team.
@@ -354,3 +382,45 @@ def plot_heat_grid(shap_values_probability_extended, headers,
         f'{inds_biggest_prob_change_nve[1]+1}'
         ').'
     ]))
+
+
+    # Line chart
+    # (definitely move to its own function after testing done)
+    # for row in range(grid_cat_sorted.shape[0]):
+    df_cat = pd.DataFrame(
+        grid_cat_sorted.T,
+        columns=headers
+    )
+    # Add index column:
+    df_cat['Sorted rank'] = np.arange(1, len(df_cat)+1)
+
+    # st.write(df_cat)
+    # fig = px.line(
+    #     df_cat,
+    #     x='Sorted rank',
+    #     y='Arrival-to-scan time',
+    #     color='Stroke team',
+    #     # line_dash = 'continent'
+        # )
+
+    import plotly.graph_objects as go
+    fig = go.Figure()
+    sorted_rank_arr = np.arange(1, len(df_cat)+1)
+    for i, feature in enumerate(headers):
+        fig.add_trace(go.Scatter(x=sorted_rank_arr, y=grid_cat_sorted[i, :],
+                            mode='lines',
+                            name=feature))
+
+
+    fig.update_layout(
+        title='Effect on probability by feature',
+        xaxis_title='Stroke team by rank',
+        yaxis_title='Effect on probability (%)',
+        legend_title='Feature'
+        )
+
+    # When hovering, highlight all features' points for chosen x:
+    fig.update_layout(hovermode='x unified')
+
+    # Write to streamlit:
+    st.plotly_chart(fig, use_container_width=True)
