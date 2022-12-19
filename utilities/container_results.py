@@ -139,12 +139,12 @@ def plot_sorted_probs(sorted_results):
 
     # Add horizontal line at prob=0.5, the decision to thrombolyse:
     fig.add_hline(y=50.0)
-    # Add horizontal line at prob=0.3, the SHAP starting point:
-    fig.add_hline(y=base_values*100.0)#,
-    #             annotation_text='Starting probability')
-    # fig.add_hline(y=base_values*100.0,
-    #               annotation_text=f'{base_values*100.0:.2f}%',
-    #               annotation_position='bottom right')
+    # # Add horizontal line at prob=0.3, the SHAP starting point:
+    # fig.add_hline(y=base_values*100.0)#,
+    # #             annotation_text='Starting probability')
+    # # fig.add_hline(y=base_values*100.0,
+    # #               annotation_text=f'{base_values*100.0:.2f}%',
+    # #               annotation_position='bottom right')
 
     # Write to streamlit:
     st.plotly_chart(fig, use_container_width=True)
