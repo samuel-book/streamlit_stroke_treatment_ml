@@ -105,12 +105,12 @@ def plot_sorted_probs(sorted_results):
         ))
 
     # fig.update_xaxes(showticklabels=False)
-    fig.update_layout(yaxis=dict(
-        tickmode='array',
-        tickvals=[0, 25, base_values*100.0, 50, 75, 100],
-        ticktext=['0%', '25%', f'{base_values*100.0:.2f}%',
-                    '50%', '75%', '100%']
-        ))
+    # fig.update_layout(yaxis=dict(
+    #     tickmode='array',
+    #     tickvals=[0, 25, base_values*100.0, 50, 75, 100],
+    #     ticktext=['0%', '25%', f'{base_values*100.0:.2f}%',
+    #                 '50%', '75%', '100%']
+    #     ))
     # fig.update_yaxes(tick0=0, dtick=25.0)
     # Set axis labels:
     fig.update_xaxes(title_text=
