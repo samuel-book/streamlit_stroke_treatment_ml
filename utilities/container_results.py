@@ -43,9 +43,9 @@ def main(sorted_results, shap_values_probability_extended,
                 # st.write(i, shap_values_probability_extended[i])
                 plot_shap_waterfall(shap_values_probability_extended[i])
 
-    if st.checkbox('Testing:'):
-        st.markdown('# Testing below')
-        plot_heat_grid(shap_values_probability_extended, headers_X, sorted_results['Stroke team'], sorted_results['Index'])
+    # if st.checkbox('Testing:'):
+    #     st.markdown('# Testing below')
+    #     plot_heat_grid(shap_values_probability_extended, headers_X, sorted_results['Stroke team'], sorted_results['Index'])
 
 
 def plot_sorted_probs(sorted_results):
@@ -419,8 +419,31 @@ def plot_heat_grid(shap_values_probability_extended, headers,
         legend_title='Feature'
         )
 
-    # When hovering, highlight all features' points for chosen x:
-    fig.update_layout(hovermode='x unified')
+    # # When hovering, highlight all features' points for chosen x:
+    # fig.update_layout(hovermode='x unified')
+
+    # Remove hover message:
+    fig.update_traces(hovertemplate='<extra></extra>')
+
+    # Move legend to bottom
+    fig.update_layout(legend=dict(
+        orientation='h',
+        yanchor='top',
+        y=-0.2,
+        xanchor="right",
+        x=1
+    ))
+
+    # Make the figure taller:
+    fig.update_layout(height=750)
+    # Changing width in the same way doesn't work when we write to
+    # streamlit later with use_container_width=True.
+    # Set aspect ratio:
+    # fig.update_yaxes(
+    #     scaleanchor='x',
+    #     scaleratio=2.0,
+    #     constrain='domain'
+    # )
 
     # Write to streamlit:
     st.plotly_chart(fig, use_container_width=True)
