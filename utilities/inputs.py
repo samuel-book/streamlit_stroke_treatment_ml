@@ -25,15 +25,18 @@ def write_text_from_file(filename, head_lines_to_skip=0):
     st.markdown(f"""{text_to_print}""")
 
 
+@st.cache
 def import_patient_data():
     synthetic = pd.read_csv('./data/synthetic_10_features.csv')
     return synthetic
 
 
+@st.cache
 def import_benchmark_data():
     all_teams_and_probs = pd.read_csv('./data/hospital_10k_thrombolysis.csv')
     # Add an index row to rank the teams:
-    all_teams_and_probs['Rank'] = np.arange(1, len(all_teams_and_probs['stroke_team'])+1)
+    all_teams_and_probs['Rank'] = \
+        np.arange(1, len(all_teams_and_probs['stroke_team'])+1)
     # all_teams = all_teams_and_probs['stroke_team'].values
     # benchmark_teams = all_teams[:30]
     # non_benchmark_teams = all_teams[30:]
@@ -60,6 +63,7 @@ def one_hot_encode_data(synthetic):
     return X
 
 
+@st.cache
 def read_stroke_teams_from_file():
     stroke_teams = pd.read_csv('./data/stroke_teams.csv')
     stroke_teams = stroke_teams.values.ravel()
@@ -128,17 +132,27 @@ def build_dataframe_from_inputs(
     return df
 
 
-def load_pretrained_models():
+@st.cache(hash_funcs={'builtins.dict': lambda _: None})
+def load_pretrained_model():
     # Load XGB Model
     filename = (f'./data/model.p')
     with open(filename, 'rb') as filehandler:
         model = pickle.load(filehandler)
+    return model
 
+
+@st.cache(hash_funcs={'builtins.dict': lambda _: None})
+def load_explainer():
     # Load SHAP explainers
     filename = (f'./data/shap_explainer.p')
     with open(filename, 'rb') as filehandler:
             explainer = pickle.load(filehandler)
+    return explainer
+
+
+@st.cache(hash_funcs={'builtins.dict': lambda _: None})
+def load_explainer_probability():
     filename = (f'./data/shap_explainer_probability.p')
     with open(filename, 'rb') as filehandler:
             explainer_probability = pickle.load(filehandler)
-    return model, explainer, explainer_probability
+    return explainer_probability

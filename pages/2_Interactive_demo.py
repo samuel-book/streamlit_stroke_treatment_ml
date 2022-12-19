@@ -72,9 +72,10 @@ X = utilities.inputs.one_hot_encode_data(synthetic)
 headers_synthetic = synthetic.columns
 headers_X = X.columns
 
-
-model, explainer, explainer_probability = utilities.inputs.\
-    load_pretrained_models()
+# Load in the model and explainers separately so each can be cached:
+model = utilities.inputs.load_pretrained_model()
+explainer = utilities.inputs.load_explainer()
+explainer_probability = utilities.inputs.load_explainer_probability()
 
 
 # ##################################
