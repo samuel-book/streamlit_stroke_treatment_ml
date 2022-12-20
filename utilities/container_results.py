@@ -13,6 +13,8 @@ from utilities import waterfall
 # Force package to be reloaded
 importlib.reload(waterfall)
 
+from utilities.main_calculations import convert_explainer_01_to_noyes
+
 
 def main(sorted_results, shap_values_probability_extended,
          indices_high_mid_low, indices_highlighted, headers_X,
@@ -29,32 +31,26 @@ def main(sorted_results, shap_values_probability_extended,
             ]
         for i_here, i in enumerate(indices_high_mid_low):
             title = (
-            '### ' + headers[i_here] + ': Team ' +
-            sorted_results['Stroke team'].loc[i]
+                '### ' + headers[i_here] + ': Team ' +
+                sorted_results['Stroke team'].loc[i]
             )
             st.markdown(title)
-            # st.write(i, shap_values_probability_extended[i])
-            # st.write(shap_values_probability_extended[i].values)
-            plot_shap_waterfall(shap_values_probability_extended[i])
+            sv = shap_values_probability_extended[i]
+            # Change integer 0/1 to str no/yes for display:
+            sv_to_display = convert_explainer_01_to_noyes(sv)
+            # Plot:
+            plot_shap_waterfall(sv_to_display)
 
     if len(indices_highlighted) > 0:
         with st.expander('SHAP for highlighted teams'):
             for i in indices_highlighted:
                 title = '### Team ' + sorted_results['Stroke team'].loc[i]
                 st.markdown(title)
-                # st.write(i, shap_values_probability_extended[i])
-                # Change integer 0/1 to str no/yes:
                 sv = shap_values_probability_extended[i]
-                # st.write(type(sv))
-
-                # import shap
-                # sv_fake = shap.Explanation()
-                # # st.write()
-                # # for b in [1, 3, 6, 8]:
-                # #     sv[b] = 'No' if sv[b] == 0 else 'Yes'
-                # st.write(sv.data)
-                # st.write(sv_fake.data)
-                plot_shap_waterfall(sv)
+                # Change integer 0/1 to str no/yes for display:
+                sv_to_display = convert_explainer_01_to_noyes(sv)
+                # Plot:
+                plot_shap_waterfall(sv_to_display)
 
     # if st.checkbox('Testing:'):
     #     st.markdown('# Testing below')

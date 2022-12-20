@@ -4,6 +4,7 @@ Main calculations.
 # Imports:
 import numpy as np
 import pandas as pd
+import shap
 
 
 def predict_treatment(X, synthetic, model):
@@ -36,3 +37,52 @@ def find_shapley_values(explainer_probability, X):
     # Shap values exist for each classification in a Tree
     shap_values_probability = shap_values_probability_extended.values
     return shap_values_probability_extended, shap_values_probability
+
+
+def convert_explainer_01_to_noyes(sv):
+    """
+    Change some SHAP explainer data values so that input 0/1 features
+    are changed to "no" or "yes" strings for display on waterfall.
+
+    Input:
+    sv - a SHAP explainer object.
+
+    Returns:
+    sv_fake - a copy of the object with some data swapped.
+    """
+    # Take the input data from the existing object:
+    data_yn = np.copy(sv.data)
+
+    # Swap out the data for these features:
+    expected_features = [
+        'Infarction',
+        'Precise onset time',
+        'Use of AF anticoagulents',
+        'Onset during sleep'
+        ]
+    # Find where these features are in the list:
+    inds = [sv.feature_names.index(feature) for feature in expected_features]
+    # Update the data behind those features:
+    for i in inds:
+        data_yn[i] = 'No' if data_yn[i] == 0 else 'Yes'
+
+    # Make a new explainer object with the new data:
+    sv_fake = shap.Explanation(
+        # Changed data:
+        data=data_yn,
+        # Everything else copied directly from the start object:
+        base_values=sv.base_values,
+        clustering=sv.clustering,
+        display_data=sv.display_data,
+        error_std=sv.error_std,
+        feature_names=sv.feature_names,
+        hierarchical_values=sv.hierarchical_values,
+        instance_names=sv.instance_names,
+        lower_bounds=sv.lower_bounds,
+        main_effects=sv.main_effects,
+        output_indexes=sv.output_indexes,
+        output_names=sv.output_names,
+        upper_bounds=sv.upper_bounds,
+        values=sv.values
+    )
+    return sv_fake
