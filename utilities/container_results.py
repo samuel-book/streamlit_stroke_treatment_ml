@@ -15,7 +15,8 @@ importlib.reload(waterfall)
 
 
 def main(sorted_results, shap_values_probability_extended,
-         indices_high_mid_low, indices_highlighted, headers_X):
+         indices_high_mid_low, indices_highlighted, headers_X,
+         shap_values_probability):
     show_metrics_benchmarks(sorted_results)
 
     plot_sorted_probs(sorted_results)
@@ -44,14 +45,20 @@ def main(sorted_results, shap_values_probability_extended,
                 # st.write(i, shap_values_probability_extended[i])
                 # Change integer 0/1 to str no/yes:
                 sv = shap_values_probability_extended[i]
-                # for b in [1, 3, 6, 8]:
-                #     sv[b] = 'No' if sv[b] == 0 else 'Yes'
+                # st.write(type(sv))
+
+                # import shap
+                # sv_fake = shap.Explanation()
+                # # st.write()
+                # # for b in [1, 3, 6, 8]:
+                # #     sv[b] = 'No' if sv[b] == 0 else 'Yes'
                 # st.write(sv.data)
+                # st.write(sv_fake.data)
                 plot_shap_waterfall(sv)
 
     # if st.checkbox('Testing:'):
     #     st.markdown('# Testing below')
-    #     plot_heat_grid(shap_values_probability_extended, headers_X, sorted_results['Stroke team'], sorted_results['Index'])
+    #     plot_heat_grid(shap_values_probability_extended, headers_X, sorted_results['Stroke team'], sorted_results['Index'], shap_values_probability)
 
 
 def plot_sorted_probs(sorted_results):
@@ -248,17 +255,19 @@ def show_metrics_benchmarks(sorted_results):
 
 
 def plot_heat_grid(shap_values_probability_extended, headers,
-                   stroke_team_list, sorted_inds):
+                   stroke_team_list, sorted_inds, shap_values_probability):
     # Experiment
     n_teams = len(shap_values_probability_extended)
     n_features = len(shap_values_probability_extended[0].values)
-    grid = np.zeros((n_features, n_teams))
+    # grid = np.zeros((n_features, n_teams))
 
-    # Don't fill this grid in the same order as the sorted bar chart.
-    # Rely on picking out the diagonal later.
-    for i, team in enumerate(shap_values_probability_extended):
-        values = shap_values_probability_extended[i].values
-        grid[:, i] = values
+    # # Don't fill this grid in the same order as the sorted bar chart.
+    # # Rely on picking out the diagonal later.
+    # for i, team in enumerate(shap_values_probability_extended):
+    #     values = shap_values_probability_extended[i].values
+    #     grid[:, i] = values
+
+    grid = np.transpose(shap_values_probability)
 
 
     vlim = np.abs(np.max(np.abs(grid)))

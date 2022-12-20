@@ -35,7 +35,7 @@ def user_inputs():
     arrival_to_scan_time_input = st.number_input(
         'Arrival-to-scan time (minutes)',
         min_value=0,
-        max_value=600,
+        max_value=90,
         value=15,
         step=15,
         help='Ranges from 0 to 600.',
