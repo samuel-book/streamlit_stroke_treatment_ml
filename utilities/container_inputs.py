@@ -6,6 +6,30 @@ import streamlit as st
 
 
 def user_inputs():
+    # Prior disability level
+    # Integer input, 0 to 5 inclusive.
+    prior_disability_input = st.slider(
+        'Prior disability (mRS score)',
+        min_value=0,
+        max_value=5,
+        value=0,
+        step=1,
+        help='Ranges from 0 (highest utility) to 5 (lowest utility).',
+        key='prior_disability_input'
+    )
+
+    # Stroke severity
+    # Integer input from 0 to 42.
+    stroke_severity_input = st.slider(
+        'Stroke severity',
+        min_value=0,
+        max_value=42,
+        value=15,
+        step=1,
+        help='Ranges from 0 (least severe) to 42 (most severe).',
+        key='stroke_severity_input'
+    )
+
     # Arrival-to-scan time
     # Number (integer?) input in minutes
     arrival_to_scan_time_input = st.number_input(
@@ -18,67 +42,6 @@ def user_inputs():
         key='arrival_to_scan_time_input'
     )
 
-    # Infarction
-    # String input for user friendliness.
-    # We convert to integer for use with the model.
-    infarction_input_str = st.radio(
-        'Infarction',
-        options=['Yes', 'No'],
-        index=0,
-        horizontal=True,
-        key='infarction_input_str'
-    )
-    infarction_input = 1 if infarction_input_str == 'Yes' else 0
-
-    # Stroke severity
-    # Integer input from 0 to 42.
-    stroke_severity_input = st.number_input(
-        'Stroke severity',
-        min_value=0,
-        max_value=42,
-        value=15,
-        step=1,
-        help='Ranges from 0 (least severe) to 42 (most severe).',
-        key='stroke_severity_input'
-    )
-
-    # Precise onset time
-    # String input for user friendliness.
-    # We convert to integer for use with the model.
-    onset_time_precise_input_str = st.radio(
-        'Precise onset time',
-        options=['Yes', 'No'],
-        index=0,
-        horizontal=True,
-        key='onset_time_precise_input_str'
-    )
-    onset_time_precise_input = 1 \
-        if onset_time_precise_input_str == 'Yes' else 0
-
-    # Prior disability level
-    # Integer input, 0 to 5 inclusive.
-    prior_disability_input = st.number_input(
-        'Prior disability (mRS score)',
-        min_value=0,
-        max_value=5,
-        value=0,
-        step=1,
-        help='Ranges from 0 to 5.',
-        key='prior_disability_input'
-    )
-
-    # Use of AF anticoagulents
-    # String input for user friendliness.
-    # We convert to integer for use with the model.
-    anticoag_input_str = st.radio(
-        'AF Anticoagulents',
-        options=['Yes', 'No'],
-        index=1,
-        horizontal=True,
-        key='anticoag_input_str'
-    )
-    anticoag_input = 1 if anticoag_input_str == 'Yes' else 0
-
     # Onset-to-arrival time
     # Number (integer?) input in minutes.
     onset_to_arrival_time_input = st.number_input(
@@ -90,19 +53,6 @@ def user_inputs():
         help='Ranges from 0 to 600.',
         key='onset_to_arrival_time_input'
     )
-
-    # Onset during sleep
-    # String input for user friendliness.
-    # We convert to integer for use with the model.
-    onset_during_sleep_input_str = st.radio(
-        'Onset during sleep',
-        options=['Yes', 'No'],
-        index=1,
-        horizontal=True,
-        key='onset_during_sleep_input_str'
-    )
-    onset_during_sleep_input = 1 \
-        if onset_during_sleep_input_str == 'Yes' else 0
 
     # Age
     # Float input in steps of 5 years from 2.5 years.
@@ -118,8 +68,57 @@ def user_inputs():
     # It's possible to override this by typing your own entry.
     # Instead manually convert to nearest step of 5 and say so.
     # if age_input % 2.5 != 0.0:
-    age_input = round(age_input, 2)
+    # age_input = round(age_input, 2)
 
+    # Infarction
+    # String input for user friendliness.
+    # We convert to integer for use with the model.
+    infarction_input_str = st.radio(
+        'Infarction',
+        options=['Yes', 'No'],
+        index=0,
+        horizontal=True,
+        key='infarction_input_str'
+    )
+    infarction_input = 1 if infarction_input_str == 'Yes' else 0
+
+    # Precise onset time
+    # String input for user friendliness.
+    # We convert to integer for use with the model.
+    onset_time_precise_input_str = st.radio(
+        'Precise onset time',
+        options=['Yes', 'No'],
+        index=0,
+        horizontal=True,
+        key='onset_time_precise_input_str'
+    )
+    onset_time_precise_input = 1 \
+        if onset_time_precise_input_str == 'Yes' else 0
+
+    # Use of AF anticoagulents
+    # String input for user friendliness.
+    # We convert to integer for use with the model.
+    anticoag_input_str = st.radio(
+        'AF Anticoagulents',
+        options=['Yes', 'No'],
+        index=1,
+        horizontal=True,
+        key='anticoag_input_str'
+    )
+    anticoag_input = 1 if anticoag_input_str == 'Yes' else 0
+
+    # Onset during sleep
+    # String input for user friendliness.
+    # We convert to integer for use with the model.
+    onset_during_sleep_input_str = st.radio(
+        'Onset during sleep',
+        options=['Yes', 'No'],
+        index=1,
+        horizontal=True,
+        key='onset_during_sleep_input_str'
+    )
+    onset_during_sleep_input = 1 \
+        if onset_during_sleep_input_str == 'Yes' else 0
 
     # Stick all of these inputs into a dictionary:
     user_input_dict = dict(
@@ -140,10 +139,10 @@ def user_inputs():
     return user_input_dict
 
 
-def favourite_teams(stroke_teams_list):
-    favourite_teams_input = st.multiselect(
+def highlighted_teams(stroke_teams_list):
+    highlighted_teams_input = st.multiselect(
         'Pick some stroke teams to highlight',
         stroke_teams_list,
         help='Pick up to 9 before the colours repeat.'
     )
-    return favourite_teams_input
+    return highlighted_teams_input

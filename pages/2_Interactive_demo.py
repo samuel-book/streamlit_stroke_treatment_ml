@@ -48,18 +48,19 @@ st.markdown('# Interactive demo')
 with st.sidebar:
     st.markdown('# Patient details')
     user_inputs_dict = utilities.container_inputs.user_inputs()
-    st.markdown('breathing room')
+    # Write an empty header to give breathing room at the bottom:
+    st.markdown('# ')
 stroke_teams_list = utilities.inputs.read_stroke_teams_from_file()
 
 benchmark_df = utilities.inputs.import_benchmark_data()
 
 # Pick favourites:
-favourite_teams_input = utilities.container_inputs.\
-    favourite_teams(stroke_teams_list)
+highlighted_teams_input = utilities.container_inputs.\
+    highlighted_teams(stroke_teams_list)
 
 # Build these into a 2D DataFrame:
 synthetic = utilities.inputs.build_dataframe_from_inputs(
-        user_inputs_dict, stroke_teams_list, favourite_teams_input,
+        user_inputs_dict, stroke_teams_list, highlighted_teams_input,
         benchmark_df)
 
 # synthetic = utilities.inputs.import_patient_data()
@@ -91,11 +92,11 @@ index_mid = sorted_results.iloc[int(len(sorted_results)/2)]['Index']
 index_low = sorted_results.iloc[-1]['Index']
 indices_high_mid_low = [index_high, index_mid, index_low]
 
-# Get indices of favourite teams:
+# Get indices of highlighted teams:
 # (attempted a Pandas-esque way to do this
 # but it looks worse than numpy where)
-indices_favourites = sorted_results['Index'].loc[
-    ~sorted_results['Favourite team'].str.contains('-')]
+indices_highlighted = sorted_results['Index'].loc[
+    ~sorted_results['Highlighted team'].str.contains('-')]
 
 # Find Shapley values:
 shap_values_probability_extended, shap_values_probability = \
@@ -111,7 +112,7 @@ utilities.container_results.main(
     sorted_results,
     shap_values_probability_extended,
     indices_high_mid_low,
-    indices_favourites,
+    indices_highlighted,
     headers_X
     )
 

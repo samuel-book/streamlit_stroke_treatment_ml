@@ -49,8 +49,8 @@ def one_hot_encode_data(synthetic):
     X = synthetic.copy(deep=True)
 
     try:
-        # Remove favourite team column
-        X = synthetic.drop(['Favourite team', 'Benchmark rank'], axis=1)
+        # Remove Highlighted team column
+        X = synthetic.drop(['Highlighted team', 'Benchmark rank'], axis=1)
     except KeyError:
         # Nothing to see here
         pass
@@ -71,7 +71,7 @@ def read_stroke_teams_from_file():
 
 
 def build_dataframe_from_inputs(
-        dict, stroke_teams_list, favourite_teams, benchmark_df):
+        dict, stroke_teams_list, Highlighted_teams, benchmark_df):
     # First build a 2D array where each row is the patient details.
     # Column headings:
     headers = np.array([
@@ -81,7 +81,7 @@ def build_dataframe_from_inputs(
         'Precise onset time',
         'Prior disability level',
         'Stroke team',
-        'Favourite team',
+        'Highlighted team',
         'Benchmark rank',
         'Use of AF anticoagulents',
         'Onset-to-arrival time',
@@ -97,7 +97,7 @@ def build_dataframe_from_inputs(
         dict['onset_time_precise'],
         dict['prior_disability'],
         'temp',  # stroke team
-        '-',   # favourite stroke team
+        '-',   # Highlighted stroke team
         0,
         dict['anticoag'],
         dict['onset_to_arrival_time'],
@@ -114,18 +114,18 @@ def build_dataframe_from_inputs(
     # Update the "Benchmark teams" column:
     # (original data is sorted alphabetically by stroke team)
     table[:, 7] = benchmark_df.sort_values('stroke_team')['Rank']
-    # Update the "Favourite teams" column:
+    # Update the "Highlighted teams" column:
     # Label benchmarks:
     # table[np.where(table[:, 7] <= 30), 6] = 'Benchmark'
-    # Put in selected favourites (overwrites benchmarks):
-    for team in favourite_teams:
+    # Put in selected Highlighteds (overwrites benchmarks):
+    for team in Highlighted_teams:
         ind_t = np.where(stroke_teams_list == team)
         table[ind_t, 6] = team
 
     # # If just need yes/no, the following works.
-    # # It doesn't return indices in the same order as favourite_teams.
-    # bool_favourites = np.in1d(stroke_teams_list, favourite_teams)
-    # table[:, 6][bool_favourites] = 'Yes'
+    # # It doesn't return indices in the same order as Highlighted_teams.
+    # bool_Highlighteds = np.in1d(stroke_teams_list, Highlighted_teams)
+    # table[:, 6][bool_Highlighteds] = 'Yes'
 
     # Turn this array into a DataFrame with labelled columns.
     df = pd.DataFrame(table, columns=headers)

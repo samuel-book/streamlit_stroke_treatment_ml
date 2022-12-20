@@ -15,8 +15,9 @@ importlib.reload(waterfall)
 
 
 def main(sorted_results, shap_values_probability_extended,
-         indices_high_mid_low, indices_favourites, headers_X):
+         indices_high_mid_low, indices_highlighted, headers_X):
     show_metrics_benchmarks(sorted_results)
+
     plot_sorted_probs(sorted_results)
 
     with st.expander('SHAP for max, middle, min'):
@@ -35,13 +36,18 @@ def main(sorted_results, shap_values_probability_extended,
             # st.write(shap_values_probability_extended[i].values)
             plot_shap_waterfall(shap_values_probability_extended[i])
 
-    if len(indices_favourites) > 0:
-        with st.expander('SHAP for favourite teams'):
-            for i in indices_favourites:
+    if len(indices_highlighted) > 0:
+        with st.expander('SHAP for highlighted teams'):
+            for i in indices_highlighted:
                 title = '### Team ' + sorted_results['Stroke team'].loc[i]
                 st.markdown(title)
                 # st.write(i, shap_values_probability_extended[i])
-                plot_shap_waterfall(shap_values_probability_extended[i])
+                # Change integer 0/1 to str no/yes:
+                sv = shap_values_probability_extended[i]
+                # for b in [1, 3, 6, 8]:
+                #     sv[b] = 'No' if sv[b] == 0 else 'Yes'
+                # st.write(sv.data)
+                plot_shap_waterfall(sv)
 
     # if st.checkbox('Testing:'):
     #     st.markdown('# Testing below')
@@ -69,7 +75,7 @@ def plot_sorted_probs(sorted_results):
         x='Sorted rank',
         y='Probability_perc',
         custom_data=['Stroke team', 'Thrombolyse_str', 'Benchmark'],
-        color='Favourite team',
+        color='Highlighted team',
         text='Benchmark',
         # color_discrete_map= {'Benchmark': 'yellow'}
         )
@@ -148,6 +154,15 @@ def plot_sorted_probs(sorted_results):
 
     # Write to streamlit:
     st.plotly_chart(fig, use_container_width=True)
+    st.write(''.join([
+        'The line at 50% is the cut-off for thrombolysis. ',
+        'Stroke teams with a probability below the line will not ',
+        'thrombolyse the patient, and teams on or above the line will.'
+        ]))
+    st.write(''.join([
+        'Currently benchmark teams are marked with the world\'s tiniest ',
+        'stars, but this will be changed to something easier to see.'
+        ]))
 
 
 def plot_sorted_probs_matplotlib(sorted_results):
