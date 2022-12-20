@@ -62,6 +62,13 @@ def convert_explainer_01_to_noyes(sv):
         ]
     # Find where these features are in the list:
     inds = [sv.feature_names.index(feature) for feature in expected_features]
+
+    # Also update all of the "team_" entries.
+    # Find where they are in the list:
+    for i, feature in enumerate(sv.feature_names):
+        if feature[:5] == 'team_':
+            inds.append(i)
+
     # Update the data behind those features:
     for i in inds:
         data_yn[i] = 'No' if data_yn[i] == 0 else 'Yes'
