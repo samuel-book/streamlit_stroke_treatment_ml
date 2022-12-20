@@ -36,8 +36,8 @@ def user_inputs():
         'Arrival-to-scan time (minutes)',
         min_value=0,
         max_value=600,
-        value=20,
-        step=5,
+        value=15,
+        step=15,
         help='Ranges from 0 to 600.',
         key='arrival_to_scan_time_input'
     )
@@ -48,8 +48,8 @@ def user_inputs():
         'Onset-to-arrival time (minutes)',
         min_value=0,
         max_value=600,
-        value=80,
-        step=5,
+        value=90,
+        step=15,
         help='Ranges from 0 to 600.',
         key='onset_to_arrival_time_input'
     )
