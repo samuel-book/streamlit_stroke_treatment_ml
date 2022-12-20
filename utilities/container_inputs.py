@@ -38,7 +38,7 @@ def user_inputs():
         max_value=90,
         value=15,
         step=15,
-        help='Ranges from 0 to 600.',
+        help='Ranges from 0 to 90.',
         key='arrival_to_scan_time_input'
     )
 
