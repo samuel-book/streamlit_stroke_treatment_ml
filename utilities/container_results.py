@@ -316,7 +316,7 @@ def plot_shap_waterfall(shap_values, final_prob):
     )
 
     fig.add_annotation(x=final_prob_perc, y=n_to_show-0.6,
-                text=f'End probability: {final_prob_perc:.2f}%',
+                text=f'\nEnd probability: {final_prob_perc:.2f}%',
                 showarrow=True,
                 # yshift=-100,
                 ax=0,  # Make arrow vertical - a = arrow, x = x-shift.
