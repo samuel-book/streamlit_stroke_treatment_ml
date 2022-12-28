@@ -232,42 +232,100 @@ def plot_shap_waterfall(shap_values, final_prob, n_to_show=9):
     patient_data = shap_values.data
     # Adjust some values to add units for showing on the plot:
     extra_bits = {
-        'Onset-to-arrival time':' minutes',
-        'Arrival-to-scan time':' minutes',
-        'Stroke severity':' (out of 42)',
-        'Prior disability level':' (mRS)',
-        'Age':' years',
+        'Onset-to-arrival time': ' minutes',
+        'Arrival-to-scan time': ' minutes',
+        'Stroke severity': ' (out of 42)',
+        'Prior disability level': ' (mRS)',
+        'Age': ' years',
     }
-    for i_here, feature in enumerate(extra_bits.keys()):
+    for feature in extra_bits.keys():
         i = np.where(feature_names == feature)[0][0]
         patient_data[i] = f'{patient_data[i]}' + extra_bits[feature]
 
-    base_values = 0.2995270168908044
+    # Start probability:
+    base_values = shap_values.base_values
     base_values_perc = base_values * 100.0
-
+    # End probability:
     final_prob_perc = final_prob * 100.0
 
+    def sort_lists(
+            shap_probs, feature_names, patient_data, n_to_show,
+            sort_by_magnitude=True, merged_cell_at_top=True
+            ):
+        """
+        sort_by_magnitude =
+            True  - in order from smallest magnitude to largest
+                    magnitude (mix -ve and +ve).
+            False - in order from smallest to largest.
+        merged_cell_at_top =
+            True  - merged row at the top.
+            False - merged row before first positive row.
+            (This only makes sense when sort_by_magnitude=False).
+        """
+        # Sort by increasing probability (magnitude, not absolute):
+        inds = np.argsort(np.abs(shap_probs))
 
-    # Sort by decreasing probability (magnitude, not absolute):
-    inds = np.argsort(np.abs(shap_probs))
+        # Show these ones individually:
+        shap_probs_to_show = shap_probs[inds][-n_to_show:]
+        feature_names_to_show = feature_names[inds][-n_to_show:]
+        patient_data_to_show = patient_data[inds][-n_to_show:]
 
-    # Show these ones individually:
-    shap_probs_to_show = shap_probs[inds][-n_to_show:]
-    feature_names_to_show = feature_names[inds][-n_to_show:]
-    patient_data_to_show = patient_data[inds][-n_to_show:]
+        if sort_by_magnitude == False:
+            # Sort again to put into increasing probability
+            # (absolute, not magnitude):
+            inds_abs = np.argsort(shap_probs_to_show)
+            # Show these ones individually:
+            shap_probs_to_show = shap_probs_to_show[inds_abs]
+            feature_names_to_show = feature_names_to_show[inds_abs]
+            patient_data_to_show = patient_data_to_show[inds_abs]
 
-    # Merge these into one bar:
-    shap_probs_to_hide = shap_probs[inds][:-n_to_show]
-    shap_probs_hide_sum = np.sum(shap_probs_to_hide)
-    n_features_hidden = len(feature_names) - len(feature_names_to_show)
-    feature_name_hidden = f'{n_features_hidden} other features'
-    data_name_hidden = 'N/A'
+        # Merge these into one bar:
+        shap_probs_to_hide = shap_probs[inds][:-n_to_show]
+        shap_probs_hide_sum = np.sum(shap_probs_to_hide)
+        n_features_hidden = len(feature_names) - len(feature_names_to_show)
+        feature_name_hidden = f'{n_features_hidden} other features'
+        data_name_hidden = 'N/A'
 
-    # Add the merged hidden features to the main lists:
+        if merged_cell_at_top == True:
+            # Add the merged hidden features to the main lists:
+            shap_probs_to_show = np.append(
+                shap_probs_hide_sum, shap_probs_to_show)
+            feature_names_to_show = np.append(
+                feature_name_hidden, feature_names_to_show)
+            patient_data_to_show = np.append(
+                data_name_hidden, patient_data_to_show)
+        else:
+            # Find where the first positive change in probability is:
+            ind_pos = np.where(shap_probs_to_show > 0)[0]
+            try:
+                # Insert the merged cell data just before the first
+                # positive bar.
+                shap_probs_to_show = np.insert(
+                    shap_probs_to_show, ind_pos[0], shap_probs_hide_sum)
+                feature_names_to_show = np.insert(
+                    feature_names_to_show, ind_pos[0], feature_name_hidden)
+                patient_data_to_show = np.insert(
+                    patient_data_to_show, ind_pos[0], data_name_hidden)
+            except IndexError:
+                # No positive values in the list. Whack this at the end.
+                # Add the merged hidden features to the main lists:
+                shap_probs_to_show = np.append(
+                    shap_probs_to_show, shap_probs_hide_sum)
+                feature_names_to_show = np.append(
+                    feature_names_to_show, feature_name_hidden)
+                patient_data_to_show = np.append(
+                    patient_data_to_show, data_name_hidden)
+        return shap_probs_to_show, feature_names_to_show, patient_data_to_show
+
+    # Use the function to sort the displayed rows:
+    shap_probs_to_show, feature_names_to_show, patient_data_to_show = \
+        sort_lists(
+            shap_probs, feature_names, patient_data, n_to_show,
+            sort_by_magnitude=False, merged_cell_at_top=False
+            )
+
+    # Add one to n_to_show to account for the merged "all other features" row.
     n_to_show += 1
-    shap_probs_to_show = np.append(shap_probs_hide_sum, shap_probs_to_show)
-    feature_names_to_show = np.append(feature_name_hidden, feature_names_to_show)
-    patient_data_to_show = np.append(data_name_hidden, patient_data_to_show)
 
     # Save a copy of shap probabilities in terms of percentage:
     shap_probs_perc = shap_probs_to_show * 100.0
