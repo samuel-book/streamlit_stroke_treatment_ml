@@ -320,7 +320,7 @@ def plot_shap_waterfall(shap_values, final_prob):
                 showarrow=True,
                 # yshift=-100,
                 ax=0,  # Make arrow vertical - a = arrow, x = x-shift.
-                ay=25,  # Make the arrow sit below the final bar
+                ay=35,  # Make the arrow sit below the final bar
     )
 
 
