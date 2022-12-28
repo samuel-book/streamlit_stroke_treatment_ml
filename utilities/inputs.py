@@ -37,10 +37,25 @@ def import_benchmark_data():
     # Add an index row to rank the teams:
     all_teams_and_probs['Rank'] = \
         np.arange(1, len(all_teams_and_probs['stroke_team'])+1)
-    # all_teams = all_teams_and_probs['stroke_team'].values
-    # benchmark_teams = all_teams[:30]
-    # non_benchmark_teams = all_teams[30:]
-    return all_teams_and_probs  # benchmark_teams, non_benchmark_teams
+    return tuple(all_teams_and_probs)
+
+
+def build_X(user_inputs_dict, stroke_teams_list):
+    """
+    """
+    # Banished this call to build_dataframe_from_inputs() to this
+    # function so the "synthetic" array doesn't sit in memory.
+    synthetic = build_dataframe_from_inputs(
+        user_inputs_dict, stroke_teams_list)
+    # Store the column names:
+    headers_synthetic = tuple(synthetic.columns)
+
+    # Make a copy of this data that is ready for the model.
+    # The same data except the Stroke Team column is one-hot-encoded.
+    X = one_hot_encode_data(synthetic)
+    # Store the column names:
+    headers_X = tuple(X.columns)
+    return X, headers_X, headers_synthetic
 
 
 def one_hot_encode_data(synthetic):
@@ -48,15 +63,8 @@ def one_hot_encode_data(synthetic):
     # Keep copy of original, with 'Stroke team' not one-hot encoded
     X = synthetic.copy(deep=True)
 
-    try:
-        # Remove Highlighted team column
-        X = synthetic.drop(['Highlighted team', 'Benchmark rank'], axis=1)
-    except KeyError:
-        # Nothing to see here
-        pass
-
     # One-hot encode 'Stroke team'
-    X_hosp = pd.get_dummies(X['Stroke team'], prefix = 'team')
+    X_hosp = pd.get_dummies(X['Stroke team'], prefix='team')
     X = pd.concat([X, X_hosp], axis=1)
     X.drop('Stroke team', axis=1, inplace=True)
 
@@ -66,12 +74,11 @@ def one_hot_encode_data(synthetic):
 @st.cache
 def read_stroke_teams_from_file():
     stroke_teams = pd.read_csv('./data/stroke_teams.csv')
-    stroke_teams = stroke_teams.values.ravel()
+    stroke_teams = tuple(stroke_teams.values.ravel())
     return stroke_teams
 
 
-def build_dataframe_from_inputs(
-        dict, stroke_teams_list, Highlighted_teams, benchmark_df):
+def build_dataframe_from_inputs(dict, stroke_teams_list):
     # First build a 2D array where each row is the patient details.
     # Column headings:
     headers = np.array([
@@ -81,8 +88,6 @@ def build_dataframe_from_inputs(
         'Precise onset time',
         'Prior disability level',
         'Stroke team',
-        'Highlighted team',
-        'Benchmark rank',
         'Use of AF anticoagulents',
         'Onset-to-arrival time',
         'Onset during sleep',
@@ -96,9 +101,7 @@ def build_dataframe_from_inputs(
         dict['stroke_severity'],
         dict['onset_time_precise'],
         dict['prior_disability'],
-        'temp',  # stroke team
-        '-',   # Highlighted stroke team
-        0,
+        'temp',  # Stroke team
         dict['anticoag'],
         dict['onset_to_arrival_time'],
         dict['onset_during_sleep'],
@@ -111,21 +114,6 @@ def build_dataframe_from_inputs(
     table = table.reshape(len(stroke_teams_list), len(headers))
     # Update the "Stroke team" column with the names:
     table[:, 5] = stroke_teams_list
-    # Update the "Benchmark teams" column:
-    # (original data is sorted alphabetically by stroke team)
-    table[:, 7] = benchmark_df.sort_values('stroke_team')['Rank']
-    # Update the "Highlighted teams" column:
-    # Label benchmarks:
-    # table[np.where(table[:, 7] <= 30), 6] = 'Benchmark'
-    # Put in selected Highlighteds (overwrites benchmarks):
-    for team in Highlighted_teams:
-        ind_t = np.where(stroke_teams_list == team)
-        table[ind_t, 6] = team
-
-    # # If just need yes/no, the following works.
-    # # It doesn't return indices in the same order as Highlighted_teams.
-    # bool_Highlighteds = np.in1d(stroke_teams_list, Highlighted_teams)
-    # table[:, 6][bool_Highlighteds] = 'Yes'
 
     # Turn this array into a DataFrame with labelled columns.
     df = pd.DataFrame(table, columns=headers)
@@ -135,7 +123,7 @@ def build_dataframe_from_inputs(
 @st.cache(hash_funcs={'builtins.dict': lambda _: None})
 def load_pretrained_model():
     # Load XGB Model
-    filename = (f'./data/model.p')
+    filename = ('./data/model.p')
     with open(filename, 'rb') as filehandler:
         model = pickle.load(filehandler)
     return model
@@ -144,15 +132,15 @@ def load_pretrained_model():
 @st.cache(hash_funcs={'builtins.dict': lambda _: None})
 def load_explainer():
     # Load SHAP explainers
-    filename = (f'./data/shap_explainer.p')
+    filename = ('./data/shap_explainer.p')
     with open(filename, 'rb') as filehandler:
-            explainer = pickle.load(filehandler)
+        explainer = pickle.load(filehandler)
     return explainer
 
 
 @st.cache(hash_funcs={'builtins.dict': lambda _: None})
 def load_explainer_probability():
-    filename = (f'./data/shap_explainer_probability.p')
+    filename = ('./data/shap_explainer_probability.p')
     with open(filename, 'rb') as filehandler:
-            explainer_probability = pickle.load(filehandler)
+        explainer_probability = pickle.load(filehandler)
     return explainer_probability

@@ -17,7 +17,7 @@ from . import colors
 # plot that is associated with that feature get overlayed on the plot...it would quickly allow users to answer
 # why a feature is pushing down or up. Perhaps the best way to do this would be with an ICE plot hanging off
 # of the bar...
-def waterfall(shap_values, max_display=10, show=True, y_reverse=False):
+def waterfall(shap_values, max_display=10, show=True, y_reverse=False, rank_absolute=True):
     """ Plots an explantion of a single prediction as a waterfall plot.
     The SHAP value of a feature represents the impact of the evidence provided by that feature on the model's
     output. The waterfall plot is designed to visually display how the SHAP values (evidence) of each feature
@@ -76,7 +76,11 @@ def waterfall(shap_values, max_display=10, show=True, y_reverse=False):
     num_features = min(max_display, len(values))
     row_height = 0.5
     rng = range(num_features - 1, -1, -1)
+    
+    # Rank features by absolute values to choose which are going to be included individually in the 
+    #   waterfall plot, the rest will be represented in one summed bar.
     order = np.argsort(-np.abs(values))
+
     pos_lefts = []
     pos_inds = []
     pos_widths = []
@@ -98,6 +102,18 @@ def waterfall(shap_values, max_display=10, show=True, y_reverse=False):
         num_individual = num_features
     else:
         num_individual = num_features - 1
+        
+    if not rank_absolute:
+        # Change the plotting order of just the features that are going to be shown indiviually 
+        #   on the waterfall plot to be in descending raw value order, rather than ranked on
+        #   absolute importance
+        values_to_sort = [values[order[i]] for i in range(num_individual)]
+        arg_to_sort = order[0:num_individual]
+        arg_values_to_sort = np.argsort(values_to_sort)
+        # range(num_individual-1,-1,-1) makes to loop go backwards from n to 0.
+        order_arg_to_sort = [arg_to_sort[arg_values_to_sort[i]] for i in range(num_individual-1,-1,-1)]
+        # Replace the location values for just those features that are going to be shown individually.
+        order[0:num_individual] = order_arg_to_sort[0:num_individual]
 
     # compute the locations of the individual features and plot the dashed connecting lines
     for i in range(num_individual):

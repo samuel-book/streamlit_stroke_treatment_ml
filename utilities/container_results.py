@@ -5,20 +5,28 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
+import plotly.graph_objects as go
 import importlib
 import pandas as pd
+
+# For matplotlib plots:
+from matplotlib.backends.backend_agg import RendererAgg
+_lock = RendererAgg.lock
+
+from utilities.main_calculations import convert_explainer_01_to_noyes
 
 # Import local package
 from utilities import waterfall
 # Force package to be reloaded
 importlib.reload(waterfall)
 
-from utilities.main_calculations import convert_explainer_01_to_noyes
 
-
-def main(sorted_results, shap_values_probability_extended,
+def main(sorted_results, 
+         shap_values_probability_extended_high_mid_low,
+         shap_values_probability_extended_highlighted,
          indices_high_mid_low, indices_highlighted, headers_X,
-         shap_values_probability):
+        #  shap_values_probability
+         ):
     show_metrics_benchmarks(sorted_results)
 
     plot_sorted_probs(sorted_results)
@@ -30,48 +38,59 @@ def main(sorted_results, shap_values_probability_extended,
             'Minimum probability'
             ]
         for i_here, i in enumerate(indices_high_mid_low):
-            title = (
-                '### ' + headers[i_here] + ': Team ' +
-                sorted_results['Stroke team'].loc[i]
-            )
-            st.markdown(title)
-            sv = shap_values_probability_extended[i]
+            # Find the data:
+            sv = shap_values_probability_extended_high_mid_low[i_here]
             # Change integer 0/1 to str no/yes for display:
             sv_to_display = convert_explainer_01_to_noyes(sv)
+            
+            # Write to streamlit:
+            title = (
+                '## ' + headers[i_here] + ': \n ### Team ' +
+                sorted_results['Stroke team'].loc[i]
+            )
+            sorted_rank = sorted_results['Sorted rank'].loc[i]
+            # Final probability:
+            final_prob = sorted_results['Probability'].loc[i]
+            st.markdown(title)
+            st.markdown(f'Rank: {sorted_rank} of {sorted_results.shape[0]}')
             # Plot:
-            plot_shap_waterfall(sv_to_display)
+            plot_shap_waterfall(sv_to_display, final_prob)
 
+    # Optional extra expander for highlights:
     if len(indices_highlighted) > 0:
         with st.expander('SHAP for highlighted teams'):
-            for i in indices_highlighted:
-                title = '### Team ' + sorted_results['Stroke team'].loc[i]
-                st.markdown(title)
-                sv = shap_values_probability_extended[i]
+            for i_here, i in enumerate(indices_highlighted):
+                # Find the data:
+                sv = shap_values_probability_extended_highlighted[i_here]
                 # Change integer 0/1 to str no/yes for display:
                 sv_to_display = convert_explainer_01_to_noyes(sv)
+                # Final probability:
+                final_prob = sorted_results['Probability'].loc[i]
+
+                # Write to streamlit:
+                title = '### Team ' + sorted_results['Stroke team'].loc[i]
+                sorted_rank = sorted_results['Sorted rank'].loc[i]
+                st.markdown(title)
+                st.markdown(
+                    f'Rank: {sorted_rank} of {sorted_results.shape[0]}')
                 # Plot:
-                plot_shap_waterfall(sv_to_display)
+                plot_shap_waterfall(sv_to_display, final_prob)
 
     # if st.checkbox('Testing:'):
     #     st.markdown('# Testing below')
-    #     plot_heat_grid(shap_values_probability_extended, headers_X, sorted_results['Stroke team'], sorted_results['Index'], shap_values_probability)
+    #     plot_heat_grid(
+    #         shap_values_probability_extended,
+    #         headers_X, sorted_results['Stroke team'],
+    #         sorted_results['Index'], shap_values_probability
+    #         )
 
 
 def plot_sorted_probs(sorted_results):
     base_values = 0.2995270168908044
 
-    # x_chart = range(len(sorted_results))
-    # Add column of '*' for benchmark rank in top 30:
-    benchmark_bool = []
-    for i in sorted_results['Benchmark rank']:
-        val = '\U00002605' if i <= 30 else ''
-        benchmark_bool.append(val)
-    sorted_results['Benchmark'] = benchmark_bool
+    # sorted_results = sorted_results_orig.copy(deep=True)
 
-    # Add column of str to print when thrombolysed or not
-    thrombolyse_str = np.full(len(sorted_results), 'No ')
-    thrombolyse_str[np.where(sorted_results['Thrombolyse'])] = 'Yes'
-    sorted_results['Thrombolyse_str'] = thrombolyse_str
+    # x_chart = range(len(sorted_results))
 
     fig = px.bar(
         sorted_results,
@@ -184,23 +203,134 @@ def plot_sorted_probs_matplotlib(sorted_results):
     plt.close(fig)
 
 
-def plot_shap_waterfall(shap_values):
-    fig = waterfall.waterfall(
-        shap_values,
-        show=False, max_display=10, y_reverse=True
-        )
-    # # Access the axis limits with this: 
-    # current_xlim = plt.xlim()
-    # st.write(current_xlim)
-    # # Update:
-    # plt.xlim(-0.5, 1.5) # doesn't work fully as expected
-    st.pyplot(fig)
-    plt.close(fig)
+def plot_shap_waterfall_matplotlib(shap_values):
+    with _lock:
+        fig = waterfall.waterfall(
+            shap_values,
+            show=False, max_display=10, y_reverse=True, rank_absolute=False
+            )
+        # # Access the axis limits with this:
+        # current_xlim = plt.xlim()
+        # st.write(current_xlim)
+        # # Update:
+        # plt.xlim(-0.5, 1.5) # doesn't work fully as expected
+
+        st.pyplot(fig)
+
+        plt.close(fig)
+        # Delete the figure - attempt to help memory usage:
+        # del fig
+
+
+def plot_shap_waterfall(shap_values, final_prob):
+
+    base_values = 0.2995270168908044
+    base_values_perc = base_values * 100.0
+
+    final_prob_perc = final_prob * 100.0
+
+    # fig = waterfall.waterfall(
+    #     shap_values,
+    #     show=False, max_display=10, y_reverse=True, rank_absolute=False
+    #     )
+
+    # All of the features:
+    shap_probs = shap_values.values
+    feature_names = np.array(shap_values.feature_names)
+
+    # Only show the top n features:
+    n_to_show = 9
+    # Sort by decreasing probability (magnitude, not absolute):
+    inds = np.argsort(np.abs(shap_probs))
+
+    # Show these ones individually:
+    shap_probs_to_show = shap_probs[inds][-n_to_show:]
+    feature_names_to_show = feature_names[inds][-n_to_show:]
+
+    # Merge these into one bar:
+    shap_probs_to_hide = shap_probs[inds][:-n_to_show]
+    shap_probs_hide_sum = np.sum(shap_probs_to_hide)
+    n_features_hidden = len(feature_names) - len(feature_names_to_show)
+    feature_name_hidden = f'{n_features_hidden} other features'
+
+    # Add the merged hidden features to the main lists:
+    n_to_show += 1
+    shap_probs_to_show = np.append(shap_probs_hide_sum, shap_probs_to_show)
+    feature_names_to_show = np.append(feature_name_hidden, feature_names_to_show)
+
+    # # Prepend the starting probability...
+    # shap_probs = np.append(shap_probs, base_values)
+    # feature_names = np.append(feature_names, 'Base probability')
+    # # And append the final probability...
+    # shap_probs = np.append(final_prob, shap_probs)
+    # feature_names = np.append('Final probability', feature_names)
+
+    # Save a copy of shap probabilities in terms of percentage:
+    shap_probs_perc = shap_probs_to_show * 100.0
+
+    # "measures" list says whether each step in the waterfall is a
+    # shift or a new total.
+    measures = ['relative'] * (len(shap_probs_to_show))# - 2)
+    # measures = ['absolute', *measures, 'absolute']
+
+    fig = go.Figure(go.Waterfall(
+        orientation='h',
+        measure=measures,
+        y=feature_names_to_show,
+        x=shap_probs_perc,
+        base=base_values_perc,
+        decreasing={'marker':{'color':'#008bfa'}},  #, "line":{"color":"red", "width":2}}},
+        increasing={'marker':{'color':'#ff0050'}},
+        # connector = {"mode":"between", "line":{"width":4, "color":"rgb(0, 0, 0)", "dash":"solid"}}
+    ))
+
+
+    # Flip y-axis so bars are read from top to bottom.
+    fig['layout']['yaxis']['autorange'] = 'reversed'
+
+    # When hovering, show bar at this y value:
+    fig.update_layout(hovermode='y')
+
+    # Write the size of each bar within the bar:
+    fig.update_traces(text=np.round(shap_probs_perc,2), selector=dict(type='waterfall'))
+    fig.update_traces(textposition='inside', selector=dict(type='waterfall'))
+    fig.update_traces(texttemplate='%{text:+}%', selector=dict(type='waterfall'))
+
+    # Set axis labels:
+    fig.update_xaxes(title_text='Probability of thrombolysis (%)')
+    fig.update_yaxes(title_text='Feature')
+    # fig.update_layout(title='Team name')
+
+    # # Add start and end prob annotations:
+    # fig.add_trace(go.Scatter(
+    #     x=[base_values_perc, final_prob_perc],
+    #     y=[1, 0],
+    #     mode='text',
+    #     text=['Start probability', 'End probability']
+    # ))
+    fig.add_annotation(x=base_values_perc, y=-0.4,
+                text=f'Start probability: {base_values_perc:.2f}%',
+                showarrow=True,
+                yshift=1,
+                ax=0  # Make arrow vertical - a = arrow, x = x-shift.
+    )
+
+    fig.add_annotation(x=final_prob_perc, y=n_to_show-0.6,
+                text=f'End probability: {final_prob_perc:.2f}%',
+                showarrow=True,
+                # yshift=-100,
+                ax=0,  # Make arrow vertical - a = arrow, x = x-shift.
+                ay=25,  # Make the arrow sit below the final bar
+    )
+
+
+    # Write to streamlit:
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def show_metrics_benchmarks(sorted_results):
     # Benchmark teams:
-    sorted_results['Benchmark rank']
+    # sorted_results['Benchmark rank']
 
     inds_benchmark = sorted_results['Benchmark rank'] <= 30
 
@@ -237,7 +367,7 @@ def show_metrics_benchmarks(sorted_results):
             f'{perc_thrombolyse_benchmark:.0f}%'
             )
         st.write(f'{n_thrombolyse_benchmark} of {n_benchmark} stroke teams would thrombolyse.')
-   
+
     with cols[2]:
         st.metric(
             'Non-benchmark stroke teams',
@@ -266,7 +396,7 @@ def plot_heat_grid(shap_values_probability_extended, headers,
     grid = np.transpose(shap_values_probability)
 
 
-    vlim = np.abs(np.max(np.abs(grid)))
+    vlim = np.max(np.abs(grid))
     fig = px.imshow(
         grid,
         # x=stroke_team_list,
@@ -345,7 +475,8 @@ def plot_heat_grid(shap_values_probability_extended, headers,
         )
 
     # 2D grid of stroke_teams:
-    stroke_team_2d = np.tile(stroke_team_list, len(headers)).reshape(grid_cat_sorted.shape)
+    stroke_team_2d = np.tile(
+        stroke_team_list, len(headers)).reshape(grid_cat_sorted.shape)
     # I don't understand why this step is necessary, but it is:
     stroke_team_cd = np.dstack((stroke_team_2d, stroke_team_2d))
 
@@ -353,7 +484,15 @@ def plot_heat_grid(shap_values_probability_extended, headers,
     fig.update(data=[{'customdata': stroke_team_cd}])
 
     # Update the hover message with the stroke team:
-    fig.update_traces(hovertemplate='Team %{customdata[0]}<br>Rank: %{x}<br>Feature: %{y}<br>Effect on probability: %{z:.2f}%')
+    fig.update_traces(hovertemplate=(
+        'Team %{customdata[0]}' +
+        '<br>' +
+        'Rank: %{x}' +
+        '<br>' +
+        'Feature: %{y}' +
+        '<br>' +
+        'Effect on probability: %{z:.2f}%'
+        ))
     # fig.update_xaxes(showticklabels=False)
 
     xmax = grid_cat_sorted.shape[1]

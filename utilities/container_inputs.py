@@ -62,7 +62,7 @@ def user_inputs():
         max_value=127.5,
         value=72.5,
         step=5.0,
-        help='Ranges from 0 to 600.',
+        help='Ranges from 2.5 to 127.5.',
         key='age_input'
     )
     # It's possible to override this by typing your own entry.
