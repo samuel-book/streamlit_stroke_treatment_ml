@@ -74,7 +74,7 @@ def one_hot_encode_data(synthetic):
 @st.cache
 def read_stroke_teams_from_file():
     stroke_teams = pd.read_csv('./data/stroke_teams.csv')
-    stroke_teams = tuple(stroke_teams.values.ravel())
+    stroke_teams = stroke_teams.values.ravel()
     return stroke_teams
 
 

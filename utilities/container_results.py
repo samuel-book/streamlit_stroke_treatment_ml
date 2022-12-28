@@ -222,68 +222,75 @@ def plot_shap_waterfall_matplotlib(shap_values):
         # del fig
 
 
-def plot_shap_waterfall(shap_values, final_prob):
+def plot_shap_waterfall(shap_values, final_prob, n_to_show=9):
+
+    # Make lists of all of the features:
+    shap_probs = shap_values.values
+    feature_names = np.array(shap_values.feature_names)
+
+    # Collect the input patient data:
+    patient_data = shap_values.data
+    # Adjust some values to add units for showing on the plot:
+    extra_bits = {
+        'Onset-to-arrival time':' minutes',
+        'Arrival-to-scan time':' minutes',
+        'Stroke severity':' (out of 42)',
+        'Prior disability level':' (mRS)',
+        'Age':' years',
+    }
+    for i_here, feature in enumerate(extra_bits.keys()):
+        i = np.where(feature_names == feature)[0][0]
+        patient_data[i] = f'{patient_data[i]}' + extra_bits[feature]
 
     base_values = 0.2995270168908044
     base_values_perc = base_values * 100.0
 
     final_prob_perc = final_prob * 100.0
 
-    # fig = waterfall.waterfall(
-    #     shap_values,
-    #     show=False, max_display=10, y_reverse=True, rank_absolute=False
-    #     )
 
-    # All of the features:
-    shap_probs = shap_values.values
-    feature_names = np.array(shap_values.feature_names)
-
-    # Only show the top n features:
-    n_to_show = 9
     # Sort by decreasing probability (magnitude, not absolute):
     inds = np.argsort(np.abs(shap_probs))
 
     # Show these ones individually:
     shap_probs_to_show = shap_probs[inds][-n_to_show:]
     feature_names_to_show = feature_names[inds][-n_to_show:]
+    patient_data_to_show = patient_data[inds][-n_to_show:]
 
     # Merge these into one bar:
     shap_probs_to_hide = shap_probs[inds][:-n_to_show]
     shap_probs_hide_sum = np.sum(shap_probs_to_hide)
     n_features_hidden = len(feature_names) - len(feature_names_to_show)
     feature_name_hidden = f'{n_features_hidden} other features'
+    data_name_hidden = 'N/A'
 
     # Add the merged hidden features to the main lists:
     n_to_show += 1
     shap_probs_to_show = np.append(shap_probs_hide_sum, shap_probs_to_show)
     feature_names_to_show = np.append(feature_name_hidden, feature_names_to_show)
-
-    # # Prepend the starting probability...
-    # shap_probs = np.append(shap_probs, base_values)
-    # feature_names = np.append(feature_names, 'Base probability')
-    # # And append the final probability...
-    # shap_probs = np.append(final_prob, shap_probs)
-    # feature_names = np.append('Final probability', feature_names)
+    patient_data_to_show = np.append(data_name_hidden, patient_data_to_show)
 
     # Save a copy of shap probabilities in terms of percentage:
     shap_probs_perc = shap_probs_to_show * 100.0
 
     # "measures" list says whether each step in the waterfall is a
     # shift or a new total.
-    measures = ['relative'] * (len(shap_probs_to_show))# - 2)
-    # measures = ['absolute', *measures, 'absolute']
+    measures = ['relative'] * (len(shap_probs_to_show))
 
     fig = go.Figure(go.Waterfall(
-        orientation='h',
+        orientation='h',  # horizontal
         measure=measures,
         y=feature_names_to_show,
         x=shap_probs_perc,
         base=base_values_perc,
-        decreasing={'marker':{'color':'#008bfa'}},  #, "line":{"color":"red", "width":2}}},
-        increasing={'marker':{'color':'#ff0050'}},
-        # connector = {"mode":"between", "line":{"width":4, "color":"rgb(0, 0, 0)", "dash":"solid"}}
+        decreasing={'marker':{'color':'#008bfa'}},
+        increasing={'marker':{'color':'#ff0050'}}
     ))
 
+
+    # For some reason, custom_data needs to be columns rather than rows:
+    custom_data = np.stack( (shap_probs_perc, patient_data_to_show), axis=-1)
+    # Add the custom data:
+    fig.update_traces(customdata=custom_data, selector=dict(type='waterfall'))
 
     # Flip y-axis so bars are read from top to bottom.
     fig['layout']['yaxis']['autorange'] = 'reversed'
@@ -291,30 +298,38 @@ def plot_shap_waterfall(shap_values, final_prob):
     # When hovering, show bar at this y value:
     fig.update_layout(hovermode='y')
 
+
+
+    # Update the hover message with the stroke team:
+    fig.update_traces(hovertemplate=(
+        # 'Team %{customdata[0]}' +
+        # '<br>' +
+        # 'Rank: %{x}' +
+        # '<br>' +
+        'Feature value: %{customdata[1]}' +
+        '<br>' +
+        'Effect on probability: %{customdata[0]:.2f}%' +
+        # Need the following line to remove default "trace" bit:
+        '<extra></extra>'
+        ))
+
     # Write the size of each bar within the bar:
     fig.update_traces(text=np.round(shap_probs_perc,2), selector=dict(type='waterfall'))
     fig.update_traces(textposition='inside', selector=dict(type='waterfall'))
     fig.update_traces(texttemplate='%{text:+}%', selector=dict(type='waterfall'))
 
     # Set axis labels:
-    fig.update_xaxes(title_text='Probability of thrombolysis (%)')
+    fig.update_xaxes(title_text=' <br>Probability of thrombolysis (%)')
     fig.update_yaxes(title_text='Feature')
     # fig.update_layout(title='Team name')
 
-    # # Add start and end prob annotations:
-    # fig.add_trace(go.Scatter(
-    #     x=[base_values_perc, final_prob_perc],
-    #     y=[1, 0],
-    #     mode='text',
-    #     text=['Start probability', 'End probability']
-    # ))
+    # Add start and end prob annotations:
     fig.add_annotation(x=base_values_perc, y=-0.4,
                 text=f'Start probability: {base_values_perc:.2f}%',
                 showarrow=True,
                 yshift=1,
                 ax=0  # Make arrow vertical - a = arrow, x = x-shift.
     )
-
     fig.add_annotation(x=final_prob_perc, y=n_to_show-0.6,
                 text=' <br>'+f'End probability: {final_prob_perc:.2f}%',
                 showarrow=True,
@@ -322,7 +337,6 @@ def plot_shap_waterfall(shap_values, final_prob):
                 ax=0,  # Make arrow vertical - a = arrow, x = x-shift.
                 ay=35,  # Make the arrow sit below the final bar
     )
-
 
     # Write to streamlit:
     st.plotly_chart(fig, use_container_width=True)
