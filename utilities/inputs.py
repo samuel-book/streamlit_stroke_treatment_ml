@@ -37,7 +37,7 @@ def import_benchmark_data():
     # Add an index row to rank the teams:
     all_teams_and_probs['Rank'] = \
         np.arange(1, len(all_teams_and_probs['stroke_team'])+1)
-    return tuple(all_teams_and_probs)
+    return all_teams_and_probs
 
 
 def build_X(user_inputs_dict, stroke_teams_list):

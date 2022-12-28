@@ -68,8 +68,7 @@ explainer_probability = utilities.inputs.load_explainer_probability()
 benchmark_df = utilities.inputs.import_benchmark_data()
 # Make list of benchmark rank:
 # (original data is sorted alphabetically by stroke team)
-benchmark_rank_list = benchmark_df.sort_values('stroke_team')['Rank']
-benchmark_rank_list = tuple(benchmark_rank_list)
+benchmark_rank_list = tuple(benchmark_df.sort_values('stroke_team')['Rank'])
 
 # ----- Highlighted teams -----
 # Pick teams to highlight on the bar chart:
