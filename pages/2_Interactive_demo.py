@@ -126,6 +126,12 @@ else:
     shap_values_probability_highlighted = None
 
 
+# Make Shapley values for all indices:
+(shap_values_probability_extended_all,
+    shap_values_probability_all) = \
+    utilities.main_calculations.find_shapley_values(
+        explainer_probability, X)
+
 # ###########################
 # ######### RESULTS #########
 # ###########################
@@ -138,8 +144,9 @@ utilities.container_results.main(
     indices_high_mid_low,
     indices_highlighted,
     headers_X,
-    explainer_probability, X
-    # shap_values_probability
+    explainer_probability, X,
+    shap_values_probability_extended_all,
+    shap_values_probability_all
     )
 
 

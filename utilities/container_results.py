@@ -29,8 +29,9 @@ def main(sorted_results,
          shap_values_probability_extended_high_mid_low,
          shap_values_probability_extended_highlighted,
          indices_high_mid_low, indices_highlighted, headers_X,
-         explainer_probability, X
-        #  shap_values_probability
+         explainer_probability, X,
+         shap_values_probability_extended_all,
+         shap_values_probability_all
          ):
     show_metrics_benchmarks(sorted_results)
 
@@ -44,6 +45,8 @@ def main(sorted_results,
         'stars, but this will be changed to something easier to see.'
         ]))
     selected_bar = plot_sorted_probs(sorted_results)
+
+    st.markdown('__New:__ click on a bar and get its waterfall plot below. This will probably be removed because it is slow and ruins the colours.')
 
     try:
         rank_selected = selected_bar[0]['x']
@@ -122,13 +125,14 @@ def main(sorted_results,
                 # Plot:
                 plot_shap_waterfall(sv_to_display, final_prob)
 
-    # if st.checkbox('Testing:'):
-    #     st.markdown('# Testing below')
-    #     plot_heat_grid(
-    #         shap_values_probability_extended,
-    #         headers_X, sorted_results['Stroke team'],
-    #         sorted_results['Index'], shap_values_probability
-    #         )
+    if st.checkbox('Testing:'):
+        st.markdown('# Testing below')
+        plot_heat_grid(
+            shap_values_probability_extended_all,
+            headers_X, sorted_results['Stroke team'],
+            sorted_results['Index'], shap_values_probability_all,
+            sorted_results['Highlighted team']
+            )
 
 
 def plot_sorted_probs(sorted_results):
@@ -543,7 +547,8 @@ def show_metrics_benchmarks(sorted_results):
 
 
 def plot_heat_grid(shap_values_probability_extended, headers,
-                   stroke_team_list, sorted_inds, shap_values_probability):
+                   stroke_team_list, sorted_inds, shap_values_probability,
+                   highlighted_team_list):
     # Experiment
     n_teams = len(shap_values_probability_extended)
     n_features = len(shap_values_probability_extended[0].values)
@@ -586,13 +591,22 @@ def plot_heat_grid(shap_values_probability_extended, headers,
     ind_first_team = 9
 
     # Make a new grid and copy over most of the values:
-    grid_cat = np.zeros((ind_first_team + 1, n_teams))
+    grid_cat = np.zeros((ind_first_team + 2, n_teams))
     grid_cat[:ind_first_team, :] = grid[:ind_first_team, :]
 
     # For the remaining column, loop over to pick out the value:
     for i, sorted_ind in enumerate(sorted_inds):
         row = i + ind_first_team
-        grid_cat[ind_first_team, i] = grid[row, i]
+        # Pick out the value we want:
+        value_of_matching_stroke_team = grid[row, i]
+        # Add the wanted value to the new grid:
+        grid_cat[ind_first_team, i] = value_of_matching_stroke_team
+        # Take the sum of all of the team values:
+        value_of_merged_stroke_teams = np.sum(grid[ind_first_team:, i])
+        # Subtract the value we want:
+        value_of_merged_stroke_teams -= value_of_matching_stroke_team
+        # And store this as a merged "all other teams" value:
+        grid_cat[ind_first_team+1, i] = value_of_merged_stroke_teams
 
     # Multiply values by 100 to get probability in percent:
     grid_cat *= 100.0
@@ -602,12 +616,14 @@ def plot_heat_grid(shap_values_probability_extended, headers,
 
     vlim = np.abs(np.max(np.abs(grid_cat)))
 
-    headers = np.append(headers[:9], 'Stroke Team')
+    headers = np.append(headers[:9], 'This stroke team')
+    headers = np.append(headers, 'Other stroke teams')
 
     # df_cat = pd.DataFrame(
     #     grid_cat.T,
     #     columns=headers
     # )
+
 
 
     # fig, ax = plt.subplots()
@@ -728,9 +744,11 @@ def plot_heat_grid(shap_values_probability_extended, headers,
     fig = go.Figure()
     sorted_rank_arr = np.arange(1, len(df_cat)+1)
     for i, feature in enumerate(headers):
-        fig.add_trace(go.Scatter(x=sorted_rank_arr, y=grid_cat_sorted[i, :],
-                            mode='lines',
-                            name=feature))
+        fig.add_trace(go.Scatter(
+            x=sorted_rank_arr, 
+            y=grid_cat_sorted[i, :],
+            mode='lines',
+            name=feature))
 
 
     fig.update_layout(
@@ -765,6 +783,123 @@ def plot_heat_grid(shap_values_probability_extended, headers,
     #     scaleratio=2.0,
     #     constrain='domain'
     # )
+
+    # Write to streamlit:
+    st.plotly_chart(fig, use_container_width=True)
+
+
+    # THIS ALSO NEEDS ITS OWN FUNCTION
+    # why am I like this
+    # Combo waterfall of sorts:
+
+    base_values = 0.2995270168908044
+    base_values_perc = 100.0 * base_values
+
+    grid_waterfall = np.copy(grid_cat_sorted)
+    # Sort the grid in order of increasing standard deviation:
+    inds_std = np.argsort(np.std(grid_waterfall, axis=1))
+    grid_waterfall = grid_waterfall[inds_std, :]
+    features_waterfall = headers[inds_std]
+
+    # Make a cumulative probability line for each team:
+    grid_waterfall = np.cumsum(grid_waterfall, axis=0)
+    # Add a row for the starting probability:
+    grid_waterfall = np.vstack(
+        (np.zeros(grid_waterfall.shape[1]), grid_waterfall))
+    # Add the starting probability to all values:
+    grid_waterfall += base_values_perc
+    # Feature names:
+    features_waterfall = np.append('Base probability', features_waterfall)
+    # features_waterfall = np.append(features_waterfall, 'Final probability')
+
+    # Get the grid into a better format for the data frame:
+    # Column containing probabilities:
+    column_probs = grid_waterfall.T.ravel()
+    # Column of feature names:
+    column_features = np.tile(features_waterfall, len(stroke_team_list))
+    # Column of the rank:
+    a = np.arange(1, len(stroke_team_list)+1)
+    column_sorted_rank = np.tile(a, len(features_waterfall))\
+        .reshape(len(features_waterfall), len(a)).T.ravel()
+    # Column of stroke teams:
+    column_stroke_team = np.tile(stroke_team_list, len(features_waterfall))\
+        .reshape(len(features_waterfall), len(stroke_team_list)).T.ravel()
+    # Column of highlighted teams:
+    column_highlighted_teams = np.tile(highlighted_team_list, len(features_waterfall))\
+        .reshape(len(features_waterfall), len(highlighted_team_list)).T.ravel()
+
+    # Put this into a data frame:
+    df_waterfalls = pd.DataFrame()
+    df_waterfalls['Sorted rank'] = column_sorted_rank
+    df_waterfalls['Stroke team'] = column_stroke_team
+    df_waterfalls['Probabilities'] = column_probs
+    df_waterfalls['Features'] = column_features
+    df_waterfalls['Highlighted team'] = column_highlighted_teams
+
+    # # Make the graph!
+    # fig = px.line(
+    #     df_waterfalls,
+    #     x='Probabilities',
+    #     y='Features',
+    #     color='Stroke team'
+    #     )
+
+    import plotly.graph_objects as go
+    fig = go.Figure()
+
+    drawn_blank_legend_line = 0
+    # Keep a list of the added data in order of zorder:
+    fig_data_list = []
+    for i, team in enumerate(stroke_team_list):
+        df_team = df_waterfalls[df_waterfalls['Stroke team'] == team]
+        if team == df_team['Highlighted team'].iloc[0]:
+            leggy = True
+            colour = None
+            opacity = 1.0
+            width = 2.0
+        else:
+            if drawn_blank_legend_line > 0:
+                leggy = False
+            else:
+                leggy = True
+                drawn_blank_legend_line += 1
+                # name = 
+            colour = 'grey'
+            opacity = 0.25
+            width = 1.0
+            
+        fig.add_trace(go.Scatter(
+            x=df_team['Probabilities'],
+            y=df_team['Features'],
+            mode='lines',
+            line=dict(width=width, color=colour), opacity=opacity,
+            # c=df_waterfalls['Stroke team'],
+            name=df_team['Highlighted team'].iloc[0],
+            showlegend=leggy
+            ))
+
+        # Update data list to put highlights with highest zorder:
+        if team == df_team['Highlighted team'].iloc[0]:
+            fig_data_list.append(fig.data[i])
+        else:
+            fig_data_list = [fig.data[i]] + fig_data_list
+
+    # Shuffle data into the wanted zorder:
+    fig.data = fig_data_list
+
+    fig.update_layout(
+        title='Waterfalls for all stroke teams',
+        xaxis_title='Probability of thrombolysis (%)',
+        yaxis_title='Feature',
+        legend_title='Highlighted team'
+        )
+
+    # Update line skinniness and opacity:
+    # fig.update_traces(line=dict(width=1), opacity=0.4)
+
+
+    # Flip y-axis so bars are read from top to bottom.
+    fig['layout']['yaxis']['autorange'] = 'reversed'
 
     # Write to streamlit:
     st.plotly_chart(fig, use_container_width=True)
