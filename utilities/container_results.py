@@ -9,11 +9,15 @@ import plotly.graph_objects as go
 import importlib
 import pandas as pd
 
+# For clickable plotly events:
+from streamlit_plotly_events import plotly_events
+
 # For matplotlib plots:
 from matplotlib.backends.backend_agg import RendererAgg
 _lock = RendererAgg.lock
 
-from utilities.main_calculations import convert_explainer_01_to_noyes
+# For creating SHAP waterfall in response to click:
+import utilities.main_calculations
 
 # Import local package
 from utilities import waterfall
@@ -25,11 +29,53 @@ def main(sorted_results,
          shap_values_probability_extended_high_mid_low,
          shap_values_probability_extended_highlighted,
          indices_high_mid_low, indices_highlighted, headers_X,
+         explainer_probability, X
         #  shap_values_probability
          ):
     show_metrics_benchmarks(sorted_results)
 
-    plot_sorted_probs(sorted_results)
+    st.write(''.join([
+        'The line at 50% is the cut-off for thrombolysis. ',
+        'Stroke teams with a probability below the line will not ',
+        'thrombolyse the patient, and teams on or above the line will.'
+        ]))
+    st.write(''.join([
+        'Currently benchmark teams are marked with the world\'s tiniest ',
+        'stars, but this will be changed to something easier to see.'
+        ]))
+    selected_bar = plot_sorted_probs(sorted_results)
+
+    try:
+        rank_selected = selected_bar[0]['x']
+        prob_selected = selected_bar[0]['y']
+        # Find where this bar is in the results dataframe:
+        ind_selected = sorted_results['Index'].loc[sorted_results['Sorted rank'] == rank_selected].values[0]
+        # Pull out some useful bits:
+        # Find Shapley values:
+        (shap_values_probability_extended_selected,
+        shap_values_probability_selected) = \
+            utilities.main_calculations.find_shapley_values(
+                explainer_probability, X.iloc[[ind_selected, ind_selected]])
+
+        # Find the data:
+        sv = shap_values_probability_extended_selected[0]
+        # Change integer 0/1 to str no/yes for display:
+        sv_to_display = utilities.main_calculations.convert_explainer_01_to_noyes(sv)
+
+        # Final probability:
+        final_prob = sorted_results['Probability'].loc[ind_selected]
+
+        # Write to streamlit:
+        title = '### Team ' + sorted_results['Stroke team'].loc[ind_selected]
+        st.markdown(title)
+        st.markdown(
+            f'Rank: {rank_selected} of {sorted_results.shape[0]}')
+        # Plot:
+        plot_shap_waterfall(sv_to_display, final_prob)
+        
+    except IndexError:
+        # Do nothing if no bar is selected.
+        pass
 
     with st.expander('SHAP for max, middle, min'):
         headers = [
@@ -41,7 +87,7 @@ def main(sorted_results,
             # Find the data:
             sv = shap_values_probability_extended_high_mid_low[i_here]
             # Change integer 0/1 to str no/yes for display:
-            sv_to_display = convert_explainer_01_to_noyes(sv)
+            sv_to_display = utilities.main_calculations.convert_explainer_01_to_noyes(sv)
             
             # Write to streamlit:
             title = (
@@ -63,7 +109,7 @@ def main(sorted_results,
                 # Find the data:
                 sv = shap_values_probability_extended_highlighted[i_here]
                 # Change integer 0/1 to str no/yes for display:
-                sv_to_display = convert_explainer_01_to_noyes(sv)
+                sv_to_display = utilities.main_calculations.convert_explainer_01_to_noyes(sv)
                 # Final probability:
                 final_prob = sorted_results['Probability'].loc[i]
 
@@ -175,16 +221,29 @@ def plot_sorted_probs(sorted_results):
     # #               annotation_position='bottom right')
 
     # Write to streamlit:
-    st.plotly_chart(fig, use_container_width=True)
-    st.write(''.join([
-        'The line at 50% is the cut-off for thrombolysis. ',
-        'Stroke teams with a probability below the line will not ',
-        'thrombolyse the patient, and teams on or above the line will.'
-        ]))
-    st.write(''.join([
-        'Currently benchmark teams are marked with the world\'s tiniest ',
-        'stars, but this will be changed to something easier to see.'
-        ]))
+    # # Non-interactive version:
+    # st.plotly_chart(fig, use_container_width=True)
+    # Clickable version:
+    selected_bar = plotly_events(fig, click_event=True)
+    # selected_bars.append(selected_bar)
+
+    # # try:
+    # if 1==1:
+    #     rank_selected = selected_bar[0]['x']
+    #     prob_selected = selected_bar[0]['y']
+    #     all_bars = fig.data[0]
+    #     st.write(all_bars)
+    #     c = list(all_bars.marker.color)
+    #     i = rank_selected - 1
+    #     c[i] = 'white'
+    #     with fig.batch_update():
+    #         all_bars.marker.color = c
+
+    # except IndexError:
+    #     # Don't change anything.
+    #     pass
+
+    return selected_bar
 
 
 def plot_sorted_probs_matplotlib(sorted_results):
@@ -385,6 +444,11 @@ def plot_shap_waterfall(shap_values, final_prob, n_to_show=9):
         '<extra></extra>'
         ))
 
+
+
+    # Change axis:
+    # fig.update_xaxes(range=[0, 100])
+
     # Write the size of each bar within the bar:
     fig.update_traces(text=np.round(shap_probs_perc,2), selector=dict(type='waterfall'))
     fig.update_traces(textposition='inside', selector=dict(type='waterfall'))
@@ -409,6 +473,18 @@ def plot_shap_waterfall(shap_values, final_prob, n_to_show=9):
                 ax=0,  # Make arrow vertical - a = arrow, x = x-shift.
                 ay=35,  # Make the arrow sit below the final bar
     )
+
+
+    # # Set aspect ratio:
+    # fig.update_yaxes(
+    #     scaleanchor='x',
+    #     scaleratio=4.0,
+    #     # constrain='domain'
+    # )
+    # Make the figure taller:
+    # fig.update_layout(height=750, width=750)
+
+    # fig.update_scenes(aspectratio_x=4.0)
 
     # Write to streamlit:
     st.plotly_chart(fig, use_container_width=True)

@@ -138,6 +138,7 @@ utilities.container_results.main(
     indices_high_mid_low,
     indices_highlighted,
     headers_X,
+    explainer_probability, X
     # shap_values_probability
     )
 
