@@ -250,7 +250,7 @@ def plot_shap_waterfall(shap_values, final_prob, n_to_show=9):
 
     def sort_lists(
             shap_probs, feature_names, patient_data, n_to_show,
-            sort_by_magnitude=True, merged_cell_at_top=True
+            sort_by_magnitude=True, merged_cell_loc='top'
             ):
         """
         sort_by_magnitude =
@@ -286,7 +286,7 @@ def plot_shap_waterfall(shap_values, final_prob, n_to_show=9):
         feature_name_hidden = f'{n_features_hidden} other features'
         data_name_hidden = 'N/A'
 
-        if merged_cell_at_top == True:
+        if merged_cell_loc == 'top' or merged_cell_loc == 'ordered':
             # Add the merged hidden features to the main lists:
             shap_probs_to_show = np.append(
                 shap_probs_hide_sum, shap_probs_to_show)
@@ -294,6 +294,19 @@ def plot_shap_waterfall(shap_values, final_prob, n_to_show=9):
                 feature_name_hidden, feature_names_to_show)
             patient_data_to_show = np.append(
                 data_name_hidden, patient_data_to_show)
+            if merged_cell_loc == 'ordered':
+                # Put the merged cell in size order.
+                if sort_by_magnitude == False:
+                    # Sort by increasing probability (magnitude, not absolute):
+                    inds = np.argsort(shap_probs_to_show)
+                else:
+                    # Sort by increasing probability (magnitude, not absolute):
+                    inds = np.argsort(np.abs(shap_probs_to_show))
+                # Show these ones individually:
+                shap_probs_to_show = shap_probs_to_show[inds]
+                feature_names_to_show = feature_names_to_show[inds]
+                patient_data_to_show = patient_data_to_show[inds]
+
         else:
             # Find where the first positive change in probability is:
             ind_pos = np.where(shap_probs_to_show > 0)[0]
@@ -315,13 +328,14 @@ def plot_shap_waterfall(shap_values, final_prob, n_to_show=9):
                     feature_names_to_show, feature_name_hidden)
                 patient_data_to_show = np.append(
                     patient_data_to_show, data_name_hidden)
+
         return shap_probs_to_show, feature_names_to_show, patient_data_to_show
 
     # Use the function to sort the displayed rows:
     shap_probs_to_show, feature_names_to_show, patient_data_to_show = \
         sort_lists(
             shap_probs, feature_names, patient_data, n_to_show,
-            sort_by_magnitude=False, merged_cell_at_top=False
+            sort_by_magnitude=False, merged_cell_loc='ordered'
             )
 
     # Add one to n_to_show to account for the merged "all other features" row.
