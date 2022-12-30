@@ -105,10 +105,19 @@ index_low = sorted_results.iloc[-1]['Index']
 indices_high_mid_low = [index_high, index_mid, index_low]
 
 # Get indices of highlighted teams:
+# --- These ways are faster...
 # (attempted a Pandas-esque way to do this
 # but it looks worse than numpy where)
-indices_highlighted = sorted_results['Index'].loc[
-    ~sorted_results['Highlighted team'].str.contains('-')]
+# indices_highlighted = sorted_results['Index'].loc[
+#     ~sorted_results['Highlighted team'].str.contains('-')]
+# indices_highlighted = sorted_results[
+#     sorted_results['Highlighted team'].isin(highlighted_teams_input)]
+# --- but this way retains the order that highlighted teams were added:
+indices_highlighted = []
+for team in highlighted_teams_input:
+    ind_team = sorted_results['Index'][
+        sorted_results['Highlighted team'] == team].values[0]
+    indices_highlighted.append(ind_team)
 
 # Find Shapley values only for the important indices:
 (shap_values_probability_extended_high_mid_low,

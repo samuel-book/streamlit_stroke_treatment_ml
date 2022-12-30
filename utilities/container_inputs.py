@@ -140,9 +140,19 @@ def user_inputs():
 
 
 def highlighted_teams(stroke_teams_list):
+    try:
+        # If we've already selected highlighted teams using the
+        # clickable plotly graphs, then load that list:
+        existing_teams = st.session_state['highlighted_teams_with_click']
+    except KeyError:
+        # Make a dummy list so streamlit behaves as normal:
+        existing_teams = []
+
     highlighted_teams_input = st.multiselect(
         'Pick some stroke teams to highlight',
         stroke_teams_list,
-        help='Pick up to 9 before the colours repeat.'
+        help='Pick up to 9 before the colours repeat.',
+        key='highlighted_teams',
+        default=existing_teams
     )
     return highlighted_teams_input
