@@ -25,7 +25,7 @@ from utilities import waterfall
 importlib.reload(waterfall)
 
 
-def main(sorted_results, 
+def main(sorted_results,
          shap_values_probability_extended_high_mid_low,
          shap_values_probability_extended_highlighted,
          indices_high_mid_low, indices_highlighted, headers_X,
@@ -56,7 +56,7 @@ def main(sorted_results,
         # Pull out some useful bits:
         # Find Shapley values:
         (shap_values_probability_extended_selected,
-        shap_values_probability_selected) = \
+         shap_values_probability_selected) = \
             utilities.main_calculations.find_shapley_values(
                 explainer_probability, X.iloc[[ind_selected, ind_selected]])
 
@@ -75,7 +75,7 @@ def main(sorted_results,
             f'Rank: {rank_selected} of {sorted_results.shape[0]}')
         # Plot:
         plot_shap_waterfall(sv_to_display, final_prob)
-        
+
     except IndexError:
         # Do nothing if no bar is selected.
         pass
@@ -91,7 +91,7 @@ def main(sorted_results,
             sv = shap_values_probability_extended_high_mid_low[i_here]
             # Change integer 0/1 to str no/yes for display:
             sv_to_display = utilities.main_calculations.convert_explainer_01_to_noyes(sv)
-            
+
             # Write to streamlit:
             title = (
                 '## ' + headers[i_here] + ': \n ### Team ' +
@@ -112,7 +112,8 @@ def main(sorted_results,
                 # Find the data:
                 sv = shap_values_probability_extended_highlighted[i_here]
                 # Change integer 0/1 to str no/yes for display:
-                sv_to_display = utilities.main_calculations.convert_explainer_01_to_noyes(sv)
+                sv_to_display = utilities.main_calculations.\
+                    convert_explainer_01_to_noyes(sv)
                 # Final probability:
                 final_prob = sorted_results['Probability'].loc[i]
 
@@ -125,18 +126,42 @@ def main(sorted_results,
                 # Plot:
                 plot_shap_waterfall(sv_to_display, final_prob)
 
-    if st.checkbox('Testing:'):
-        st.markdown('# Testing below')
-        plot_heat_grid(
-            shap_values_probability_extended_all,
-            headers_X, sorted_results['Stroke team'],
-            sorted_results['Index'], shap_values_probability_all,
-            sorted_results['Highlighted team']
-            )
+    st.write(''.join([
+        'Calculating all of the waterfall plots takes a few seconds '
+        'once this box is ticked: '
+        ]))
+    if st.checkbox('Combine all waterfalls'):
+        st.markdown('## All waterfalls')
+
+        grid, grid_cat_sorted, stroke_team_2d, headers = make_heat_grids(
+            headers_X, sorted_results['Stroke team'], sorted_results['Index'],
+            shap_values_probability_all)
+
+        # plot_heat_grid_full(grid)
+        # plot_heat_grid_compressed(
+        #     grid_cat_sorted, sorted_results['Stroke team'], headers,
+        #     stroke_team_2d)
+        print_changes_info(grid_cat_sorted, headers, stroke_team_2d)
+
+        # plot_all_prob_shifts_for_all_features_and_teams(
+        #     headers, grid_cat_sorted)
+
+        df_waterfalls = make_waterfall_df(
+                grid_cat_sorted,
+                headers,
+                sorted_results['Stroke team'],
+                sorted_results['Highlighted team'],
+                base_values=0.2995270168908044
+                )
+        plot_combo_waterfalls(df_waterfalls, sorted_results['Stroke team'])
+
+        # Write statistics:
+        write_feature_means_stds(grid_cat_sorted, headers)
+    else:
+        pass
 
 
 def plot_sorted_probs(sorted_results):
-    base_values = 0.2995270168908044
 
     # sorted_results = sorted_results_orig.copy(deep=True)
 
@@ -546,42 +571,12 @@ def show_metrics_benchmarks(sorted_results):
     st.markdown('__Benchmark decision:__ ' + extra_str + 'thrombolyse this patient.')
 
 
-def plot_heat_grid(shap_values_probability_extended, headers,
-                   stroke_team_list, sorted_inds, shap_values_probability,
-                   highlighted_team_list):
+def make_heat_grids(headers, stroke_team_list, sorted_inds,
+                    shap_values_probability):
     # Experiment
-    n_teams = len(shap_values_probability_extended)
-    n_features = len(shap_values_probability_extended[0].values)
-    # grid = np.zeros((n_features, n_teams))
-
-    # # Don't fill this grid in the same order as the sorted bar chart.
-    # # Rely on picking out the diagonal later.
-    # for i, team in enumerate(shap_values_probability_extended):
-    #     values = shap_values_probability_extended[i].values
-    #     grid[:, i] = values
-
+    n_teams = shap_values_probability.shape[0]
+    # n_features = len(shap_values_probability_extended[0].values)
     grid = np.transpose(shap_values_probability)
-
-
-    vlim = np.max(np.abs(grid))
-    fig = px.imshow(
-        grid,
-        # x=stroke_team_list,
-        # y=headers,
-        # labels=dict(
-            # x='Feature',
-            # y='Stroke team',
-            # color='Effect on probability (%)'
-        # ),
-        color_continuous_scale='rdbu_r',
-        range_color=(-vlim, vlim),
-        aspect='auto'
-        )
-    fig.update_xaxes(showticklabels=False)
-
-    # Write to streamlit:
-    st.plotly_chart(fig, use_container_width=True)
-
 
     # Expect most of the mismatched one-hot-encoded hospitals to make
     # only a tiny contribution to the SHAP. Moosh them down into one
@@ -614,30 +609,40 @@ def plot_heat_grid(shap_values_probability_extended, headers,
     # Sort the values into the same order as sorted_results:
     grid_cat_sorted = grid_cat[:, sorted_inds]
 
-    vlim = np.abs(np.max(np.abs(grid_cat)))
-
     headers = np.append(headers[:9], 'This stroke team')
     headers = np.append(headers, 'Other stroke teams')
 
-    # df_cat = pd.DataFrame(
-    #     grid_cat.T,
-    #     columns=headers
-    # )
+
+    # 2D grid of stroke_teams:
+    stroke_team_2d = np.tile(
+        stroke_team_list, len(headers)).reshape(grid_cat_sorted.shape)
+    return grid, grid_cat_sorted, stroke_team_2d, headers
 
 
+def plot_heat_grid_full(grid):
+    vlim = np.max(np.abs(grid))
+    fig = px.imshow(
+        grid,
+        # x=stroke_team_list,
+        # y=headers,
+        # labels=dict(
+            # x='Feature',
+            # y='Stroke team',
+            # color='Effect on probability (%)'
+        # ),
+        color_continuous_scale='rdbu_r',
+        range_color=(-vlim, vlim),
+        aspect='auto'
+        )
+    fig.update_xaxes(showticklabels=False)
 
-    # fig, ax = plt.subplots()
-    # grid_map = ax.imshow(grid_cat, vmin=-vlim, vmax=vlim, cmap='RdBu_r')
-    # plt.colorbar(grid_map)
+    # Write to streamlit:
+    st.plotly_chart(fig, use_container_width=True)
 
-    # ax.set_xlabel('Team')
-    # ax.set_ylabel('Feature')
 
-    # st.pyplot(fig)
+def plot_heat_grid_compressed(grid_cat_sorted, stroke_team_list, headers, stroke_team_2d):
+    vlim = np.abs(np.max(np.abs(grid_cat_sorted)))
 
-    # headers = headers[:ind_first_team]
-
-    # fig = px.imshow(grid_cat, color_continuous_scale='rdbu_r')
     fig = px.imshow(
         grid_cat_sorted,
         x=np.arange(1, len(stroke_team_list)+1),
@@ -652,9 +657,6 @@ def plot_heat_grid(shap_values_probability_extended, headers,
         aspect='auto'
         )
 
-    # 2D grid of stroke_teams:
-    stroke_team_2d = np.tile(
-        stroke_team_list, len(headers)).reshape(grid_cat_sorted.shape)
     # I don't understand why this step is necessary, but it is:
     stroke_team_cd = np.dstack((stroke_team_2d, stroke_team_2d))
 
@@ -684,8 +686,9 @@ def plot_heat_grid(shap_values_probability_extended, headers,
 
     # Write to streamlit:
     st.plotly_chart(fig, use_container_width=True)
+    
 
-
+def print_changes_info(grid_cat_sorted, headers, stroke_team_2d):
     # Print the biggest positive and negative changes:
     biggest_prob_change_pve = np.max(grid_cat_sorted)
     biggest_prob_change_nve = np.min(grid_cat_sorted)
@@ -721,36 +724,22 @@ def plot_heat_grid(shap_values_probability_extended, headers,
     ]))
 
 
-    # Line chart
-    # (definitely move to its own function after testing done)
-    # for row in range(grid_cat_sorted.shape[0]):
-    df_cat = pd.DataFrame(
-        grid_cat_sorted.T,
-        columns=headers
-    )
-    # Add index column:
-    df_cat['Sorted rank'] = np.arange(1, len(df_cat)+1)
-
-    # st.write(df_cat)
-    # fig = px.line(
-    #     df_cat,
-    #     x='Sorted rank',
-    #     y='Arrival-to-scan time',
-    #     color='Stroke team',
-    #     # line_dash = 'continent'
-        # )
-
-    import plotly.graph_objects as go
+def plot_all_prob_shifts_for_all_features_and_teams(
+        headers, grid_cat_sorted
+        ):
+    """
+    Line chart
+    """
     fig = go.Figure()
-    sorted_rank_arr = np.arange(1, len(df_cat)+1)
+    sorted_rank_arr = np.arange(1, grid_cat_sorted.shape[1]+1)
     for i, feature in enumerate(headers):
         fig.add_trace(go.Scatter(
-            x=sorted_rank_arr, 
+            x=sorted_rank_arr,
             y=grid_cat_sorted[i, :],
-            mode='lines',
+            mode='markers',
             name=feature))
 
-
+    # Update titles and labels:
     fig.update_layout(
         title='Effect on probability by feature',
         xaxis_title='Stroke team by rank',
@@ -760,6 +749,8 @@ def plot_heat_grid(shap_values_probability_extended, headers,
 
     # # When hovering, highlight all features' points for chosen x:
     # fig.update_layout(hovermode='x unified')
+    fig.update_xaxes(showspikes=True, spikesnap='cursor', spikemode='across',
+                     spikethickness=1)
 
     # Remove hover message:
     fig.update_traces(hovertemplate='<extra></extra>')
@@ -775,24 +766,60 @@ def plot_heat_grid(shap_values_probability_extended, headers,
 
     # Make the figure taller:
     fig.update_layout(height=750)
-    # Changing width in the same way doesn't work when we write to
-    # streamlit later with use_container_width=True.
-    # Set aspect ratio:
-    # fig.update_yaxes(
-    #     scaleanchor='x',
-    #     scaleratio=2.0,
-    #     constrain='domain'
-    # )
 
     # Write to streamlit:
     st.plotly_chart(fig, use_container_width=True)
 
 
-    # THIS ALSO NEEDS ITS OWN FUNCTION
-    # why am I like this
-    # Combo waterfall of sorts:
+def write_feature_means_stds(grid_cat_sorted, headers):  #, stroke_team_list):
 
-    base_values = 0.2995270168908044
+    # Round the values now to save mucking about with df formatting.
+    std_list = np.std(grid_cat_sorted, axis=1)
+    ave_list = np.median(grid_cat_sorted, axis=1)
+    max_list = np.max(grid_cat_sorted, axis=1)
+    min_list = np.min(grid_cat_sorted, axis=1)
+
+    # Find each team where this is max?
+
+    lists = [headers, ave_list, std_list, max_list, min_list]
+    # Sort from lowest to highest standard deviation:
+    # (sorting in pandas also sorts the index column. This will look
+    # confusing.)
+    inds_std = np.argsort(std_list)
+    for i, data in enumerate(lists):
+        lists[i] = data[inds_std]
+
+    # Make a dataframe of these values:
+    lists = np.array(lists, dtype=object)
+    data_for_df = np.transpose(np.vstack(lists))
+    headers_for_df = [
+            'Feature',
+            'Median shift (%)',
+            'Standard deviation of shift (%)',
+            'Biggest shift (%)',
+            'Smallest shift (%)'
+            ]
+    df = pd.DataFrame(
+        data_for_df,
+        columns=headers_for_df
+    )
+
+    # Write to streamlit with two decimal places:
+    f = '{:.2f}'
+    style_dict = {
+        'Feature':None,
+        'Median shift (%)':f,
+        'Standard deviation of shift (%)':f,
+        'Biggest shift (%)':f,
+        'Smallest shift (%)':f
+    }
+    st.dataframe(df.style.format(style_dict))
+
+
+def make_waterfall_df(
+        grid_cat_sorted, headers, stroke_team_list, highlighted_team_list,
+        base_values=0.2995270168908044
+        ):
     base_values_perc = 100.0 * base_values
 
     grid_waterfall = np.copy(grid_cat_sorted)
@@ -801,20 +828,24 @@ def plot_heat_grid(shap_values_probability_extended, headers,
     grid_waterfall = grid_waterfall[inds_std, :]
     features_waterfall = headers[inds_std]
 
-    # Make a cumulative probability line for each team:
-    grid_waterfall = np.cumsum(grid_waterfall, axis=0)
     # Add a row for the starting probability:
     grid_waterfall = np.vstack(
         (np.zeros(grid_waterfall.shape[1]), grid_waterfall))
+    # Make a cumulative probability line for each team:
+    grid_waterfall_cumsum = np.cumsum(grid_waterfall, axis=0)
     # Add the starting probability to all values:
-    grid_waterfall += base_values_perc
+    grid_waterfall_cumsum += base_values_perc
+    # Keep final probabilities separate:
+    final_probs_list = grid_waterfall_cumsum[-1, :]
     # Feature names:
     features_waterfall = np.append('Base probability', features_waterfall)
     # features_waterfall = np.append(features_waterfall, 'Final probability')
 
     # Get the grid into a better format for the data frame:
-    # Column containing probabilities:
-    column_probs = grid_waterfall.T.ravel()
+    # Column containing shifts in probabilities for each feature:
+    column_probs_shifts = grid_waterfall.T.ravel()
+    # Column containing cumulative probabilities (for x axis):
+    column_probs_cum = grid_waterfall_cumsum.T.ravel() 
     # Column of feature names:
     column_features = np.tile(features_waterfall, len(stroke_team_list))
     # Column of the rank:
@@ -827,25 +858,25 @@ def plot_heat_grid(shap_values_probability_extended, headers,
     # Column of highlighted teams:
     column_highlighted_teams = np.tile(highlighted_team_list, len(features_waterfall))\
         .reshape(len(features_waterfall), len(highlighted_team_list)).T.ravel()
+    # Column of final probability of thrombolysis:
+    column_probs_final = np.tile(final_probs_list, len(features_waterfall))\
+        .reshape(len(features_waterfall), len(final_probs_list)).T.ravel()
 
     # Put this into a data frame:
     df_waterfalls = pd.DataFrame()
     df_waterfalls['Sorted rank'] = column_sorted_rank
     df_waterfalls['Stroke team'] = column_stroke_team
-    df_waterfalls['Probabilities'] = column_probs
+    df_waterfalls['Probabilities'] = column_probs_cum
+    df_waterfalls['Prob shift'] = column_probs_shifts
+    df_waterfalls['Prob final'] = column_probs_final
     df_waterfalls['Features'] = column_features
     df_waterfalls['Highlighted team'] = column_highlighted_teams
+    return df_waterfalls
 
-    # # Make the graph!
-    # fig = px.line(
-    #     df_waterfalls,
-    #     x='Probabilities',
-    #     y='Features',
-    #     color='Stroke team'
-    #     )
 
-    import plotly.graph_objects as go
+def plot_combo_waterfalls(df_waterfalls, stroke_team_list):
     fig = go.Figure()
+
 
     drawn_blank_legend_line = 0
     # Keep a list of the added data in order of zorder:
@@ -871,9 +902,14 @@ def plot_heat_grid(shap_values_probability_extended, headers,
         fig.add_trace(go.Scatter(
             x=df_team['Probabilities'],
             y=df_team['Features'],
-            mode='lines',
+            mode='lines+markers',
             line=dict(width=width, color=colour), opacity=opacity,
             # c=df_waterfalls['Stroke team'],
+            customdata=np.stack((
+                df_team['Stroke team'], 
+                df_team['Prob shift'],
+                df_team['Prob final']
+                ), axis=-1),
             name=df_team['Highlighted team'].iloc[0],
             showlegend=leggy
             ))
@@ -887,6 +923,15 @@ def plot_heat_grid(shap_values_probability_extended, headers,
     # Shuffle data into the wanted zorder:
     fig.data = fig_data_list
 
+    # Update x axis limits:
+    xmin = df_waterfalls['Probabilities'].min() - 2
+    xmax = df_waterfalls['Probabilities'].max() + 2
+    xmin = xmin if xmin < 0.0 else 0.0
+    xmax = xmax if xmax > 100.0 else 100.0
+    fig.update_xaxes(range=[xmin, xmax])
+
+
+    # Titles and labels:
     fig.update_layout(
         title='Waterfalls for all stroke teams',
         xaxis_title='Probability of thrombolysis (%)',
@@ -894,9 +939,29 @@ def plot_heat_grid(shap_values_probability_extended, headers,
         legend_title='Highlighted team'
         )
 
-    # Update line skinniness and opacity:
-    # fig.update_traces(line=dict(width=1), opacity=0.4)
+    # Update the hover text:
+    fig.update_traces(
+        hovertemplate=(
+            'Stroke team: %{customdata[0]}' +
+            '<br>' +
+            'Effect of %{y}: %{customdata[1]:>+.2f}%' +
+            '<br>' +
+            'Final probability: %{customdata[2]:>.2f}%' +
+            '<extra></extra>'
+            )
+        )
 
+    # Move legend to bottom
+    fig.update_layout(legend=dict(
+        orientation='h',
+        yanchor='top',
+        y=-0.2,
+        xanchor="right",
+        x=1
+    ))
+
+    # Make the figure taller:
+    fig.update_layout(height=750)
 
     # Flip y-axis so bars are read from top to bottom.
     fig['layout']['yaxis']['autorange'] = 'reversed'
