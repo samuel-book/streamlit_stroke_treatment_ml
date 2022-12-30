@@ -109,9 +109,9 @@ def main(sorted_results,
         plot_combo_waterfalls(df_waterfalls, sorted_results['Stroke team'], indices_highlighted, highlighted_teams_colours)
 
         # Write statistics:
-        # write_feature_means_stds(grid_cat_sorted, headers)
+        write_feature_means_stds(grid_cat_sorted, headers)
 
-        print_changes_info(grid_cat_sorted, headers, stroke_team_2d)
+        # print_changes_info(grid_cat_sorted, headers, stroke_team_2d)
     else:
         pass
 
