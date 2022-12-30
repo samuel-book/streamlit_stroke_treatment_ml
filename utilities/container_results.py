@@ -199,6 +199,7 @@ def plot_sorted_probs(sorted_results):
         # for this highlighted team:
         results_here = sorted_results[
             sorted_results['Highlighted team'] == leg_entry]
+        colour = 'grey' if leg_entry == '-' else px.colors.qualitative.Plotly[i]
         # Add bar(s) to the chart for this highlighted team:
         fig.add_trace(go.Bar(
             x=results_here['Sorted rank'],
@@ -212,10 +213,12 @@ def plot_sorted_probs(sorted_results):
             # Add this text to the bar:
             text=results_here['Benchmark'],
             # Name for the legend:
-            name=leg_entry
+            name=leg_entry,
+            # Set non-highlighted bars to grey:
+            marker=dict(color=colour)
             ))
         # Store the colour:
-        highlighted_teams_colours.append(px.colors.qualitative.Plotly[i])
+        highlighted_teams_colours.append(colour)
 
     # Update text at top of bars:
     fig.update_traces(
@@ -936,7 +939,10 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, indices_highlighted, 
     n_non_highlighted = len(inds_order)
     inds_order += indices_highlighted
     # Set up the colours of the lines to be plotted:
-    colour_list = ['grey']*n_non_highlighted + highlighted_teams_colours[1:]
+    colour_list = (
+        [highlighted_teams_colours[0]]*n_non_highlighted +
+        highlighted_teams_colours[1:]
+    )
 
     fig = go.Figure()
     drawn_blank_legend_line = 0
