@@ -89,6 +89,20 @@ highlighted_teams_list = tuple(highlighted_teams_list)
 # bool_Highlighteds = np.in1d(stroke_teams_list, Highlighted_teams)
 # table[:, 6][bool_Highlighteds] = 'Yes'
 
+# Remove highlighted colours that are no longer needed:
+try:
+    highlighted_teams_colours_before = \
+        st.session_state['highlighted_teams_colours']
+    highlighted_teams_colours = {}
+    for team in highlighted_teams_input:
+        try:
+            highlighted_teams_colours[team] = \
+                highlighted_teams_colours_before[team]
+        except KeyError:
+            pass
+    st.session_state['highlighted_teams_colours'] = highlighted_teams_colours
+except KeyError:
+    st.session_state['highlighted_teams_colours'] = {}
 
 # ##################################
 # ########## CALCULATIONS ##########

@@ -8,6 +8,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import importlib
 import pandas as pd
+import matplotlib
 
 # For creating SHAP waterfall in response to click:
 import utilities.main_calculations
@@ -44,7 +45,7 @@ def main(sorted_results,
         'Currently benchmark teams are marked with the world\'s tiniest ',
         'stars, but this will be changed to something easier to see.'
         ]))
-    selected_bar, highlighted_teams_colours = plot_sorted_probs(sorted_results)
+    selected_bar = plot_sorted_probs(sorted_results)
 
     
     # try:
@@ -111,7 +112,7 @@ def main(sorted_results,
                 sorted_results['Highlighted team'],
                 base_values=0.2995270168908044
                 )
-        plot_combo_waterfalls(df_waterfalls, sorted_results['Stroke team'], indices_highlighted, highlighted_teams_colours)
+        plot_combo_waterfalls(df_waterfalls, sorted_results['Stroke team'], indices_highlighted)
 
         # Write statistics:
         write_feature_means_stds(grid_cat_sorted, headers)
@@ -194,18 +195,44 @@ def plot_sorted_probs(sorted_results):
     # Make the ordered list of things to add:
     highlighted_teams_list = st.session_state['highlighted_teams']
     highlighted_teams_list = np.append(['-'], highlighted_teams_list)
-
     # Store the colours used in here:
-    highlighted_teams_colours = []
+    try:
+        highlighted_teams_colours = \
+            st.session_state['highlighted_teams_colours']
+    except KeyError:
+        highlighted_teams_colours = {}
+
     fig = go.Figure()
+
+    plotly_colours = px.colors.qualitative.Plotly
 
     for i, leg_entry in enumerate(highlighted_teams_list):
         # Take the subset of the big dataframe that contains the data
         # for this highlighted team:
         results_here = sorted_results[
             sorted_results['Highlighted team'] == leg_entry]
-        colour = 'grey' if leg_entry == '-' \
-            else px.colors.qualitative.Plotly[i]
+        try:
+            # Check if there's already a designated colour:
+            colour = highlighted_teams_colours[leg_entry]
+        except KeyError:
+            if leg_entry == '-':
+                colour = 'grey'
+            else:
+                # Pick a colour that hasn't already been used.
+                unused_colours = np.setdiff1d(
+                    plotly_colours,
+                    list(highlighted_teams_colours.values())
+                    )
+                if len(unused_colours) < 1:
+                    # Select a colour from this list:
+                    mpl_colours = list(matplotlib.colors.cnames.values())
+                    colour = list(highlighted_teams_colours.values())[0]
+                    while colour in list(highlighted_teams_colours.values()):
+                        colour = mpl_colours[np.random.randint(0, len(mpl_colours))]
+                else:
+                    colour = unused_colours[-1]
+            # Add this to the dictionary:
+            highlighted_teams_colours[leg_entry] = colour
         # Add bar(s) to the chart for this highlighted team:
         fig.add_trace(go.Bar(
             x=results_here['Sorted rank'],
@@ -224,53 +251,10 @@ def plot_sorted_probs(sorted_results):
             marker=dict(color=colour)
             ))
         # Store the colour:
-        highlighted_teams_colours.append(colour)
-
-    # legend_contains_non_highlighted = 0
-    # legend_count = 0
-
-    # for i, trace in enumerate(sorted_results['Stroke team']):
-    #     results_here = sorted_results[
-    #         sorted_results['Stroke team'] == trace]
-
-    #     if results_here['Highlighted team'].values[0] == '-':
-    #         colour = 'grey'
-    #         if legend_contains_non_highlighted < 1:
-    #             # Add this to legend
-    #             leg_entry = '-'
-    #         else:
-    #             # Don't add this to legend
-    #             leg_entry = None
-    #     else:
-    #         colour = px.colors.qualitative.Plotly[legend_count]
-    #         legend_count += 1
-    #         # Store the colour:
-    #         highlighted_teams_colours.append(colour)
-    #         # Add this to legend
-    #         leg_entry = results_here['Stroke team'].values[0]
-
-    #     # Take the subset of the big dataframe that contains the data
-    #     # for this highlighted team:
-    #     # results_here = sorted_results[
-    #     #     sorted_results['Highlighted team'] == leg_entry]
-    #     # colour = 'grey' if leg_entry == '-' else px.colors.qualitative.Plotly[i]
-    #     # Add bar(s) to the chart for this highlighted team:
-    #     fig.add_trace(go.Bar(
-    #         x=results_here['Sorted rank'],
-    #         y=results_here['Probability_perc'],
-    #         # Extra data for hover popup:
-    #         customdata=np.stack([
-    #             results_here['Stroke team'],
-    #             results_here['Thrombolyse_str'],
-    #             results_here['Benchmark']
-    #             ], axis=-1),
-    #         # Add this text to the bar:
-    #         text=results_here['Benchmark'],
-    #         # Name for the legend:
-    #         name=leg_entry,
-    #         # Set non-highlighted bars to grey:
-    #         marker=dict(color=colour)
-    #         ))
+        # highlighted_teams_colours.append(colour)
+        highlighted_teams_colours[leg_entry] = colour
+    # Save the new colour dictionary to the session state:
+    st.session_state['highlighted_teams_colours'] = highlighted_teams_colours
 
     # Update text at top of bars:
     fig.update_traces(
@@ -323,12 +307,6 @@ def plot_sorted_probs(sorted_results):
 
     # Add horizontal line at prob=0.5, the decision to thrombolyse:
     fig.add_hline(y=50.0)
-    # # Add horizontal line at prob=0.3, the SHAP starting point:
-    # fig.add_hline(y=base_values*100.0)#,
-    # #             annotation_text='Starting probability')
-    # # fig.add_hline(y=base_values*100.0,
-    # #               annotation_text=f'{base_values*100.0:.2f}%',
-    # #               annotation_position='bottom right')
 
     # Write to streamlit:
     # # Non-interactive version:
@@ -408,7 +386,7 @@ def plot_sorted_probs(sorted_results):
             # Nothing has been clicked yet, so don't change anything.
             pass
 
-    return selected_bar, highlighted_teams_colours
+    return selected_bar
 
 
 def plot_sorted_probs_matplotlib(sorted_results):
@@ -1023,7 +1001,7 @@ def make_waterfall_df(
     return df_waterfalls
 
 
-def plot_combo_waterfalls(df_waterfalls, stroke_team_list, indices_highlighted, highlighted_teams_colours):
+def plot_combo_waterfalls(df_waterfalls, stroke_team_list, indices_highlighted):
     """
     Add the elements to the chart in order so that the last thing
     added ends up on the top. Add the unhighlighted teams first,
@@ -1031,15 +1009,17 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, indices_highlighted, 
     This will make the highlighted colours here the same as in
     previous plots.
     """
+    highlighted_teams_colours = st.session_state['highlighted_teams_colours']
+
     # Find the indices of the non-highlighted teams:
     inds_order = list(set(np.arange(0, len(stroke_team_list))).difference(indices_highlighted))
     n_non_highlighted = len(inds_order)
     inds_order += indices_highlighted
     # Set up the colours of the lines to be plotted:
-    colour_list = (
-        [highlighted_teams_colours[0]]*n_non_highlighted +
-        highlighted_teams_colours[1:]
-    )
+    # colour_list = (
+    #     [highlighted_teams_colours['-']]*n_non_highlighted +
+    #     highlighted_teams_colours[1:]
+    # )
 
     fig = go.Figure()
     drawn_blank_legend_line = 0
@@ -1062,12 +1042,13 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, indices_highlighted, 
             # colour = 'grey'
             opacity = 0.25
             width = 1.0
+        colour = highlighted_teams_colours[df_team['Highlighted team'].iloc[0]]
 
         fig.add_trace(go.Scatter(
             x=df_team['Probabilities'],
             y=df_team['Features'],
             mode='lines+markers',
-            line=dict(width=width, color=colour_list[i]), opacity=opacity,
+            line=dict(width=width, color=colour), opacity=opacity,
             # c=df_waterfalls['Stroke team'],
             customdata=np.stack((
                 df_team['Stroke team'],
