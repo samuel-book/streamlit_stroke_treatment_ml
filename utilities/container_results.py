@@ -48,78 +48,36 @@ def main(sorted_results,
     selected_bar = plot_sorted_probs(sorted_results)
 
     
-    # try:
-    #     # If a bar has been clicked, then the following line will not
-    #     # throw up an IndexError:
-    #     rank_selected = selected_bar[0]['x']
-    #     # prob_selected = selected_bar[0]['y']
-    #     # Find where this bar is in the results dataframe:
-    #     ind_selected = sorted_results['Index'].loc[
-    #         sorted_results['Sorted rank'] == rank_selected].values[0]
-    #     # Pull out some useful bits:
-    #     # Find Shapley values:
-    #     (shap_values_probability_extended_selected,
-    #      shap_values_probability_selected) = \
-    #         utilities.main_calculations.find_shapley_values(
-    #             explainer_probability, X.iloc[[ind_selected, ind_selected]])
+    # Get big SHAP probability grid:
+    grid, grid_cat_sorted, stroke_team_2d, headers = make_heat_grids(
+        headers_X, sorted_results['Stroke team'], sorted_results['Index'],
+        shap_values_probability_all)
 
-    #     # Find the data:
-    #     sv = shap_values_probability_extended_selected[0]
-    #     # Change integer 0/1 to str no/yes for display:
-    #     sv_to_display = utilities.main_calculations.\
-    #         convert_explainer_01_to_noyes(sv)
+    # plot_heat_grid_full(grid)
+    # plot_heat_grid_compressed(
+    #     grid_cat_sorted, sorted_results['Stroke team'], headers,
+    #     stroke_team_2d)
 
-    #     # Final probability:
-    #     final_prob = sorted_results['Probability'].loc[ind_selected]
+    # plot_all_prob_shifts_for_all_features_and_teams(
+    #     headers, grid_cat_sorted)
 
-    #     # Write to streamlit:
-    #     title = '### Team ' + sorted_results['Stroke team'].loc[ind_selected]
-    #     st.markdown(title)
-    #     st.markdown(
-    #         f'Rank: {rank_selected} of {sorted_results.shape[0]}')
-    #     # Plot:
-    #     plot_shap_waterfall(sv_to_display, final_prob)
-    # except IndexError:
-    #     # Do nothing if no bar is selected.
-    #     pass
-    
+    # Plot combo waterfalls:
+    df_waterfalls = make_waterfall_df(
+            grid_cat_sorted,
+            headers,
+            sorted_results['Stroke team'],
+            sorted_results['Highlighted team'],
+            sorted_results['HB team'],
+            base_values=0.2995270168908044
+            )
+    plot_combo_waterfalls(df_waterfalls, sorted_results['Stroke team'],
+                          indices_highlighted)
 
+    # Write statistics:
+    write_feature_means_stds(grid_cat_sorted, headers)
 
-    # st.write(''.join([
-    #     'Calculating all of the waterfall plots takes a few seconds '
-    #     'once this box is ticked: '
-    #     ]))
-    # if st.checkbox('Combine all waterfalls'):
-    if 1==1:
-        st.markdown('## All waterfalls')
+    # print_changes_info(grid_cat_sorted, headers, stroke_team_2d)
 
-        grid, grid_cat_sorted, stroke_team_2d, headers = make_heat_grids(
-            headers_X, sorted_results['Stroke team'], sorted_results['Index'],
-            shap_values_probability_all)
-
-        # plot_heat_grid_full(grid)
-        # plot_heat_grid_compressed(
-        #     grid_cat_sorted, sorted_results['Stroke team'], headers,
-        #     stroke_team_2d)
-
-        # plot_all_prob_shifts_for_all_features_and_teams(
-        #     headers, grid_cat_sorted)
-
-        df_waterfalls = make_waterfall_df(
-                grid_cat_sorted,
-                headers,
-                sorted_results['Stroke team'],
-                sorted_results['Highlighted team'],
-                base_values=0.2995270168908044
-                )
-        plot_combo_waterfalls(df_waterfalls, sorted_results['Stroke team'], indices_highlighted)
-
-        # Write statistics:
-        write_feature_means_stds(grid_cat_sorted, headers)
-
-        # print_changes_info(grid_cat_sorted, headers, stroke_team_2d)
-    else:
-        pass
 
     with st.expander('SHAP for max, middle, min'):
         titles = [
@@ -169,23 +127,8 @@ def main(sorted_results,
                 plot_shap_waterfall(sv_to_display, final_prob)
 
 
-
 def plot_sorted_probs(sorted_results):
 
-    # sorted_results = sorted_results_orig.copy(deep=True)
-
-    # x_chart = range(len(sorted_results))
-
-    # fig = px.bar(
-    #     sorted_results,
-    #     x='Sorted rank',
-    #     y='Probability_perc',
-    #     custom_data=['Stroke team', 'Thrombolyse_str', 'Benchmark'],
-    #     color='Highlighted team',
-    #     text='Benchmark',
-    #     # color_discrete_map= {'Benchmark': 'yellow'}
-    #     )
-    
     # Add the bars to the chart in the same order as the highlighted
     # teams list. Otherwise by default the bars would be added in the
     # order of sorted rank, and adding a new highlighted team could
@@ -193,53 +136,19 @@ def plot_sorted_probs(sorted_results):
     # (Currently removing a team does shuffle the colours but I don't
     # see an easy fix to that.)
     # Make the ordered list of things to add:
-    highlighted_teams_list = st.session_state['highlighted_teams']
-    highlighted_teams_list = np.append(['-'], highlighted_teams_list)
+    highlighted_teams_list = st.session_state['hb_teams_input']
+    # highlighted_teams_list = np.append(['-', '\U00002605' + ' (Benchmark)'], highlighted_teams_list)
     # Store the colours used in here:
-    try:
-        highlighted_teams_colours = \
-            st.session_state['highlighted_teams_colours']
-    except KeyError:
-        highlighted_teams_colours = {}
+    highlighted_teams_colours = st.session_state['highlighted_teams_colours']
 
     fig = go.Figure()
-
-    # Specify the indices to get a mix of colours:
-    plotly_colours = px.colors.qualitative.Plotly
-
     for i, leg_entry in enumerate(highlighted_teams_list):
         # Take the subset of the big dataframe that contains the data
         # for this highlighted team:
         results_here = sorted_results[
-            sorted_results['Highlighted team'] == leg_entry]
-        try:
-            # Check if there's already a designated colour:
-            colour = highlighted_teams_colours[leg_entry]
-        except KeyError:
-            if leg_entry == '-':
-                colour = 'grey'
-            else:
-                # Pick a colour that hasn't already been used.
-                unused_colours = list(np.setdiff1d(
-                    plotly_colours,
-                    list(highlighted_teams_colours.values())
-                    ))
-                if len(unused_colours) < 1:
-                    # Select a colour from this list:
-                    mpl_colours = list(matplotlib.colors.cnames.values())
-                    colour = list(highlighted_teams_colours.values())[0]
-                    while colour in list(highlighted_teams_colours.values()):
-                        colour = mpl_colours[
-                            np.random.randint(0, len(mpl_colours))]
-                else:
-                    # Take either the first or the last from this list
-                    # (mixes up the reds and blues a bit.)
-                    c_ind = 0 if i % 2 == 0 else -1
-                    colour = unused_colours[c_ind]
-
-            # Add this to the dictionary:
-            highlighted_teams_colours[leg_entry] = colour
-
+            sorted_results['HB team'] == leg_entry]
+        # Choose the colour of this bar:
+        colour = highlighted_teams_colours[leg_entry]
         # Add bar(s) to the chart for this highlighted team:
         fig.add_trace(go.Bar(
             x=results_here['Sorted rank'],
@@ -251,25 +160,20 @@ def plot_sorted_probs(sorted_results):
                 results_here['Benchmark']
                 ], axis=-1),
             # Add this text to the bar:
-            text=results_here['Benchmark'],
+            # text=results_here['Benchmark'],
             # Name for the legend:
             name=leg_entry,
-            # Set non-highlighted bars to grey:
+            # Set bars colours:
             marker=dict(color=colour)
             ))
-        # Store the colour:
-        # highlighted_teams_colours.append(colour)
-        highlighted_teams_colours[leg_entry] = colour
-    # Save the new colour dictionary to the session state:
-    st.session_state['highlighted_teams_colours'] = highlighted_teams_colours
 
-    # Update text at top of bars:
-    fig.update_traces(
-        textfont_size=20,
-        textposition='outside',
-        cliponaxis=False,
-        # marker_line=dict(width=2, color='black')
-        )
+    # # Update text at top of bars:
+    # fig.update_traces(
+    #     textfont_size=20,
+    #     textposition='outside',
+    #     cliponaxis=False,
+    #     # marker_line=dict(width=2, color='black')
+    #     )
 
     # Figure title:
     # Change axis:
@@ -313,7 +217,7 @@ def plot_sorted_probs(sorted_results):
         )
 
     # Add horizontal line at prob=0.5, the decision to thrombolyse:
-    fig.add_hline(y=50.0)
+    fig.add_hline(y=50.0, line=dict(color='black'))
 
     # Write to streamlit:
     # # Non-interactive version:
@@ -951,7 +855,7 @@ def write_feature_means_stds(grid_cat_sorted, headers):
 
 def make_waterfall_df(
         grid_cat_sorted, headers, stroke_team_list, highlighted_team_list,
-        base_values=0.2995270168908044
+        hb_team_list, base_values=0.2995270168908044
         ):
     base_values_perc = 100.0 * base_values
 
@@ -992,6 +896,10 @@ def make_waterfall_df(
     column_highlighted_teams = np.tile(
         highlighted_team_list, len(features_waterfall))\
         .reshape(len(features_waterfall), len(highlighted_team_list)).T.ravel()
+    # Column of highlighted/benchmark teams:
+    column_hb_teams = np.tile(
+        hb_team_list, len(features_waterfall))\
+        .reshape(len(features_waterfall), len(hb_team_list)).T.ravel()
     # Column of final probability of thrombolysis:
     column_probs_final = np.tile(final_probs_list, len(features_waterfall))\
         .reshape(len(features_waterfall), len(final_probs_list)).T.ravel()
@@ -1005,6 +913,7 @@ def make_waterfall_df(
     df_waterfalls['Prob final'] = column_probs_final
     df_waterfalls['Features'] = column_features
     df_waterfalls['Highlighted team'] = column_highlighted_teams
+    df_waterfalls['HB team'] = column_hb_teams
     return df_waterfalls
 
 
@@ -1030,6 +939,7 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, indices_highlighted):
 
     fig = go.Figure()
     drawn_blank_legend_line = 0
+    drawn_bench_legend_line = 0
     # Keep a list of the added data in order of zorder:
     fig_data_list = []
     for i, ind in enumerate(inds_order):
@@ -1041,15 +951,22 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, indices_highlighted):
             opacity = 1.0
             width = 2.0
         else:
-            if drawn_blank_legend_line > 0:
-                leggy = False
+            if df_team['HB team'].iloc[0] == '-':
+                if drawn_blank_legend_line > 0:
+                    leggy = False
+                else:
+                    leggy = True
+                    drawn_blank_legend_line += 1
             else:
-                leggy = True
-                drawn_blank_legend_line += 1
+                if drawn_bench_legend_line > 0:
+                    leggy = False
+                else:
+                    leggy = True
+                    drawn_bench_legend_line += 1
             # colour = 'grey'
             opacity = 0.25
             width = 1.0
-        colour = highlighted_teams_colours[df_team['Highlighted team'].iloc[0]]
+        colour = highlighted_teams_colours[df_team['HB team'].iloc[0]]
 
         fig.add_trace(go.Scatter(
             x=df_team['Probabilities'],
@@ -1063,7 +980,7 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, indices_highlighted):
                 df_team['Prob final'],
                 df_team['Sorted rank']
                 ), axis=-1),
-            name=df_team['Highlighted team'].iloc[0],
+            name=df_team['HB team'].iloc[0],
             showlegend=leggy
             ))
 

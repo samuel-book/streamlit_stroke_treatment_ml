@@ -24,6 +24,8 @@ import utilities.container_inputs
 import utilities.container_results
 # import utilities.container_details
 
+from utilities.plot_utils import remove_old_colours_for_highlights, \
+                                 choose_colours_for_highlights
 
 # ###########################
 # ##### START OF SCRIPT #####
@@ -68,9 +70,16 @@ explainer_probability = utilities.inputs.load_explainer_probability()
 benchmark_df = utilities.inputs.import_benchmark_data()
 # Make list of benchmark rank:
 # (original data is sorted alphabetically by stroke team)
-benchmark_rank_list = tuple(benchmark_df.sort_values('stroke_team')['Rank'])
+benchmark_rank_list = benchmark_df.sort_values('stroke_team')['Rank'].to_numpy()
+# Indices of benchmark data at the moment:
+inds_benchmark = np.where(benchmark_rank_list <= 30)[0]
+
 
 # ----- Highlighted teams -----
+
+bench_str = 'Benchmark \U00002605'
+plain_str = '-'
+
 # Pick teams to highlight on the bar chart:
 highlighted_teams_input = utilities.container_inputs.\
     highlighted_teams(stroke_teams_list)
@@ -79,30 +88,60 @@ highlighted_teams_input = utilities.container_inputs.\
 # table[np.where(table[:, 7] <= 30), 6] = 'Benchmark'
 highlighted_teams_list = np.array(
     ['-' for team in stroke_teams_list], dtype=object)
+# Combo highlighted and benchmark:
+hb_teams_list = np.array(
+    ['-' for team in stroke_teams_list], dtype=object)
+hb_teams_list[inds_benchmark] = bench_str
 # Put in selected Highlighteds (overwrites benchmarks):
+# inds_highlighted = []
+hb_teams_input = [plain_str, bench_str]
 for team in highlighted_teams_input:
-    ind_t = np.where(stroke_teams_list == team)
+    ind_t = np.argwhere(stroke_teams_list == team)[0][0]
+    # inds_highlighted.append(ind_t)
     highlighted_teams_list[ind_t] = team
-highlighted_teams_list = tuple(highlighted_teams_list)
+    if ind_t in inds_benchmark:
+        team = team + ' \U00002605'
+    hb_teams_list[ind_t] = team
+    hb_teams_input.append(team)
+
+
+st.session_state['hb_teams_input'] = hb_teams_input
+
+# highlighted_teams_list = highlighted_teams_list
 # # If just need yes/no, the following works.
 # # It doesn't return indices in the same order as Highlighted_teams.
 # bool_Highlighteds = np.in1d(stroke_teams_list, Highlighted_teams)
 # table[:, 6][bool_Highlighteds] = 'Yes'
 
-# Remove highlighted colours that are no longer needed:
-try:
-    highlighted_teams_colours_before = \
-        st.session_state['highlighted_teams_colours']
-    highlighted_teams_colours = {}
-    for team in highlighted_teams_input:
-        try:
-            highlighted_teams_colours[team] = \
-                highlighted_teams_colours_before[team]
-        except KeyError:
-            pass
-    st.session_state['highlighted_teams_colours'] = highlighted_teams_colours
-except KeyError:
-    st.session_state['highlighted_teams_colours'] = {}
+# # Mark the benchmarks in the highlighted names. Add a star.
+# # Star: '\U00002605'
+# hb_teams_list = np.copy(highlighted_teams_list)
+# hb_teams_list[inds_benchmark] = '\U00002605 ' + hb_teams_list[inds_benchmark]
+
+# inds_benchmark_not_highlighted = np.where(hb_teams_list == '\U00002605 -')
+# hb_teams_list[inds_benchmark_not_highlighted] = bench_str
+
+# # Remove repeats:
+# highlighted_teams_input_extras = [plain_str, bench_str] + highlighted_teams_input #np.unique(hb_teams_list)
+# st.write(highlighted_teams_input_extras)
+# ind_bench_str = np.where(highlighted_teams_input_extras == bench_str)[0][0]
+# ind_plain_str = np.where(highlighted_teams_input_extras == plain_str)[0][0]
+# inds_hite = sorted([ind_bench_str, ind_plain_str])
+# inds_other = []
+# ind_prev = 0
+# for ind in inds_hite + [len(highlighted_teams_input_extras)]:
+#     inds_other += range(ind_prev, ind)
+#     ind_prev = ind + 1
+# inds_hite += inds_other[::-1]
+# highlighted_teams_input_extras = highlighted_teams_input_extras[inds_hite]
+# st.session_state['highlighted_teams_extras'] = highlighted_teams_input_extras
+
+
+# Find colour lists for plotting (saved to session state):
+remove_old_colours_for_highlights(hb_teams_input)
+choose_colours_for_highlights(hb_teams_input)
+
+# highlighted_teams_input_extras.remove('-')
 
 
 # ##################################
@@ -111,7 +150,8 @@ except KeyError:
 
 sorted_results = utilities.main_calculations.\
     predict_treatment(X, model, stroke_teams_list,
-                      highlighted_teams_list, benchmark_rank_list)
+                      highlighted_teams_list, benchmark_rank_list,
+                      hb_teams_list)
 
 # Get indices of highest, most average, and lowest probability teams.
 index_high = sorted_results.iloc[0]['Index']
@@ -129,10 +169,11 @@ indices_high_mid_low = [index_high, index_mid, index_low]
 #     sorted_results['Highlighted team'].isin(highlighted_teams_input)]
 # --- but this way retains the order that highlighted teams were added:
 indices_highlighted = []
-for team in highlighted_teams_input:
-    ind_team = sorted_results['Index'][
-        sorted_results['Highlighted team'] == team].values[0]
-    indices_highlighted.append(ind_team)
+for team in hb_teams_input:
+    if '-' not in team and 'Benchmark' not in team:
+        ind_team = sorted_results['Index'][
+            sorted_results['HB team'] == team].values[0]
+        indices_highlighted.append(ind_team)
 
 # Find Shapley values only for the important indices:
 (shap_values_probability_extended_high_mid_low,

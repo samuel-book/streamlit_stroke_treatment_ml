@@ -10,7 +10,7 @@ import streamlit as st
 
 def predict_treatment(
         X, model, stroke_teams_list, highlighted_teams_list,
-        benchmark_rank_list
+        benchmark_rank_list, hb_teams_list
         ):
     probs_list = model.predict_proba(X)[:, 1]
 
@@ -19,6 +19,7 @@ def predict_treatment(
     results['Stroke team'] = stroke_teams_list
     results['Highlighted team'] = highlighted_teams_list
     results['Benchmark rank'] = benchmark_rank_list
+    results['HB team'] = hb_teams_list
     results['Probability'] = probs_list
     results['Probability_perc'] = probs_list*100.0
     results['Thrombolyse'] = probs_list >= 0.5
