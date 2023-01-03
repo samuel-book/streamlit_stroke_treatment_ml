@@ -204,6 +204,7 @@ def plot_sorted_probs(sorted_results):
 
     fig = go.Figure()
 
+    # Specify the indices to get a mix of colours:
     plotly_colours = px.colors.qualitative.Plotly
 
     for i, leg_entry in enumerate(highlighted_teams_list):
@@ -219,20 +220,26 @@ def plot_sorted_probs(sorted_results):
                 colour = 'grey'
             else:
                 # Pick a colour that hasn't already been used.
-                unused_colours = np.setdiff1d(
+                unused_colours = list(np.setdiff1d(
                     plotly_colours,
                     list(highlighted_teams_colours.values())
-                    )
+                    ))
                 if len(unused_colours) < 1:
                     # Select a colour from this list:
                     mpl_colours = list(matplotlib.colors.cnames.values())
                     colour = list(highlighted_teams_colours.values())[0]
                     while colour in list(highlighted_teams_colours.values()):
-                        colour = mpl_colours[np.random.randint(0, len(mpl_colours))]
+                        colour = mpl_colours[
+                            np.random.randint(0, len(mpl_colours))]
                 else:
-                    colour = unused_colours[-1]
+                    # Take either the first or the last from this list
+                    # (mixes up the reds and blues a bit.)
+                    c_ind = 0 if i % 2 == 0 else -1
+                    colour = unused_colours[c_ind]
+
             # Add this to the dictionary:
             highlighted_teams_colours[leg_entry] = colour
+
         # Add bar(s) to the chart for this highlighted team:
         fig.add_trace(go.Bar(
             x=results_here['Sorted rank'],
@@ -1013,7 +1020,7 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, indices_highlighted):
 
     # Find the indices of the non-highlighted teams:
     inds_order = list(set(np.arange(0, len(stroke_team_list))).difference(indices_highlighted))
-    n_non_highlighted = len(inds_order)
+    # n_non_highlighted = len(inds_order)
     inds_order += indices_highlighted
     # Set up the colours of the lines to be plotted:
     # colour_list = (

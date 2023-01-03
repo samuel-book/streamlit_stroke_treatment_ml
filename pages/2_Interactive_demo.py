@@ -104,6 +104,7 @@ try:
 except KeyError:
     st.session_state['highlighted_teams_colours'] = {}
 
+
 # ##################################
 # ########## CALCULATIONS ##########
 # ##################################
