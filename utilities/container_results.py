@@ -46,45 +46,50 @@ def main(sorted_results,
         ]))
     selected_bar, highlighted_teams_colours = plot_sorted_probs(sorted_results)
 
-    try:
-        # If a bar has been clicked, then the following line will not
-        # throw up an IndexError:
-        rank_selected = selected_bar[0]['x']
-        # prob_selected = selected_bar[0]['y']
-        # Find where this bar is in the results dataframe:
-        ind_selected = sorted_results['Index'].loc[
-            sorted_results['Sorted rank'] == rank_selected].values[0]
-        # Pull out some useful bits:
-        # Find Shapley values:
-        (shap_values_probability_extended_selected,
-         shap_values_probability_selected) = \
-            utilities.main_calculations.find_shapley_values(
-                explainer_probability, X.iloc[[ind_selected, ind_selected]])
+    
+    # try:
+    #     # If a bar has been clicked, then the following line will not
+    #     # throw up an IndexError:
+    #     rank_selected = selected_bar[0]['x']
+    #     # prob_selected = selected_bar[0]['y']
+    #     # Find where this bar is in the results dataframe:
+    #     ind_selected = sorted_results['Index'].loc[
+    #         sorted_results['Sorted rank'] == rank_selected].values[0]
+    #     # Pull out some useful bits:
+    #     # Find Shapley values:
+    #     (shap_values_probability_extended_selected,
+    #      shap_values_probability_selected) = \
+    #         utilities.main_calculations.find_shapley_values(
+    #             explainer_probability, X.iloc[[ind_selected, ind_selected]])
 
-        # Find the data:
-        sv = shap_values_probability_extended_selected[0]
-        # Change integer 0/1 to str no/yes for display:
-        sv_to_display = utilities.main_calculations.\
-            convert_explainer_01_to_noyes(sv)
+    #     # Find the data:
+    #     sv = shap_values_probability_extended_selected[0]
+    #     # Change integer 0/1 to str no/yes for display:
+    #     sv_to_display = utilities.main_calculations.\
+    #         convert_explainer_01_to_noyes(sv)
 
-        # Final probability:
-        final_prob = sorted_results['Probability'].loc[ind_selected]
+    #     # Final probability:
+    #     final_prob = sorted_results['Probability'].loc[ind_selected]
 
-        # Write to streamlit:
-        title = '### Team ' + sorted_results['Stroke team'].loc[ind_selected]
-        st.markdown(title)
-        st.markdown(
-            f'Rank: {rank_selected} of {sorted_results.shape[0]}')
-        # Plot:
-        plot_shap_waterfall(sv_to_display, final_prob)
-    except IndexError:
-        # Do nothing if no bar is selected.
-        pass
-    st.write(''.join([
-        'Calculating all of the waterfall plots takes a few seconds '
-        'once this box is ticked: '
-        ]))
-    if st.checkbox('Combine all waterfalls'):
+    #     # Write to streamlit:
+    #     title = '### Team ' + sorted_results['Stroke team'].loc[ind_selected]
+    #     st.markdown(title)
+    #     st.markdown(
+    #         f'Rank: {rank_selected} of {sorted_results.shape[0]}')
+    #     # Plot:
+    #     plot_shap_waterfall(sv_to_display, final_prob)
+    # except IndexError:
+    #     # Do nothing if no bar is selected.
+    #     pass
+    
+
+
+    # st.write(''.join([
+    #     'Calculating all of the waterfall plots takes a few seconds '
+    #     'once this box is ticked: '
+    #     ]))
+    # if st.checkbox('Combine all waterfalls'):
+    if 1==1:
         st.markdown('## All waterfalls')
 
         grid, grid_cat_sorted, stroke_team_2d, headers = make_heat_grids(
@@ -114,7 +119,6 @@ def main(sorted_results,
         # print_changes_info(grid_cat_sorted, headers, stroke_team_2d)
     else:
         pass
-
 
     with st.expander('SHAP for max, middle, min'):
         titles = [
@@ -194,12 +198,14 @@ def plot_sorted_probs(sorted_results):
     # Store the colours used in here:
     highlighted_teams_colours = []
     fig = go.Figure()
+
     for i, leg_entry in enumerate(highlighted_teams_list):
         # Take the subset of the big dataframe that contains the data
         # for this highlighted team:
         results_here = sorted_results[
             sorted_results['Highlighted team'] == leg_entry]
-        colour = 'grey' if leg_entry == '-' else px.colors.qualitative.Plotly[i]
+        colour = 'grey' if leg_entry == '-' \
+            else px.colors.qualitative.Plotly[i]
         # Add bar(s) to the chart for this highlighted team:
         fig.add_trace(go.Bar(
             x=results_here['Sorted rank'],
@@ -219,6 +225,52 @@ def plot_sorted_probs(sorted_results):
             ))
         # Store the colour:
         highlighted_teams_colours.append(colour)
+
+    # legend_contains_non_highlighted = 0
+    # legend_count = 0
+
+    # for i, trace in enumerate(sorted_results['Stroke team']):
+    #     results_here = sorted_results[
+    #         sorted_results['Stroke team'] == trace]
+
+    #     if results_here['Highlighted team'].values[0] == '-':
+    #         colour = 'grey'
+    #         if legend_contains_non_highlighted < 1:
+    #             # Add this to legend
+    #             leg_entry = '-'
+    #         else:
+    #             # Don't add this to legend
+    #             leg_entry = None
+    #     else:
+    #         colour = px.colors.qualitative.Plotly[legend_count]
+    #         legend_count += 1
+    #         # Store the colour:
+    #         highlighted_teams_colours.append(colour)
+    #         # Add this to legend
+    #         leg_entry = results_here['Stroke team'].values[0]
+
+    #     # Take the subset of the big dataframe that contains the data
+    #     # for this highlighted team:
+    #     # results_here = sorted_results[
+    #     #     sorted_results['Highlighted team'] == leg_entry]
+    #     # colour = 'grey' if leg_entry == '-' else px.colors.qualitative.Plotly[i]
+    #     # Add bar(s) to the chart for this highlighted team:
+    #     fig.add_trace(go.Bar(
+    #         x=results_here['Sorted rank'],
+    #         y=results_here['Probability_perc'],
+    #         # Extra data for hover popup:
+    #         customdata=np.stack([
+    #             results_here['Stroke team'],
+    #             results_here['Thrombolyse_str'],
+    #             results_here['Benchmark']
+    #             ], axis=-1),
+    #         # Add this text to the bar:
+    #         text=results_here['Benchmark'],
+    #         # Name for the legend:
+    #         name=leg_entry,
+    #         # Set non-highlighted bars to grey:
+    #         marker=dict(color=colour)
+    #         ))
 
     # Update text at top of bars:
     fig.update_traces(
@@ -281,35 +333,80 @@ def plot_sorted_probs(sorted_results):
     # Write to streamlit:
     # # Non-interactive version:
     # st.plotly_chart(fig, use_container_width=True)
+
     # Clickable version:
-    selected_bar = plotly_events(fig, click_event=True)
 
     try:
-        # If a bar has been clicked, then the following line
-        # will not throw up an IndexError:
-        rank_selected = selected_bar[0]['x']
-        # Find which team this is:
-        team_selected = sorted_results['Stroke team'].loc[
-            sorted_results['Sorted rank'] == rank_selected].values[0]
-        # Copy the current highlighted teams list
-        highlighted_teams_list_updated = st.session_state['highlighted_teams']
-        # Check if the newly-selected team is already in the list.
-        if team_selected in highlighted_teams_list_updated:
-            # Remove this team from the list.
-            highlighted_teams_list_updated.remove(team_selected)
-        else:
-            # Add the newly-selected team to the list.
-            highlighted_teams_list_updated.append(team_selected)
-        # Add this new list to the session state so that
-        # streamlit can access it immediately on the next re-run.
-        st.session_state['highlighted_teams_with_click'] = \
-            highlighted_teams_list_updated
-        # Re-run the script to get immediate feedback in the
-        # multiselect input widget and the graph colours:
-        st.experimental_rerun()
-    except IndexError:
-        # Don't change anything.
-        pass
+        # Pull the details out of the last bar that was changed
+        # (moved to or from the "highlighted" list due to being
+        # clicked on) out of the session state:
+        last_changed_bar = st.session_state['last_changed_bar']
+    except KeyError:
+        # Invent some nonsense. It doesn't matter whether it matches
+        # the default value of selected_bar before anything is clicked.
+        last_changed_bar = [0]
+
+    # Write the plot to streamlit, and store the details of the last
+    # bar that was clicked:
+    selected_bar = plotly_events(fig, click_event=True, key='test')
+
+    # When the script is re-run, this value of selected bar doesn't
+    # change. So if the script is re-run for another reason such as
+    # a streamlit input widget being changed, then the selected bar
+    # is remembered and it looks indistinguishable from the user
+    # clicking the bar again. To make sure we only make updates if
+    # the user actually clicked the bar, compare the current returned
+    # bar details with the details of the last bar *before* it was
+    # changed.
+    # When moved to or from the highlighted list, the bar is drawn
+    # as part of a different trace and so its details such as
+    # curveNumber change.
+    # When the user clicks on the same bar twice in a row, we do want
+    # the bar to change. For example, a non-highlighted bar might have
+    # curveNumber=0, then when clicked changes to curveNumber=1.
+    # When clicked again, the last_changed_bar has curveNumber=0,
+    # but selected_bar has curveNumber=1. The bar details have changed
+    # and so the following loop still happens despite x and y being
+    # the same.
+
+    if selected_bar != last_changed_bar:
+        # If the selected bar doesn't match the last changed bar,
+        # then we need to update the graph and store the latest
+        # clicked bar.
+        try:
+            # If a bar has been clicked, then the following line
+            # will not throw up an IndexError:
+            rank_selected = selected_bar[0]['x']
+            # Find which team this is:
+            team_selected = sorted_results['Stroke team'].loc[
+                sorted_results['Sorted rank'] == rank_selected].values[0]
+            # Copy the current highlighted teams list
+            highlighted_teams_list_updated = \
+                st.session_state['highlighted_teams']
+            # Check if the newly-selected team is already in the list.
+            if team_selected in highlighted_teams_list_updated:
+                # Remove this team from the list.
+                highlighted_teams_list_updated.remove(team_selected)
+            else:
+                # Add the newly-selected team to the list.
+                highlighted_teams_list_updated.append(team_selected)
+            # Add this new list to the session state so that
+            # streamlit can access it immediately on the next re-run.
+            st.session_state['highlighted_teams_with_click'] = \
+                highlighted_teams_list_updated
+
+            # Keep a copy of the bar that we've just changed,
+            # and put it in the session state so that we can still
+            # access it once the script is re-run:
+            st.session_state['last_changed_bar'] = selected_bar.copy()
+
+            # Re-run the script to get immediate feedback in the
+            # multiselect input widget and the graph colours:
+            st.experimental_rerun()
+
+        except IndexError:
+            # Nothing has been clicked yet, so don't change anything.
+            pass
 
     return selected_bar, highlighted_teams_colours
 
