@@ -1054,8 +1054,9 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, hb_team_list, sorted_
     fig['layout']['yaxis']['autorange'] = 'reversed'
 
     # Increase margin size:
-    fig.update_layout(
-        margin=dict(l=50))#, r=20, t=20, b=20),
+    # fig.update_layout(
+    #     margin=dict(l=50))#, r=20, t=20, b=20),
+    fig.update_yaxes(automargin=True)
 
     # Write to streamlit:
     # st.plotly_chart(fig, use_container_width=True)
