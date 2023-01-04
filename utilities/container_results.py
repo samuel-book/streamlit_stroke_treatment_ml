@@ -36,7 +36,21 @@ def main(sorted_results,
 
     plot_sorted_probs(sorted_results)
 
-    
+    # Move this to its own container 
+    base_values=0.2995270168908044
+
+    st.markdown('### Probability waterfalls')
+    st.markdown(''.join([
+        'We can look at how the model decides on the probability ',
+        'of thrombolysis. Before the model looks at any of the ',
+        'patient\'s details, the patient starts with a base probability ',
+        f'of {100.0*base_values:.2f}%. ',
+        'The model then looks at the value of each feature of the patient ',
+        'in turn, and adjusts this probability upwards or downwards.'
+    ]))
+    st.markdown(''.join([
+        'The process can be visualised as a waterfall plot.'
+    ]))
     # Get big SHAP probability grid:
     grid, grid_cat_sorted, stroke_team_2d, headers = make_heat_grids(
         headers_X, sorted_results['Stroke team'], sorted_results['Index'],
@@ -59,18 +73,30 @@ def main(sorted_results,
             sorted_results['HB team'],
             base_values=0.2995270168908044
             )
-    plot_combo_waterfalls(df_waterfalls, sorted_results)
 
-    # Write statistics:
-    write_feature_means_stds(grid_cat_sorted, headers)
+    tabs_waterfall = st.tabs(['Max/min/median teams', 'Highlighted teams', 'All teams'])
+    with tabs_waterfall[2]:
+        plot_combo_waterfalls(df_waterfalls, sorted_results)
 
-    # print_changes_info(grid_cat_sorted, headers, stroke_team_2d)
+        # Write statistics:
+        write_feature_means_stds(grid_cat_sorted, headers)
 
+        # print_changes_info(grid_cat_sorted, headers, stroke_team_2d)
 
-    with st.expander('SHAP for max, middle, min'):
+    waterfall_explanation_str = ''.join([
+            'The features are ordered from largest negative effect on ',
+            'probability to largest positive effect. ',
+            'The 9 largest features are shown individually and the rest ',
+            'are condensed into the "132 other features" bar. ',
+            'This bar mostly contains the effect of the patient _not_ ',
+            'attending the other stroke teams.'
+        ])
+
+    with tabs_waterfall[0]:
+        st.markdown(waterfall_explanation_str)
         titles = [
             'Maximum probability',
-            'Middle probability',
+            'Median probability',
             'Minimum probability'
             ]
         for i_here, i in enumerate(indices_high_mid_low):
@@ -81,21 +107,27 @@ def main(sorted_results,
                 convert_explainer_01_to_noyes(sv)
 
             # Write to streamlit:
-            title = (
-                '## ' + titles[i_here] + ': \n ### Team ' +
-                sorted_results['Stroke team'].loc[i]
-            )
             sorted_rank = sorted_results['Sorted rank'].loc[i]
             # Final probability:
             final_prob = sorted_results['Probability'].loc[i]
+
+            title = '__' + titles[i_here] + ' of thrombolysis__'
+            team_info = (
+                'Team ' +
+                sorted_results['Stroke team'].loc[i] +
+                f' (Rank {sorted_rank} of {sorted_results.shape[0]})'
+            )
             st.markdown(title)
-            st.markdown(f'Rank: {sorted_rank} of {sorted_results.shape[0]}')
+            # st.markdown(team_info)
             # Plot:
-            plot_shap_waterfall(sv_to_display, final_prob)
+            plot_shap_waterfall(sv_to_display, final_prob, team_info)
 
     # Optional extra expander for highlights:
-    if len(indices_highlighted) > 0:
-        with st.expander('SHAP for highlighted teams'):
+    with tabs_waterfall[1]:
+        if len(indices_highlighted) < 1:
+            st.write('No teams are highlighted.')
+        else:
+            st.markdown(waterfall_explanation_str)
             for i_here, i in enumerate(indices_highlighted):
                 # Find the data:
                 sv = shap_values_probability_extended_highlighted[i_here]
@@ -106,13 +138,18 @@ def main(sorted_results,
                 final_prob = sorted_results['Probability'].loc[i]
 
                 # Write to streamlit:
-                title = '### Team ' + sorted_results['Stroke team'].loc[i]
+                # title = 'Team ' + sorted_results['Stroke team'].loc[i]
                 sorted_rank = sorted_results['Sorted rank'].loc[i]
-                st.markdown(title)
-                st.markdown(
-                    f'Rank: {sorted_rank} of {sorted_results.shape[0]}')
+                team_info = (
+                    'Team ' +
+                    sorted_results['Stroke team'].loc[i] +
+                    f' (Rank {sorted_rank} of {sorted_results.shape[0]})'
+                )
+                # st.markdown(team_info)
+                # st.markdown(
+                #     f'Rank: {sorted_rank} of {sorted_results.shape[0]}')
                 # Plot:
-                plot_shap_waterfall(sv_to_display, final_prob)
+                plot_shap_waterfall(sv_to_display, final_prob, team_info)
 
 
 def plot_sorted_probs(sorted_results):
@@ -168,7 +205,7 @@ def plot_sorted_probs(sorted_results):
         # title='Effect on probability by feature',
         xaxis_title=f'Rank out of {sorted_results.shape[0]} stroke teams',
         yaxis_title='Probability of giving patient thrombolysis',
-        legend_title='Highlighted team:'
+        legend_title='Highlighted team'
         )
 
     # Hover settings:
@@ -333,7 +370,7 @@ def plot_shap_waterfall_matplotlib(shap_values):
         # del fig
 
 
-def plot_shap_waterfall(shap_values, final_prob, n_to_show=9):
+def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
 
     # Make lists of all of the features:
     shap_probs = shap_values.values
@@ -506,7 +543,7 @@ def plot_shap_waterfall(shap_values, final_prob, n_to_show=9):
     # Set axis labels:
     fig.update_xaxes(title_text=' <br>Probability of thrombolysis (%)')
     fig.update_yaxes(title_text='Feature')
-    # fig.update_layout(title='Team name')
+    fig.update_layout(title=title)
 
     # Add start and end prob annotations:
     fig.add_annotation(
@@ -526,17 +563,6 @@ def plot_shap_waterfall(shap_values, final_prob, n_to_show=9):
         ax=0,  # Make arrow vertical - a = arrow, x = x-shift.
         ay=35,  # Make the arrow sit below the final bar
          )
-
-    # # Set aspect ratio:
-    # fig.update_yaxes(
-    #     scaleanchor='x',
-    #     scaleratio=4.0,
-    #     # constrain='domain'
-    # )
-    # Make the figure taller:
-    # fig.update_layout(height=750, width=750)
-
-    # fig.update_scenes(aspectratio_x=4.0)
 
     # Write to streamlit:
     st.plotly_chart(fig, use_container_width=True)
