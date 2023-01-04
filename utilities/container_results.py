@@ -45,7 +45,7 @@ def main(sorted_results,
         'Currently benchmark teams are marked with the world\'s tiniest ',
         'stars, but this will be changed to something easier to see.'
         ]))
-    selected_bar = plot_sorted_probs(sorted_results)
+    plot_sorted_probs(sorted_results)
 
     
     # Get big SHAP probability grid:
@@ -71,7 +71,7 @@ def main(sorted_results,
             base_values=0.2995270168908044
             )
     plot_combo_waterfalls(df_waterfalls, sorted_results['Stroke team'],
-                          indices_highlighted)
+                          sorted_results['HB team'], sorted_results)
 
     # Write statistics:
     write_feature_means_stds(grid_cat_sorted, headers)
@@ -159,21 +159,11 @@ def plot_sorted_probs(sorted_results):
                 results_here['Thrombolyse_str'],
                 results_here['Benchmark']
                 ], axis=-1),
-            # Add this text to the bar:
-            # text=results_here['Benchmark'],
             # Name for the legend:
             name=leg_entry,
             # Set bars colours:
             marker=dict(color=colour)
             ))
-
-    # # Update text at top of bars:
-    # fig.update_traces(
-    #     textfont_size=20,
-    #     textposition='outside',
-    #     cliponaxis=False,
-    #     # marker_line=dict(width=2, color='black')
-    #     )
 
     # Figure title:
     # Change axis:
@@ -224,7 +214,9 @@ def plot_sorted_probs(sorted_results):
     # st.plotly_chart(fig, use_container_width=True)
 
     # Clickable version:
-
+    # Write the plot to streamlit, and store the details of the last
+    # bar that was clicked:
+    selected_bar = plotly_events(fig, click_event=True, key='test')
     try:
         # Pull the details out of the last bar that was changed
         # (moved to or from the "highlighted" list due to being
@@ -234,11 +226,12 @@ def plot_sorted_probs(sorted_results):
         # Invent some nonsense. It doesn't matter whether it matches
         # the default value of selected_bar before anything is clicked.
         last_changed_bar = [0]
+    callback_bar(selected_bar, last_changed_bar, 'last_changed_bar', sorted_results)
+    # return selected_bar
 
-    # Write the plot to streamlit, and store the details of the last
-    # bar that was clicked:
-    selected_bar = plotly_events(fig, click_event=True, key='test')
 
+def callback_bar(selected_bar, last_changed_bar, last_changed_str, sorted_results):
+    """
     # When the script is re-run, this value of selected bar doesn't
     # change. So if the script is re-run for another reason such as
     # a streamlit input widget being changed, then the selected bar
@@ -257,7 +250,7 @@ def plot_sorted_probs(sorted_results):
     # but selected_bar has curveNumber=1. The bar details have changed
     # and so the following loop still happens despite x and y being
     # the same.
-
+    """
     if selected_bar != last_changed_bar:
         # If the selected bar doesn't match the last changed bar,
         # then we need to update the graph and store the latest
@@ -287,7 +280,7 @@ def plot_sorted_probs(sorted_results):
             # Keep a copy of the bar that we've just changed,
             # and put it in the session state so that we can still
             # access it once the script is re-run:
-            st.session_state['last_changed_bar'] = selected_bar.copy()
+            st.session_state[last_changed_str] = selected_bar.copy()
 
             # Re-run the script to get immediate feedback in the
             # multiselect input widget and the graph colours:
@@ -296,8 +289,6 @@ def plot_sorted_probs(sorted_results):
         except IndexError:
             # Nothing has been clicked yet, so don't change anything.
             pass
-
-    return selected_bar
 
 
 def plot_sorted_probs_matplotlib(sorted_results):
@@ -917,7 +908,7 @@ def make_waterfall_df(
     return df_waterfalls
 
 
-def plot_combo_waterfalls(df_waterfalls, stroke_team_list, indices_highlighted):
+def plot_combo_waterfalls(df_waterfalls, stroke_team_list, hb_team_list, sorted_results):
     """
     Add the elements to the chart in order so that the last thing
     added ends up on the top. Add the unhighlighted teams first,
@@ -928,23 +919,54 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, indices_highlighted):
     highlighted_teams_colours = st.session_state['highlighted_teams_colours']
 
     # Find the indices of the non-highlighted teams:
-    inds_order = list(set(np.arange(0, len(stroke_team_list))).difference(indices_highlighted))
-    # n_non_highlighted = len(inds_order)
-    inds_order += indices_highlighted
-    # Set up the colours of the lines to be plotted:
-    # colour_list = (
-    #     [highlighted_teams_colours['-']]*n_non_highlighted +
-    #     highlighted_teams_colours[1:]
-    # )
+    # inds_order = list(set(np.arange(0, len(stroke_team_list))).difference(indices_highlighted))
+
+    bench_str = 'Benchmark \U00002605'
+    plain_str = '-'
+
+    # Getting muddled with pandas indexing so switch to numpy:
+    # index_list = sorted_results['Index'].to_numpy()
+    hb_list = sorted_results['HB team'].to_numpy()
+    stroke_team_list = sorted_results['Stroke team'].to_numpy()
+
+    inds_plain = np.where(hb_list == plain_str)[0]
+    inds_bench = np.where(hb_list == bench_str)[0]
+    # inds_highlighted = np.where(
+    #     (hb_list != plain_str) & (hb_list != bench_str))[0]
+    
+    # # inds_plain = sorted_results['Index'].loc[sorted_results['HB team'] == plain_str].values
+    # # inds_bench = sorted_results['Index'].loc[sorted_results['HB team'] == bench_str].values
+    # # inds_order = np.concatenate((inds_plain, inds_bench))
+
+    # # inds_highlighted = sorted_results['Index'][~inds_order].values
+    highlighted_teams_input = st.session_state['highlighted_teams']#.copy()
+
+    # Do this way to retain order of input:
+    inds_highlighted = []
+    for team in highlighted_teams_input:
+        # ind_h = sorted_results['Index'].loc[sorted_results['Highlighted team'] == team].values[0]
+        ind_h = np.where(sorted_results['Highlighted team'].to_numpy() == team)[0][0]
+        inds_highlighted.append(ind_h)
+
+    # # hb_team_list = hb_team_list.to_numpy()
+    # # inds_plain = np.where(hb_team_list == plain_str)[0]
+    # # inds_bench = np.where(hb_team_list == bench_str)[0]
+    # # inds_highlighted = np.where(
+    # #     (hb_team_list != plain_str) & (hb_team_list != bench_str))[0]
+
+    inds_order = np.concatenate((inds_plain, inds_bench, inds_highlighted))
+    # st.write(inds_order)
 
     fig = go.Figure()
     drawn_blank_legend_line = 0
     drawn_bench_legend_line = 0
-    # Keep a list of the added data in order of zorder:
-    fig_data_list = []
     for i, ind in enumerate(inds_order):
+        # team = stroke_team_list.iloc[ind]
+        # team = stroke_team_list.loc[ind]
         team = stroke_team_list[ind]
+        # st.write('df', i, ind, team, index_list[i], index_list[ind], sorted_results['Sorted rank'].loc[i], sorted_results['Sorted rank'].loc[ind])
         df_team = df_waterfalls[df_waterfalls['Stroke team'] == team]
+        # st.write(df_team)
         if team == df_team['Highlighted team'].iloc[0]:
             leggy = True
             # colour = #None
@@ -983,15 +1005,6 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, indices_highlighted):
             name=df_team['HB team'].iloc[0],
             showlegend=leggy
             ))
-
-        # Update data list to put highlights with highest zorder:
-        if team == df_team['Highlighted team'].iloc[0]:
-            fig_data_list.append(fig.data[i])
-        else:
-            fig_data_list = [fig.data[i]] + fig_data_list
-
-    # Shuffle data into the wanted zorder:
-    fig.data = fig_data_list
 
     # Update x axis limits:
     xmin = df_waterfalls['Probabilities'].min() - 2
@@ -1039,4 +1052,82 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, indices_highlighted):
     fig['layout']['yaxis']['autorange'] = 'reversed'
 
     # Write to streamlit:
-    st.plotly_chart(fig, use_container_width=True)
+    # st.plotly_chart(fig, use_container_width=True)
+    # Clickable version:
+    # Write the plot to streamlit, and store the details of the last
+    # bar that was clicked:
+    selected_waterfall = plotly_events(fig, click_event=True, key='waterfall_combo')
+
+    try:
+        # Pull the details out of the last bar that was changed
+        # (moved to or from the "highlighted" list due to being
+        # clicked on) out of the session state:
+        last_changed_waterfall = st.session_state['last_changed_waterfall']
+    except KeyError:
+        # Invent some nonsense. It doesn't matter whether it matches
+        # the default value of selected_bar before anything is clicked.
+        last_changed_waterfall = [0]
+
+    callback_waterfall(selected_waterfall, last_changed_waterfall, 'last_changed_waterfall', inds_order, stroke_team_list)
+
+
+def callback_waterfall(selected_waterfall, last_changed_waterfall, last_changed_str, inds_order, stroke_team_list):
+    """
+    # When the script is re-run, this value of selected bar doesn't
+    # change. So if the script is re-run for another reason such as
+    # a streamlit input widget being changed, then the selected bar
+    # is remembered and it looks indistinguishable from the user
+    # clicking the bar again. To make sure we only make updates if
+    # the user actually clicked the bar, compare the current returned
+    # bar details with the details of the last bar *before* it was
+    # changed.
+    # When moved to or from the highlighted list, the bar is drawn
+    # as part of a different trace and so its details such as
+    # curveNumber change.
+    # When the user clicks on the same bar twice in a row, we do want
+    # the bar to change. For example, a non-highlighted bar might have
+    # curveNumber=0, then when clicked changes to curveNumber=1.
+    # When clicked again, the last_changed_waterfall has curveNumber=0,
+    # but selected_waterfall has curveNumber=1. The bar details have changed
+    # and so the following loop still happens despite x and y being
+    # the same.
+    """
+    if selected_waterfall != last_changed_waterfall:
+        # If the selected bar doesn't match the last changed bar,
+        # then we need to update the graph and store the latest
+        # clicked bar.
+        try:
+            # If a bar has been clicked, then the following line
+            # will not throw up an IndexError:
+            curve_selected = selected_waterfall[0]['curveNumber']
+            ind = inds_order[curve_selected]
+            # Find which team this is:
+            team_selected = stroke_team_list[ind]
+
+            # Copy the current highlighted teams list
+            highlighted_teams_list_updated = \
+                st.session_state['highlighted_teams']
+            # Check if the newly-selected team is already in the list.
+            if team_selected in highlighted_teams_list_updated:
+                # Remove this team from the list.
+                highlighted_teams_list_updated.remove(team_selected)
+            else:
+                # Add the newly-selected team to the list.
+                highlighted_teams_list_updated.append(team_selected)
+            # Add this new list to the session state so that
+            # streamlit can access it immediately on the next re-run.
+            st.session_state['highlighted_teams_with_click'] = \
+                highlighted_teams_list_updated
+
+            # Keep a copy of the bar that we've just changed,
+            # and put it in the session state so that we can still
+            # access it once the script is re-run:
+            st.session_state[last_changed_str] = selected_waterfall.copy()
+
+            # Re-run the script to get immediate feedback in the
+            # multiselect input widget and the graph colours:
+            st.experimental_rerun()
+
+        except IndexError:
+            # Nothing has been clicked yet, so don't change anything.
+            pass
