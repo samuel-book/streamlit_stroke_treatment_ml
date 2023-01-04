@@ -34,6 +34,36 @@ page_setup()
 
 # Title:
 st.markdown('# Interactive demo')
+st.markdown(''.join([
+    'To use this demo, '
+    'change the patient details in the left sidebar.'
+    ]))
+
+st.markdown(''.join([
+    # 'The line at 50% is the cut-off for thrombolysis. ',
+    'The model returns the probability of each team thrombolysing ',
+    'this patient. '
+    'Stroke teams with a probability below 50% are unlikely to ',
+    'thrombolyse the patient, and other teams are ',
+    'likely to thrombolyse. ',
+    'We record teams below 50% as :x: not thrombolysing this patient ',
+    'and other teams as :heavy_check_mark: thrombolysing this patient.'
+    ]))
+
+# Draw some empty containers on the page.
+# They'll appear in this order, but we'll fill them in another order.
+container_metrics = st.container()
+with container_metrics:
+    st.markdown(''.join([
+        '### How many stroke teams _would_ thrombolyse this patient?'
+        ]))
+
+container_team_probs = st.container()
+with container_team_probs:
+    st.markdown(''.join([
+        '### Probability of thrombolysis from each team'
+        ]))
+
 # # Draw a blue information box:
 # st.info(
 #     ':information_source: ' +
@@ -80,9 +110,15 @@ inds_benchmark = np.where(benchmark_rank_list <= 30)[0]
 bench_str = 'Benchmark \U00002605'
 plain_str = '-'
 
-# Pick teams to highlight on the bar chart:
-highlighted_teams_input = utilities.container_inputs.\
-    highlighted_teams(stroke_teams_list)
+# Receive the user inputs now and show this container now:
+with container_team_probs:
+    st.markdown(''.join([
+        'To highlight stroke teams on the following charts, ',
+        'select them in this box or click on them in the charts.'
+    ]))
+    # Pick teams to highlight on the bar chart:
+    highlighted_teams_input = utilities.container_inputs.\
+        highlighted_teams(stroke_teams_list)
 # Update the "Highlighted teams" column:
 # Label benchmarks:
 # table[np.where(table[:, 7] <= 30), 6] = 'Benchmark'
@@ -200,7 +236,13 @@ else:
 # ###########################
 # ######### RESULTS #########
 # ###########################
-st.header('Results')
+# st.header('Results')
+
+with container_metrics:
+    # Print metrics for how many teams would thrombolyse:
+    utilities.container_results.show_metrics_benchmarks(sorted_results)
+
+
 # Draw a plot in this function:
 utilities.container_results.main(
     sorted_results,

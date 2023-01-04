@@ -33,18 +33,7 @@ def main(sorted_results,
          shap_values_probability_extended_all,
          shap_values_probability_all
          ):
-    show_metrics_benchmarks(sorted_results)
 
-    # Info about the bar chart:
-    st.write(''.join([
-        'The line at 50% is the cut-off for thrombolysis. ',
-        'Stroke teams with a probability below the line will not ',
-        'thrombolyse the patient, and teams on or above the line will.'
-        ]))
-    st.write(''.join([
-        'Currently benchmark teams are marked with the world\'s tiniest ',
-        'stars, but this will be changed to something easier to see.'
-        ]))
     plot_sorted_probs(sorted_results)
 
     
@@ -70,8 +59,7 @@ def main(sorted_results,
             sorted_results['HB team'],
             base_values=0.2995270168908044
             )
-    plot_combo_waterfalls(df_waterfalls, sorted_results['Stroke team'],
-                          sorted_results['HB team'], sorted_results)
+    plot_combo_waterfalls(df_waterfalls, sorted_results)
 
     # Write statistics:
     write_feature_means_stds(grid_cat_sorted, headers)
@@ -208,6 +196,23 @@ def plot_sorted_probs(sorted_results):
 
     # Add horizontal line at prob=0.5, the decision to thrombolyse:
     fig.add_hline(y=50.0, line=dict(color='black'))
+    # Update y ticks to match this 50% line:
+    fig.update_layout(yaxis=dict(
+        tickmode='array',
+        tickvals=[0, 20, 40, 50, 60, 80, 100],
+        ))
+
+    # Reduce size of figure by adjusting margins:
+    fig.update_layout(
+        margin=dict(    
+            # l=50,
+            # r=50,
+            b=10,
+            t=20,
+            # pad=4
+        ),
+        height=250
+        )
 
     # Write to streamlit:
     # # Non-interactive version:
@@ -216,7 +221,8 @@ def plot_sorted_probs(sorted_results):
     # Clickable version:
     # Write the plot to streamlit, and store the details of the last
     # bar that was clicked:
-    selected_bar = plotly_events(fig, click_event=True, key='test')
+    selected_bar = plotly_events(fig, click_event=True, key='bars',
+        override_height=250)#, override_width='50%')
     try:
         # Pull the details out of the last bar that was changed
         # (moved to or from the "highlighted" list due to being
@@ -560,44 +566,48 @@ def show_metrics_benchmarks(sorted_results):
     perc_thrombolyse_benchmark = 100.0 * n_thrombolyse_benchmark / n_benchmark
     perc_thrombolyse_non_benchmark = (
         100.0 * n_thrombolyse_non_benchmark / n_non_benchmark)
-
+    
     cols = st.columns(3)
     with cols[0]:
         st.metric(
-            'All stroke teams',
+            f'All {n_all} teams',
             f'{perc_thrombolyse_all:.0f}%'
             )
         st.write(''.join([
-            f'{n_thrombolyse_all} of {n_all} ',
-            'stroke teams would thrombolyse.'
+            ':heavy_check_mark:' + f' {n_thrombolyse_all} teams '
+            ':x:' + f' {n_all - n_thrombolyse_all} teams'
             ]))
 
     with cols[1]:
         st.metric(
-            'Benchmark stroke teams',
+            f'{n_benchmark} Benchmark teams',
             f'{perc_thrombolyse_benchmark:.0f}%'
             )
         st.write(''.join([
-            f'{n_thrombolyse_benchmark} of {n_benchmark} ',
-            'stroke teams would thrombolyse.'
+            ':heavy_check_mark:' + f' {n_thrombolyse_benchmark} teams '
+            ':x:' + f' {n_benchmark - n_thrombolyse_benchmark} teams'
             ]))
+
 
     with cols[2]:
         st.metric(
-            'Non-benchmark stroke teams',
+            f'{n_non_benchmark} Non-benchmark teams',
             f'{perc_thrombolyse_non_benchmark:.0f}%'
             )
         st.write(''.join([
-            f'{n_thrombolyse_non_benchmark} of {n_non_benchmark} ',
-            'stroke teams would thrombolyse.'
+            ':heavy_check_mark:' + f' {n_thrombolyse_non_benchmark} teams '
+            ':x:' + f' {n_non_benchmark - n_thrombolyse_non_benchmark} teams'
             ]))
 
+
     # Write benchmark decision:
-    extra_str = '' if perc_thrombolyse_benchmark >= 50.0 else 'do not '
+    extra_str = '' if perc_thrombolyse_benchmark >= 50.0 else ' do not'
+    decision_emoji = ':heavy_check_mark:' if perc_thrombolyse_benchmark >= 50.0 else ':x:'
     st.markdown(''.join([
         '__Benchmark decision:__ ',
+        decision_emoji,
         extra_str,
-        'thrombolyse this patient.'
+        ' thrombolyse this patient.'
         ]))
 
 
@@ -908,7 +918,7 @@ def make_waterfall_df(
     return df_waterfalls
 
 
-def plot_combo_waterfalls(df_waterfalls, stroke_team_list, hb_team_list, sorted_results):
+def plot_combo_waterfalls(df_waterfalls, sorted_results):
     """
     Add the elements to the chart in order so that the last thing
     added ends up on the top. Add the unhighlighted teams first,
@@ -1017,7 +1027,7 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, hb_team_list, sorted_
 
     # Titles and labels:
     fig.update_layout(
-        title='Waterfalls for all stroke teams',
+        # title='Waterfalls for all stroke teams',
         xaxis_title='Probability of thrombolysis (%)',
         yaxis_title='Feature',
         legend_title='Highlighted team'
@@ -1044,7 +1054,7 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, hb_team_list, sorted_
     fig.update_layout(legend=dict(
         orientation='h',
         yanchor='top',
-        y=-0.2,
+        y=-0.1,
         xanchor="right",
         x=1
     ))
@@ -1058,6 +1068,17 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, hb_team_list, sorted_
     # Increase margin size:
     # fig.update_layout(
     #     margin=dict(l=50))#, r=20, t=20, b=20),
+    # Reduce size of figure by adjusting margins:
+    fig.update_layout(
+        margin=dict(    
+            # l=50,
+            # r=50,
+            b=10,
+            t=20,
+            # pad=4
+        ),
+        height=600
+        )
     fig.update_yaxes(automargin=True)
 
     # Write to streamlit:
@@ -1067,7 +1088,7 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, hb_team_list, sorted_
     # bar that was clicked:
     selected_waterfall = plotly_events(
         fig, click_event=True, key='waterfall_combo',
-        override_height=750, override_width='50%')
+        override_height=600, override_width='50%')
 
     try:
         # Pull the details out of the last bar that was changed

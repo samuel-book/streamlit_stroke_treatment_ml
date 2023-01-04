@@ -149,7 +149,7 @@ def highlighted_teams(stroke_teams_list):
         existing_teams = []
 
     highlighted_teams_input = st.multiselect(
-        'Pick some stroke teams to highlight',
+        'Stroke teams to highlight:',
         stroke_teams_list,
         # help='Pick up to 9 before the colours repeat.',
         key='highlighted_teams',
