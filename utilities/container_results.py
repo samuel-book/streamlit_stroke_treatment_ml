@@ -1096,7 +1096,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
     fig.update_layout(
         margin=dict(    
             # l=50,
-            r=200,
+            # r=200,
             b=80,
             t=20,
             # pad=4
@@ -1112,7 +1112,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
     # bar that was clicked:
     selected_waterfall = plotly_events(
         fig, click_event=True, key='waterfall_combo',
-        override_height=600, override_width='40%')
+        override_height=600)#, override_width='40%')
 
     try:
         # Pull the details out of the last bar that was changed
