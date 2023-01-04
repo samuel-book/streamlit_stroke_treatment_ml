@@ -213,6 +213,7 @@ def plot_sorted_probs(sorted_results):
         ),
         height=250
         )
+    fig.update_xaxes(automargin=True)
 
     # Write to streamlit:
     # # Non-interactive version:
