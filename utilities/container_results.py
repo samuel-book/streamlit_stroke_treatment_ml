@@ -1101,7 +1101,8 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
             t=20,
             # pad=4
         ),
-        height=600
+        height=600,
+        width=300
         )
     # fig.update_yaxes(automargin=True)
 
