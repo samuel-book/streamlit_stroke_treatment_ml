@@ -1051,17 +1051,14 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
     # Explicitly set hover mode (else Streamlit sets this to 'x')
     fig.update_layout(hovermode='closest')
 
-    # Move legend to bottom
-    fig.update_layout(legend=dict(
-        orientation='h',
-        yanchor='top',
-        y=-0.1,
-        xanchor="right",
-        x=1
-    ))
-
-    # # Make the figure taller:
-    # fig.update_layout(height=750)
+    # # Move legend to bottom
+    # fig.update_layout(legend=dict(
+    #     orientation='h',
+    #     yanchor='top',
+    #     y=-0.1,
+    #     xanchor="right",
+    #     x=1
+    # ))
 
     # Flip y-axis so bars are read from top to bottom.
     fig['layout']['yaxis']['autorange'] = 'reversed'
