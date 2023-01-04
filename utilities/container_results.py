@@ -1095,15 +1095,15 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
     # Reduce size of figure by adjusting margins:
     fig.update_layout(
         margin=dict(    
-            # l=50,
-            # r=200,
+            l=200,
+            r=200,
             b=80,
             t=20,
             # pad=4
         ),
         height=600
         )
-    fig.update_yaxes(automargin=True)
+    # fig.update_yaxes(automargin=True)
 
     # Write to streamlit:
     # st.plotly_chart(fig, use_container_width=True)
