@@ -954,7 +954,9 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, hb_team_list, sorted_
     # # inds_highlighted = np.where(
     # #     (hb_team_list != plain_str) & (hb_team_list != bench_str))[0]
 
-    inds_order = np.concatenate((inds_plain, inds_bench, inds_highlighted))
+    # Need the astype(int) as if any of the lists are empty,
+    # all of the elements will be converted to float.
+    inds_order = np.concatenate((inds_plain, inds_bench, inds_highlighted)).astype(int)
     # st.write(inds_order)
 
     fig = go.Figure()
