@@ -1095,7 +1095,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
     # Reduce size of figure by adjusting margins:
     fig.update_layout(
         margin=dict(
-            l=70,
+            l=150,
             r=150,
             b=80,
             t=20,
