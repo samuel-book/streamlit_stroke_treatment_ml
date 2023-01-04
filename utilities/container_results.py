@@ -207,13 +207,13 @@ def plot_sorted_probs(sorted_results):
         margin=dict(    
             # l=50,
             # r=50,
-            b=50,
+            b=80,
             t=20,
             # pad=4
         ),
         height=250
         )
-    fig.update_xaxes(automargin=True)
+    # fig.update_xaxes(automargin=True)
 
     # Write to streamlit:
     # # Non-interactive version:
