@@ -1052,6 +1052,15 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
     xmax = xmax if xmax > 100.0 else 100.0
     fig.update_xaxes(range=[xmin, xmax])
 
+    # # Move legend to bottom
+    # fig.update_layout(legend=dict(
+    #     orientation='v', #'h',
+    #     # yanchor='top',
+    #     # y=-0.1,
+    #     # xanchor="right",
+    #     # x=1
+    # ))
+
     # Titles and labels:
     fig.update_layout(
         # title='Waterfalls for all stroke teams',
@@ -1086,8 +1095,8 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
     # Reduce size of figure by adjusting margins:
     fig.update_layout(
         margin=dict(    
-            l=50,
-            r=300,
+            # l=50,
+            # r=300,
             b=80,
             t=20,
             # pad=4
@@ -1097,14 +1106,6 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
     # fig.update_yaxes(automargin=True)
 
 
-    # Move legend to bottom
-    fig.update_layout(legend=dict(
-        orientation='v', #'h',
-        # yanchor='top',
-        # y=-0.1,
-        # xanchor="right",
-        # x=1
-    ))
 
 
     # Write to streamlit:
@@ -1114,7 +1115,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
     # bar that was clicked:
     selected_waterfall = plotly_events(
         fig, click_event=True, key='waterfall_combo',
-        override_height=600)#, override_width='40%')
+        override_height=600, override_width='40%')
 
     try:
         # Pull the details out of the last bar that was changed
