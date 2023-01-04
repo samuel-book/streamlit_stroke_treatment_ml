@@ -1071,7 +1071,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
         margin=dict(    
             # l=50,
             # r=50,
-            b=50,
+            b=80,
             t=20,
             # pad=4
         ),
