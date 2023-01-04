@@ -1052,14 +1052,6 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
     xmax = xmax if xmax > 100.0 else 100.0
     fig.update_xaxes(range=[xmin, xmax])
 
-    # # Move legend to bottom
-    # fig.update_layout(legend=dict(
-    #     orientation='v', #'h',
-    #     # yanchor='top',
-    #     # y=-0.1,
-    #     # xanchor="right",
-    #     # x=1
-    # ))
 
     # Titles and labels:
     fig.update_layout(
@@ -1107,6 +1099,21 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
     fig.update_yaxes(automargin=True)
 
 
+    # Move legend to bottom
+    fig.update_layout(legend=dict(
+        orientation='v', #'h',
+        yanchor='top',
+        y=1,
+        xanchor='left',
+        x=1.03
+    ))
+    # fig.update_layout(legend=dict(
+    #     orientation='v', #'h',
+    #     yanchor='top',
+    #     y=-0.1,
+    #     xanchor="right",
+    #     x=1
+    # ))
 
     # Write to streamlit:
     # st.plotly_chart(fig, use_container_width=True)
