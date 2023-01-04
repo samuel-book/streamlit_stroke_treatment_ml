@@ -1053,6 +1053,10 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, hb_team_list, sorted_
     # Flip y-axis so bars are read from top to bottom.
     fig['layout']['yaxis']['autorange'] = 'reversed'
 
+    # Increase margin size:
+    fig.update_layout(
+        margin=dict(l=50))#, r=20, t=20, b=20),
+
     # Write to streamlit:
     # st.plotly_chart(fig, use_container_width=True)
     # Clickable version:
