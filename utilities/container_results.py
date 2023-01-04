@@ -207,7 +207,7 @@ def plot_sorted_probs(sorted_results):
         margin=dict(    
             # l=50,
             # r=50,
-            b=10,
+            b=20,
             t=20,
             # pad=4
         ),
