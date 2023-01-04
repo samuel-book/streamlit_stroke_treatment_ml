@@ -1037,6 +1037,8 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, hb_team_list, sorted_
             '<extra></extra>'
             )
         )
+    # Explicitly set hover mode (else Streamlit sets this to 'x')
+    fig.update_layout(hovermode='closest')
 
     # Move legend to bottom
     fig.update_layout(legend=dict(
