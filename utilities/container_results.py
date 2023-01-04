@@ -1058,7 +1058,9 @@ def plot_combo_waterfalls(df_waterfalls, stroke_team_list, hb_team_list, sorted_
     # Clickable version:
     # Write the plot to streamlit, and store the details of the last
     # bar that was clicked:
-    selected_waterfall = plotly_events(fig, click_event=True, key='waterfall_combo', override_height=750)
+    selected_waterfall = plotly_events(
+        fig, click_event=True, key='waterfall_combo',
+        override_height=750, override_width='80%')
 
     try:
         # Pull the details out of the last bar that was changed
