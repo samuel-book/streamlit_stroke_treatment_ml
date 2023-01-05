@@ -56,6 +56,11 @@ def main(sorted_results,
         headers_X, sorted_results['Stroke team'], sorted_results['Index'],
         shap_values_probability_all)
 
+    # These grids have teams in the same order as sorted_results.
+    # Pick out the subset of benchmark teams:
+    inds_bench = np.where(sorted_results['Benchmark rank'].to_numpy() <= 30)[0]
+    grid_cat_bench = grid_cat_sorted[:, inds_bench]
+
     # plot_heat_grid_full(grid)
     # plot_heat_grid_compressed(
     #     grid_cat_sorted, sorted_results['Stroke team'], headers,
@@ -64,7 +69,7 @@ def main(sorted_results,
     # plot_all_prob_shifts_for_all_features_and_teams(
     #     headers, grid_cat_sorted)
 
-    # Plot combo waterfalls:
+    # Make dataframe for combo waterfalls:
     df_waterfalls = make_waterfall_df(
             grid_cat_sorted,
             headers,
@@ -74,12 +79,54 @@ def main(sorted_results,
             base_values=0.2995270168908044
             )
 
-    tabs_waterfall = st.tabs(['Max/min/median teams', 'Highlighted teams', 'All teams'])
+    tabs_waterfall = st.tabs(
+        ['Max/min/median teams', 'Highlighted teams', 'All teams'])
     with tabs_waterfall[2]:
+        st.markdown(''.join([
+            'The following chart shows the waterfall charts for all ',
+            'teams. Instead of red and blue bars, each team has ',
+            'a series of scatter points connected by lines. ',
+            'The features are ordered with the most agreed on features ',
+            'at the top, and the ones with more variation lower down. '
+        ]))
         plot_combo_waterfalls(df_waterfalls, sorted_results)
 
         # Write statistics:
-        write_feature_means_stds(grid_cat_sorted, headers)
+        st.markdown('All teams: ')
+        inds_std = write_feature_means_stds(grid_cat_sorted, headers, return_inds=True)
+
+        def box_plot_of_prob_shifts(grid, grid_bench, headers, inds=[]):
+
+            # Sort data:
+            if len(inds) > 0:
+                grid = grid[inds_std, :]
+                grid_bench = grid_bench[inds_std, :]
+                headers = headers[inds_std]
+            # # Quick plot demo
+            # df = pd.DataFrame(
+            #     grid_cat_sorted.T,
+            #     # columns=headers
+            # )
+            # st.write(df)
+
+            # fig = px.box(grid_cat_sorted, y=0)#'Infarction')
+            fig = go.Figure()
+            # Use x instead of y argument for horizontal plot
+            plotly_colours = px.colors.qualitative.Plotly
+            plotly_colours.append('teal')
+            for i, column in enumerate(grid):
+                fig.add_trace(go.Box(x=grid[i], name=headers[i], line=dict(color=plotly_colours[i])))
+                fig.add_trace(go.Box(x=grid_bench[i], name=headers[i]+' Benchmark', line=dict(color=plotly_colours[i])))
+            # fig.update_yaxes()
+            # fig.add_trace(go.Box(x=headers))
+            # fig.add_trace(go.Box(x=x1))
+            # Write to streamlit:
+            st.plotly_chart(fig, use_container_width=True)
+
+        # box_plot_of_prob_shifts(grid_cat_sorted, headers, inds_std)
+        st.markdown('Benchmark teams: ')
+        write_feature_means_stds(grid_cat_bench, headers, inds=inds_std)
+        box_plot_of_prob_shifts(grid_cat_sorted, grid_cat_bench, headers, inds_std)
 
         # print_changes_info(grid_cat_sorted, headers, stroke_team_2d)
 
@@ -204,7 +251,7 @@ def plot_sorted_probs(sorted_results):
     fig.update_layout(
         # title='Effect on probability by feature',
         xaxis_title=f'Rank out of {sorted_results.shape[0]} stroke teams',
-        yaxis_title='Probability of giving patient thrombolysis',
+        yaxis_title='Probability of giving<br>thrombolysis',
         legend_title='Highlighted team'
         )
 
@@ -836,7 +883,7 @@ def plot_all_prob_shifts_for_all_features_and_teams(
     st.plotly_chart(fig, use_container_width=True)
 
 
-def write_feature_means_stds(grid_cat_sorted, headers):
+def write_feature_means_stds(grid_cat_sorted, headers, inds=[], return_inds=False):
 
     # Round the values now to save mucking about with df formatting.
     std_list = np.std(grid_cat_sorted, axis=1)
@@ -847,10 +894,13 @@ def write_feature_means_stds(grid_cat_sorted, headers):
     # Find each team where this is max?
 
     lists = [headers, ave_list, std_list, max_list, min_list]
-    # Sort from lowest to highest standard deviation:
-    # (sorting in pandas also sorts the index column. This will look
-    # confusing.)
-    inds_std = np.argsort(std_list)
+    if len(inds) > 0:
+        inds_std = inds
+    else:
+        # Sort from lowest to highest standard deviation:
+        # (sorting in pandas also sorts the index column. This will look
+        # confusing.)
+        inds_std = np.argsort(std_list)
     for i, data in enumerate(lists):
         lists[i] = data[inds_std]
 
@@ -879,6 +929,10 @@ def write_feature_means_stds(grid_cat_sorted, headers):
         'Smallest shift (%)': f
     }
     st.dataframe(df.style.format(style_dict))
+
+
+    if return_inds == True:
+        return inds_std
 
 
 def make_waterfall_df(
