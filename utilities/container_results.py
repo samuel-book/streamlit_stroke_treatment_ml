@@ -60,6 +60,8 @@ def main(sorted_results,
     # Pick out the subset of benchmark teams:
     inds_bench = np.where(sorted_results['Benchmark rank'].to_numpy() <= 30)[0]
     grid_cat_bench = grid_cat_sorted[:, inds_bench]
+    grid_cat_nonbench = grid_cat_sorted[:, ~inds_bench]
+
 
     # plot_heat_grid_full(grid)
     # plot_heat_grid_compressed(
@@ -70,7 +72,7 @@ def main(sorted_results,
     #     headers, grid_cat_sorted)
 
     # Make dataframe for combo waterfalls:
-    df_waterfalls = make_waterfall_df(
+    df_waterfalls, final_probs = make_waterfall_df(
             grid_cat_sorted,
             headers,
             sorted_results['Stroke team'],
@@ -89,44 +91,17 @@ def main(sorted_results,
             'The features are ordered with the most agreed on features ',
             'at the top, and the ones with more variation lower down. '
         ]))
-        plot_combo_waterfalls(df_waterfalls, sorted_results)
+        plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs)
 
         # Write statistics:
         st.markdown('All teams: ')
         inds_std = write_feature_means_stds(grid_cat_sorted, headers, return_inds=True)
 
-        def box_plot_of_prob_shifts(grid, grid_bench, headers, inds=[]):
-
-            # Sort data:
-            if len(inds) > 0:
-                grid = grid[inds_std, :]
-                grid_bench = grid_bench[inds_std, :]
-                headers = headers[inds_std]
-            # # Quick plot demo
-            # df = pd.DataFrame(
-            #     grid_cat_sorted.T,
-            #     # columns=headers
-            # )
-            # st.write(df)
-
-            # fig = px.box(grid_cat_sorted, y=0)#'Infarction')
-            fig = go.Figure()
-            # Use x instead of y argument for horizontal plot
-            plotly_colours = px.colors.qualitative.Plotly
-            plotly_colours.append('teal')
-            for i, column in enumerate(grid):
-                fig.add_trace(go.Box(x=grid[i], name=headers[i], line=dict(color=plotly_colours[i])))
-                fig.add_trace(go.Box(x=grid_bench[i], name=headers[i]+' Benchmark', line=dict(color=plotly_colours[i])))
-            # fig.update_yaxes()
-            # fig.add_trace(go.Box(x=headers))
-            # fig.add_trace(go.Box(x=x1))
-            # Write to streamlit:
-            st.plotly_chart(fig, use_container_width=True)
-
-        # box_plot_of_prob_shifts(grid_cat_sorted, headers, inds_std)
         st.markdown('Benchmark teams: ')
         write_feature_means_stds(grid_cat_bench, headers, inds=inds_std)
-        box_plot_of_prob_shifts(grid_cat_sorted, grid_cat_bench, headers, inds_std)
+
+        # Box plot:
+        box_plot_of_prob_shifts(grid_cat_nonbench, grid_cat_bench, headers, inds_std)
 
         # print_changes_info(grid_cat_sorted, headers, stroke_team_2d)
 
@@ -169,7 +144,7 @@ def main(sorted_results,
             # Plot:
             plot_shap_waterfall(sv_to_display, final_prob, team_info)
 
-    # Optional extra expander for highlights:
+    # Highlighted teams
     with tabs_waterfall[1]:
         if len(indices_highlighted) < 1:
             st.write('No teams are highlighted.')
@@ -229,7 +204,7 @@ def plot_sorted_probs(sorted_results):
             customdata=np.stack([
                 results_here['Stroke team'],
                 results_here['Thrombolyse_str'],
-                results_here['Benchmark']
+                # results_here['Benchmark']
                 ], axis=-1),
             # Name for the legend:
             name=leg_entry,
@@ -996,10 +971,10 @@ def make_waterfall_df(
     df_waterfalls['Features'] = column_features
     df_waterfalls['Highlighted team'] = column_highlighted_teams
     df_waterfalls['HB team'] = column_hb_teams
-    return df_waterfalls
+    return df_waterfalls, final_probs_list
 
 
-def plot_combo_waterfalls(df_waterfalls, sorted_results):
+def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
     """
     Add the elements to the chart in order so that the last thing
     added ends up on the top. Add the unhighlighted teams first,
@@ -1050,6 +1025,13 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
     inds_order = np.concatenate((inds_plain, inds_bench, inds_highlighted)).astype(int)
     # st.write(inds_order)
 
+    
+    y_vals = np.arange(len(set(df_waterfalls['Features']))+1) # for features + final prob
+
+    # # Generate random jitter values for the final probability row
+    y_jigg = make_pretty_jitter_offsets(final_probs)
+
+
     fig = go.Figure()
     drawn_blank_legend_line = 0
     drawn_bench_legend_line = 0
@@ -1083,9 +1065,10 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
             width = 1.0
         colour = highlighted_teams_colours[df_team['HB team'].iloc[0]]
 
+        # Draw the waterfall
         fig.add_trace(go.Scatter(
             x=df_team['Probabilities'],
-            y=df_team['Features'],
+            y=y_vals, #df_team['Features'],
             mode='lines+markers',
             line=dict(width=width, color=colour), opacity=opacity,
             # c=df_waterfalls['Stroke team'],
@@ -1098,6 +1081,45 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
             name=df_team['HB team'].iloc[0],
             showlegend=leggy
             ))
+        
+        # Draw an extra marker for the final probability.
+        show_legend_dot = False if i < len(inds_order)-1 else True
+        df_short = df_team.iloc[-1]
+        fig.add_trace(go.Scatter(
+            x=[df_short['Probabilities']],
+            y=[y_vals[-1]+y_jigg[ind]], #df_team['Features'],
+            mode='markers',
+            # line=dict(width=width, color=colour), 
+            # opacity=opacity,
+            marker=dict(color=colour, size=2),
+            # c=df_waterfalls['Stroke team'],
+            customdata=np.stack((
+                [df_short['Stroke team']],
+                ['N/A'],
+                [df_short['Prob final']],
+                [df_short['Sorted rank']]
+                ), axis=-1),
+            name='Final Probability', #df_short['HB team'],
+            showlegend=show_legend_dot
+            ))
+        # st.write(df_short['Probabilities'], y_jigg[ind], colour, df_short['HB team'])
+
+
+        
+    # fig.add_trace(go.Scatter(x=[10, 30], y=[9, 8.8], mode='lines+markers'))
+
+    # # Add a box plot of the final probability values.
+    # fig.add_trace(go.Box(
+    #     x=final_probs,
+    #     y=[y_vals[-1]],
+    #     name='Final probability',
+    #     boxpoints='all', # can also be outliers, or suspectedoutliers, or False
+    #     jitter=1.0, # add some jitter for a better separation between points
+    #     pointpos=0, # relative position of points wrt box
+    #     line=dict(color='rgba(0,0,0,0)'),  # Set box and whisker outline to invisible
+    #     fillcolor='rgba(0,0,0,0)',  # Set box and whisker fill to invisible
+    #     marker=dict(color='black', size=2)
+    #     ))
 
     # Update x axis limits:
     xmin = df_waterfalls['Probabilities'].min() - 2
@@ -1114,8 +1136,15 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
         yaxis_title='Feature',
         legend_title='Highlighted team'
         )
+    fig.update_layout(
+        yaxis = dict(
+            tickmode='array',
+            tickvals=np.append(y_vals, 'Final probability'),
+            ticktext=np.append(df_team['Features'], 'Final probability')
+        )
+    )
 
-    # Update the hover text:
+    # Update the hover text for the lines:
     fig.update_traces(
         hovertemplate=(
             'Stroke team: %{customdata[0]}' +
@@ -1128,6 +1157,19 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
             f'{len(stroke_team_list)}' + ' teams' +
             '<extra></extra>'
             )
+        )
+    # Update the hover text for the final probabilities:
+    fig.update_traces(
+        hovertemplate=(
+            'Stroke team: %{customdata[0]}' +
+            '<br>' +
+            'Final probability: %{customdata[2]:>.2f}%' +
+            '<br>' +
+            'Rank: %{customdata[3]} of ' +
+            f'{len(stroke_team_list)}' + ' teams' +
+            '<extra></extra>'
+            ),
+        selector={'name':'Final Probability'}
         )
     # Explicitly set hover mode (else Streamlit sets this to 'x')
     fig.update_layout(hovermode='closest')
@@ -1153,7 +1195,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
     fig.update_yaxes(automargin=True)
 
 
-    # Move legend to bottom
+    # Move legend to side
     fig.update_layout(legend=dict(
         orientation='v', #'h',
         yanchor='top',
@@ -1168,6 +1210,8 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results):
     #     xanchor="right",
     #     x=1
     # ))
+
+
 
     # Write to streamlit:
     # st.plotly_chart(fig, use_container_width=True)
@@ -1251,3 +1295,152 @@ def callback_waterfall(selected_waterfall, last_changed_waterfall, last_changed_
         except IndexError:
             # Nothing has been clicked yet, so don't change anything.
             pass
+
+
+def box_plot_of_prob_shifts(grid, grid_bench, headers, inds=[]):
+
+    # Sort data:
+    if len(inds) > 0:
+        grid = grid[inds, :]
+        grid_bench = grid_bench[inds, :]
+        headers = headers[inds]
+    # # Quick plot demo
+    # df = pd.DataFrame(
+    #     grid_cat_sorted.T,
+    #     # columns=headers
+    # )
+    # st.write(df)
+
+    # fig = px.box(grid_cat_sorted, y=0)#'Infarction')
+    fig = go.Figure()
+    # Use x instead of y argument for horizontal plot
+    plotly_colours = px.colors.qualitative.Plotly
+    plotly_colours.append('teal')
+    for i, column in enumerate(grid):
+        fig.add_trace(go.Box(x=grid[i], name=headers[i]+' not Benchmark', line=dict(color=plotly_colours[0]), boxpoints=False))
+        fig.add_trace(go.Box(x=grid_bench[i], name=headers[i]+' Benchmark', line=dict(color=plotly_colours[0]), boxpoints=False))
+
+    fig.update_layout(showlegend=False)
+    fig.update_layout(height=750)
+
+    # Flip y-axis so boxes are read from top to bottom.
+    fig['layout']['yaxis']['autorange'] = 'reversed'
+
+
+    # Hover settings:
+    # Make it so cursor can hover over any x value to show the
+    # label of the survival line for (x,y), rather than needing to
+    # hover directly over the line:
+    fig.update_layout(hovermode='y')
+    # # Update the information that appears on hover:
+    fig.update_traces(
+        hovertemplate=(
+            '%{y:.2f}'
+            # # Stroke team:
+            # '%{customdata[0]}' +
+            # '<br>' +
+            # # Probability to two decimal places:
+            # '%{y:>.2f}%' +
+            # '<br>' +
+            # # Yes/no whether to thrombolyse:
+            # 'Thrombolysis: %{customdata[1]}' +
+            # '<br>' +
+            # # Yes/no whether it's a benchmark team:
+            # '%{customdata[2]}'
+            # '<extra></extra>'
+            )
+        )
+
+    # st.write(fig.data[0].hovertemplate)
+
+    # Write to streamlit:
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def make_pretty_jitter_offsets(final_probs):
+    # Coordinates of all points:
+    all_coords = np.transpose(
+        np.vstack((final_probs, np.zeros_like(final_probs))))
+    # Minimum distance between points:
+    d_min = 1.0  # % in x axis
+    # # Weight the jitter by distance from the nearest point.
+    # # (assuming that final_probs is sorted)
+    diff_x = np.append(0.0, np.abs(np.diff(final_probs)))
+    inds_close = np.where(diff_x < d_min)[0]
+    # Store the jiggled y-values in here:
+    y_jigg = []
+    jigg_dir = 1
+
+    for ind in range(len(final_probs)):
+        # st.write('ind', ind)
+        if ind in inds_close:
+            # Find all inds within d_min in x of this point.
+            x_here = all_coords[ind][0]
+            y_here = all_coords[ind][1]
+            x_max = x_here + d_min
+            inds_close_here = np.where((final_probs >= x_here) & (final_probs < x_max))[0]
+            # Remove itself from this list:
+            ind_here = np.where(inds_close_here == ind)
+            inds_close_here = np.delete(inds_close_here, ind_here)
+
+            # st.write(x_here)#, y_here, x_max, inds_close_here)
+            # if len(inds_close_here) == 0:
+            #     y_jigg.append(0)
+            # else:
+            # Work out how much to jiggle this value in y 
+            # st.write('While loop:')
+            # count = 0
+            # Find current distance between this point and
+            # the other close points.
+            coords_nearby_list = np.copy(all_coords)[inds_close_here]
+            inds_still_close_here = np.copy(inds_close_here)
+            count = 0
+            
+            if len(inds_still_close_here) < 1:
+                success = 1
+            else:
+                success = 0
+            while success < 1:
+                # st.write('    ', len(inds_close_here), inds_close_here)
+
+                dist_list = np.sqrt(
+                    (coords_nearby_list[:, 0] - x_here)**2.0 + 
+                    (coords_nearby_list[:, 1] - y_here)**2.0
+                )
+                ind_nearest = np.where(dist_list == np.min(dist_list))
+                coords_nearest = coords_nearby_list[ind_nearest]
+                x_next = coords_nearest[0][0]
+                # Find out current difference between this point and
+                # next nearest in x:
+                # x_next = coords_nearby_list[-2, 0]
+                x_diff = x_here - x_next
+                # st.write('xdiff', x_diff)
+                y_here += jigg_dir * np.sqrt(d_min**2.0 - x_diff**2.0)
+                # y_here = jigg_dir * count * d_min*0.1
+                # st.write(dist_list)
+                # st.write(dist_list[0, :])
+                inds_still_close_here = np.where(dist_list <= d_min)[0]
+                # st.write(inds_close_here)
+                # count += 1
+                if len(inds_still_close_here) < 1:
+                    success = 1
+                elif count > 100:
+                    # Looping for too long. Bow out now.
+                    success = 1
+
+            all_coords[ind][1] = y_here
+            # Set the next point to be moved to move in the other direction.
+            jigg_dir *= -1
+        else:
+            y_here = 0
+        # Add the y value to the list:
+        y_jigg.append(y_here)
+        # st.write('y_here', y_here)
+        # st.text(y_here)
+        # st.text(type(y_here))
+
+    # Squash y_jigg down into a smaller y space:
+    # y_jigg = np.array(y_jigg) * 0.6*(y_vals[-1] / 100.0)
+    y_jigg = 0.6 * np.array(y_jigg) / np.max(np.abs(y_jigg))
+
+    return y_jigg

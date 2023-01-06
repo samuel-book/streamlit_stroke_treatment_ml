@@ -143,36 +143,6 @@ for team in highlighted_teams_input:
 
 st.session_state['hb_teams_input'] = hb_teams_input
 
-# highlighted_teams_list = highlighted_teams_list
-# # If just need yes/no, the following works.
-# # It doesn't return indices in the same order as Highlighted_teams.
-# bool_Highlighteds = np.in1d(stroke_teams_list, Highlighted_teams)
-# table[:, 6][bool_Highlighteds] = 'Yes'
-
-# # Mark the benchmarks in the highlighted names. Add a star.
-# # Star: '\U00002605'
-# hb_teams_list = np.copy(highlighted_teams_list)
-# hb_teams_list[inds_benchmark] = '\U00002605 ' + hb_teams_list[inds_benchmark]
-
-# inds_benchmark_not_highlighted = np.where(hb_teams_list == '\U00002605 -')
-# hb_teams_list[inds_benchmark_not_highlighted] = bench_str
-
-# # Remove repeats:
-# highlighted_teams_input_extras = [plain_str, bench_str] + highlighted_teams_input #np.unique(hb_teams_list)
-# st.write(highlighted_teams_input_extras)
-# ind_bench_str = np.where(highlighted_teams_input_extras == bench_str)[0][0]
-# ind_plain_str = np.where(highlighted_teams_input_extras == plain_str)[0][0]
-# inds_hite = sorted([ind_bench_str, ind_plain_str])
-# inds_other = []
-# ind_prev = 0
-# for ind in inds_hite + [len(highlighted_teams_input_extras)]:
-#     inds_other += range(ind_prev, ind)
-#     ind_prev = ind + 1
-# inds_hite += inds_other[::-1]
-# highlighted_teams_input_extras = highlighted_teams_input_extras[inds_hite]
-# st.session_state['highlighted_teams_extras'] = highlighted_teams_input_extras
-
-
 # Find colour lists for plotting (saved to session state):
 remove_old_colours_for_highlights(hb_teams_input)
 choose_colours_for_highlights(hb_teams_input)
@@ -196,14 +166,6 @@ index_low = sorted_results.iloc[-1]['Index']
 indices_high_mid_low = [index_high, index_mid, index_low]
 
 # Get indices of highlighted teams:
-# --- These ways are faster...
-# (attempted a Pandas-esque way to do this
-# but it looks worse than numpy where)
-# indices_highlighted = sorted_results['Index'].loc[
-#     ~sorted_results['Highlighted team'].str.contains('-')]
-# indices_highlighted = sorted_results[
-#     sorted_results['Highlighted team'].isin(highlighted_teams_input)]
-# --- but this way retains the order that highlighted teams were added:
 indices_highlighted = []
 for team in hb_teams_input:
     if '-' not in team and 'Benchmark' not in team:

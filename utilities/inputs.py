@@ -88,7 +88,7 @@ def build_dataframe_from_inputs(dict, stroke_teams_list):
         'Precise onset time',
         'Prior disability level',
         'Stroke team',
-        'Use of AF anticoagulents',
+        'Use of AF anticoagulants',
         'Onset-to-arrival time',
         'Onset during sleep',
         'Age'

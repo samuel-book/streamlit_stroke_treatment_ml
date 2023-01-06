@@ -95,11 +95,11 @@ def user_inputs():
     onset_time_precise_input = 1 \
         if onset_time_precise_input_str == 'Yes' else 0
 
-    # Use of AF anticoagulents
+    # Use of AF anticoagulants
     # String input for user friendliness.
     # We convert to integer for use with the model.
     anticoag_input_str = st.radio(
-        'AF Anticoagulents',
+        'AF Anticoagulants',
         options=['Yes', 'No'],
         index=1,
         horizontal=True,
