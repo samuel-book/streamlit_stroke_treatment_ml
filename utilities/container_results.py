@@ -59,8 +59,10 @@ def main(sorted_results,
     # These grids have teams in the same order as sorted_results.
     # Pick out the subset of benchmark teams:
     inds_bench = np.where(sorted_results['Benchmark rank'].to_numpy() <= 30)[0]
+    inds_nonbench = np.where(sorted_results['Benchmark rank'].to_numpy() > 30)[0]
+
     grid_cat_bench = grid_cat_sorted[:, inds_bench]
-    grid_cat_nonbench = grid_cat_sorted[:, ~inds_bench]
+    grid_cat_nonbench = grid_cat_sorted[:, inds_nonbench]
 
 
     # plot_heat_grid_full(grid)
@@ -82,7 +84,7 @@ def main(sorted_results,
             )
 
     tabs_waterfall = st.tabs(
-        ['Max/min/median teams', 'Highlighted teams', 'All teams'])
+        ['Max/min/median teams', 'Highlighted teams', 'All teams', 'Shifts for highlighted teams'])
     with tabs_waterfall[2]:
         st.markdown(''.join([
             'The following chart shows the waterfall charts for all ',
@@ -93,15 +95,22 @@ def main(sorted_results,
         ]))
         plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs)
 
-        # Write statistics:
-        st.markdown('All teams: ')
-        inds_std = write_feature_means_stds(grid_cat_sorted, headers, return_inds=True)
+    with tabs_waterfall[3]:
+        # # Write statistics:
+        # st.markdown('All teams: ')
+        # inds_std = write_feature_means_stds(grid_cat_sorted, headers, return_inds=True)
 
-        st.markdown('Benchmark teams: ')
-        write_feature_means_stds(grid_cat_bench, headers, inds=inds_std)
+        # st.markdown('Benchmark teams: ')
+        # # write_feature_means_stds(grid_cat_bench, headers, inds=inds_std)
 
+        # Round the values now to save mucking about with df formatting.
+        std_list = np.std(grid_cat_sorted, axis=1)
+        # Sort from lowest to highest standard deviation:
+        # (sorting in pandas also sorts the index column. This will look
+        # confusing.)
+        inds_std = np.argsort(std_list)
         # Box plot:
-        box_plot_of_prob_shifts(grid_cat_nonbench, grid_cat_bench, headers, inds_std)
+        box_plot_of_prob_shifts(grid_cat_sorted, grid_cat_bench, grid_cat_nonbench, headers, sorted_results, inds_std)
 
         # print_changes_info(grid_cat_sorted, headers, stroke_team_2d)
 
@@ -905,7 +914,6 @@ def write_feature_means_stds(grid_cat_sorted, headers, inds=[], return_inds=Fals
     }
     st.dataframe(df.style.format(style_dict))
 
-
     if return_inds == True:
         return inds_std
 
@@ -1026,10 +1034,12 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
     # st.write(inds_order)
 
     
-    y_vals = np.arange(len(set(df_waterfalls['Features']))+1) # for features + final prob
+    y_vals = np.arange(len(set(df_waterfalls['Features']))+1)*0.5 # for features + final prob
 
-    # # Generate random jitter values for the final probability row
-    y_jigg = make_pretty_jitter_offsets(final_probs)
+    pretty_jitter = True
+    if pretty_jitter == True:
+        # # Generate random jitter values for the final probability row
+        y_jigg = make_pretty_jitter_offsets(final_probs)
 
 
     fig = go.Figure()
@@ -1081,44 +1091,85 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
             name=df_team['HB team'].iloc[0],
             showlegend=leggy
             ))
-        
-        # Draw an extra marker for the final probability.
-        show_legend_dot = False if i < len(inds_order)-1 else True
-        df_short = df_team.iloc[-1]
-        fig.add_trace(go.Scatter(
-            x=[df_short['Probabilities']],
-            y=[y_vals[-1]+y_jigg[ind]], #df_team['Features'],
-            mode='markers',
-            # line=dict(width=width, color=colour), 
-            # opacity=opacity,
-            marker=dict(color=colour, size=2),
-            # c=df_waterfalls['Stroke team'],
-            customdata=np.stack((
-                [df_short['Stroke team']],
-                ['N/A'],
-                [df_short['Prob final']],
-                [df_short['Sorted rank']]
-                ), axis=-1),
-            name='Final Probability', #df_short['HB team'],
-            showlegend=show_legend_dot
-            ))
-        # st.write(df_short['Probabilities'], y_jigg[ind], colour, df_short['HB team'])
+
+        if pretty_jitter == True:
+            # Draw an extra marker for the final probability.
+            show_legend_dot = False if i < len(inds_order)-1 else True
+            df_short = df_team.iloc[-1]
+            fig.add_trace(go.Scatter(
+                x=[df_short['Probabilities']],
+                y=[y_vals[-1]+y_jigg[ind]], #df_team['Features'],
+                mode='markers',
+                # line=dict(width=width, color=colour), 
+                # opacity=opacity,
+                marker=dict(color=colour, size=2),
+                # c=df_waterfalls['Stroke team'],
+                customdata=np.stack((
+                    [df_short['Stroke team']],
+                    # ['N/A'],
+                    [df_short['Prob final']],
+                    [df_short['Sorted rank']]
+                    ), axis=-1),
+                name='Final Probability', #df_short['HB team'],
+                showlegend=show_legend_dot
+                ))
+            # st.write(df_short['Probabilities'], y_jigg[ind], colour, df_short['HB team'])
 
 
-        
+            
     # fig.add_trace(go.Scatter(x=[10, 30], y=[9, 8.8], mode='lines+markers'))
 
     # # Add a box plot of the final probability values.
     # fig.add_trace(go.Box(
     #     x=final_probs,
-    #     y=[y_vals[-1]],
-    #     name='Final probability',
+    #     y0=y_vals[-1],
+    #     name='Final Probability',
     #     boxpoints='all', # can also be outliers, or suspectedoutliers, or False
     #     jitter=1.0, # add some jitter for a better separation between points
     #     pointpos=0, # relative position of points wrt box
     #     line=dict(color='rgba(0,0,0,0)'),  # Set box and whisker outline to invisible
     #     fillcolor='rgba(0,0,0,0)',  # Set box and whisker fill to invisible
-    #     marker=dict(color='black', size=2)
+    #     marker=dict(color='black', size=2),
+    #     customdata=np.stack((
+    #         sorted_results['Stroke team'],
+    #         # ['N/A'],
+    #         sorted_results['Probability']*100.0,
+    #         sorted_results['Sorted rank']
+    #         ), axis=-1),
+    #     ))
+    # Add a box plot of the final probability values.
+    fig.add_trace(go.Box(
+        x=final_probs,
+        y0=y_vals[-1],
+        name='Final probability',
+        boxpoints=False, # can also be outliers, or suspectedoutliers, or False
+        # jitter=1.0, # add some jitter for a better separation between points
+        # pointpos=0, # relative position of points wrt box
+        # line=dict(color='rgba(0,0,0,0)'),  # Set box and whisker outline to invisible
+        # fillcolor='rgba(0,0,0,0)',  # Set box and whisker fill to invisible
+        line_color='black',
+        # marker=dict(color='black', size=2)    
+        customdata=np.stack((
+            sorted_results['Stroke team'],
+            # ['N/A'],
+            sorted_results['Probability']*100.0,
+            sorted_results['Sorted rank']
+            ), axis=-1),
+        ))
+
+    # # # Add a violin plot
+    # fig.add_trace(go.Violin(
+    #     x=final_probs,
+    #     # box_visible=True,
+    #     line_color='black',
+    #     meanline_visible=True,
+    #     # box_visible=True,
+    #     # fillcolor='lightseagreen',
+    #     # opacity=0.6,
+    #     y0=y_vals[-1],
+    #     orientation='h',
+    #     name='Final Probability',
+    #     points=False  # 'all'
     #     ))
 
     # Update x axis limits:
@@ -1163,9 +1214,9 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
         hovertemplate=(
             'Stroke team: %{customdata[0]}' +
             '<br>' +
-            'Final probability: %{customdata[2]:>.2f}%' +
+            'Final probability: %{customdata[1]:>.2f}%' +
             '<br>' +
-            'Rank: %{customdata[3]} of ' +
+            'Rank: %{customdata[2]} of ' +
             f'{len(stroke_team_list)}' + ' teams' +
             '<extra></extra>'
             ),
@@ -1211,7 +1262,8 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
     #     x=1
     # ))
 
-
+    # Remove y=0 line:
+    fig.update_yaxes(zeroline=False)
 
     # Write to streamlit:
     # st.plotly_chart(fig, use_container_width=True)
@@ -1232,7 +1284,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
         # the default value of selected_bar before anything is clicked.
         last_changed_waterfall = [0]
 
-    callback_waterfall(selected_waterfall, last_changed_waterfall, 'last_changed_waterfall', inds_order, stroke_team_list, pretty_jitter=True)
+    callback_waterfall(selected_waterfall, last_changed_waterfall, 'last_changed_waterfall', inds_order, stroke_team_list, pretty_jitter=pretty_jitter)
 
 
 def callback_waterfall(selected_waterfall, last_changed_waterfall, last_changed_str, inds_order, stroke_team_list, pretty_jitter=False):
@@ -1301,12 +1353,13 @@ def callback_waterfall(selected_waterfall, last_changed_waterfall, last_changed_
             pass
 
 
-def box_plot_of_prob_shifts(grid, grid_bench, headers, inds=[]):
+def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_results, inds=[]):
 
     # Sort data:
     if len(inds) > 0:
         grid = grid[inds, :]
         grid_bench = grid_bench[inds, :]
+        grid_non_bench = grid_non_bench[inds, :]
         headers = headers[inds]
     # # Quick plot demo
     # df = pd.DataFrame(
@@ -1315,50 +1368,168 @@ def box_plot_of_prob_shifts(grid, grid_bench, headers, inds=[]):
     # )
     # st.write(df)
 
-    # fig = px.box(grid_cat_sorted, y=0)#'Infarction')
-    fig = go.Figure()
-    # Use x instead of y argument for horizontal plot
-    plotly_colours = px.colors.qualitative.Plotly
-    plotly_colours.append('teal')
+    y_vals = [0, 1, 2]  #headers #np.arange(0, len(grid))
+
+    std_list = np.std(grid, axis=1)
+    ave_list = np.median(grid, axis=1)
+    max_list = np.max(grid, axis=1)
+    min_list = np.min(grid, axis=1)
+
+    highlighted_teams = st.session_state['highlighted_teams']
+    n_stroke_teams = grid.shape[1]
+
+    row_headers = [
+        'Team',
+        f'Rank for this feature (of {n_stroke_teams} teams)',
+        'Effect on probability (%)'
+    ]
+
     for i, column in enumerate(grid):
-        fig.add_trace(go.Box(x=grid[i], name=headers[i]+' not Benchmark', line=dict(color=plotly_colours[0]), boxpoints=False))
-        fig.add_trace(go.Box(x=grid_bench[i], name=headers[i]+' Benchmark', line=dict(color=plotly_colours[0]), boxpoints=False))
+        feature = headers[i]
+        st.markdown('### ' + feature)
+        # Values for this feature:
+        feature_values = grid[i]
+        # Store effects for highlighted teams in here:
+        effect_vals = []
 
-    fig.update_layout(showlegend=False)
-    fig.update_layout(height=750)
+        cols = st.columns(2)
+        with cols[0]:
+            table = []
+            for team in highlighted_teams:
+                # Find where this team is in the overall list:
+                rank_overall = sorted_results['Sorted rank'][sorted_results['Stroke team'] == team]
+                # Find the effect of this value for this feature:
+                effect_val_perc = grid[i][rank_overall-1][0]
+                effect_vals.append(effect_val_perc)
+                # effect_val_perc = 100.0 * effect_val
+                # Find how it compares with the other features
+                rank_here = np.where(np.sort(feature_values) == effect_val_perc)[0][0]
+                row0 = [team, rank_here, effect_val_perc]
+                table.append(row0)
+            df = pd.DataFrame(table, columns=row_headers)
+            st.table(df)
+        with cols[1]:
+            fig = go.Figure()
+            plotly_colours = px.colors.qualitative.Plotly
 
-    # Flip y-axis so boxes are read from top to bottom.
-    fig['layout']['yaxis']['autorange'] = 'reversed'
+            # Draw the box plots:
+            fig.add_trace(go.Box(
+                x=grid[i],
+                y0=y_vals[0],
+                name='All',
+                line=dict(color=plotly_colours[0]),
+                boxpoints=False,
+                hoveron='points'  # Switch off the hover label
+                ))
+            fig.add_trace(go.Box(
+                x=grid_bench[i],
+                y0=y_vals[1],
+                name='Benchmark',
+                line=dict(color=plotly_colours[0]),
+                boxpoints=False,
+                hoveron='points'  # Switch off the hover label
+                ))
+            fig.add_trace(go.Box(
+                x=grid_non_bench[i],
+                y0=y_vals[2],
+                name='Not benchmark',
+                line=dict(color=plotly_colours[0]),
+                boxpoints=False,
+                hoveron='points'  # Switch off the hover label
+                ))
+
+            # Setup for box:
+            fig.update_layout(boxgap=0.01)#, boxgroupgap=1)
+            fig.update_traces(width=0.5)
+
+            # Mark the highlighted teams:
+            for t, team in enumerate(highlighted_teams):
+                # Index in the big array:
+                ind = np.where(sorted_results['Stroke team'].values == team)[0]
+                hb_team = sorted_results['HB team'].values[ind][0]
+                colour = st.session_state['highlighted_teams_colours'][hb_team]
+                team_effect = effect_vals[t]
+                # fig.add_vline(x=team_effect, line=dict(color=colour))
+                # Add a separate marker for each grid (all, bench, non-bench)
+                extra_strs = [' (All)', ' (Benchmark)', '(Non-benchmark)']
+                for y, y_val in enumerate(y_vals):
+                    fig.add_trace(go.Scatter(
+                        x=[team_effect],
+                        y=[y_val],
+                        mode='markers',
+                        name=team + extra_strs[y],
+                        marker=dict(color=colour,
+                            line=dict(color='black', width=1.0))
+                        ))
+            # Setup for markers:
+            # # Hover settings:
+            # # Make it so cursor can hover over any x value to show the
+            # # label of the survival line for (x,y), rather than needing to
+            # # hover directly over the line:
+            # fig.update_layout(hovermode='y')
+            # # Update the information that appears on hover:
+            fig.update_traces(
+                hovertemplate=(
+                    '%{x:.2f}%'
+                    # # Stroke team:
+                    # '%{customdata[0]}' +
+                    # '<br>' +
+                    # # Probability to two decimal places:
+                    # '%{y:>.2f}%' +
+                    # '<br>' +
+                    # # Yes/no whether to thrombolyse:
+                    # 'Thrombolysis: %{customdata[1]}' +
+                    # '<br>' +
+                    # # Yes/no whether it's a benchmark team:
+                    # '%{customdata[2]}'
+                    # Remove everything in the second box:
+                    '<extra></extra>'
+                    )
+                )
 
 
-    # Hover settings:
-    # Make it so cursor can hover over any x value to show the
-    # label of the survival line for (x,y), rather than needing to
-    # hover directly over the line:
-    fig.update_layout(hovermode='y')
-    # # Update the information that appears on hover:
-    fig.update_traces(
-        hovertemplate=(
-            '%{y:.2f}'
-            # # Stroke team:
-            # '%{customdata[0]}' +
-            # '<br>' +
-            # # Probability to two decimal places:
-            # '%{y:>.2f}%' +
-            # '<br>' +
-            # # Yes/no whether to thrombolyse:
-            # 'Thrombolysis: %{customdata[1]}' +
-            # '<br>' +
-            # # Yes/no whether it's a benchmark team:
-            # '%{customdata[2]}'
-            # '<extra></extra>'
-            )
-        )
 
-    # st.write(fig.data[0].hovertemplate)
+            # Setup:
+            fig.update_layout(
+                yaxis=dict(
+                    tickmode='array',
+                    tickvals=y_vals,
+                    ticktext=['All', 'Benchmark', 'Not benchmark']
+                ))
+            fig.update_yaxes(tickangle=90)
+            fig.update_layout(showlegend=False)
+            # fig.update_traces(orientation='h')
+            # fig.update_layout(height=350)
 
-    # Write to streamlit:
-    st.plotly_chart(fig, use_container_width=True)
+            # Flip y-axis so boxes are read from top to bottom.
+            fig['layout']['yaxis']['autorange'] = 'reversed'
+
+
+
+            
+            # Update titles and labels:
+            fig.update_layout(
+                # title='Effect on probability by feature',
+                xaxis_title='Shift in probability (%)',
+                # yaxis_title='Probability of giving<br>thrombolysis',
+                # legend_title='Highlighted team'
+                )
+
+            # Reduce size of figure by adjusting margins:
+            fig.update_layout(
+                margin=dict(    
+                    l=0,
+                    r=0,
+                    b=0,
+                    t=40,
+                    pad=0
+                ),
+                height=350
+                )
+            # st.write(fig.data[0].hovertemplate)
+
+            # Write to streamlit:
+            st.plotly_chart(fig, use_container_width=True)
 
 
 def make_pretty_jitter_offsets(final_probs):
@@ -1445,6 +1616,6 @@ def make_pretty_jitter_offsets(final_probs):
 
     # Squash y_jigg down into a smaller y space:
     # y_jigg = np.array(y_jigg) * 0.6*(y_vals[-1] / 100.0)
-    y_jigg = 0.6 * np.array(y_jigg) / np.max(np.abs(y_jigg))
+    y_jigg = 0.3 * np.array(y_jigg) / np.max(np.abs(y_jigg))
 
     return y_jigg
