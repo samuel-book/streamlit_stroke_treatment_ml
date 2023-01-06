@@ -1221,7 +1221,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
     selected_waterfall = plotly_events(
         fig, click_event=True, key='waterfall_combo',
         override_height=600, override_width='100%')
-
+    
     try:
         # Pull the details out of the last bar that was changed
         # (moved to or from the "highlighted" list due to being
@@ -1232,10 +1232,10 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
         # the default value of selected_bar before anything is clicked.
         last_changed_waterfall = [0]
 
-    callback_waterfall(selected_waterfall, last_changed_waterfall, 'last_changed_waterfall', inds_order, stroke_team_list)
+    callback_waterfall(selected_waterfall, last_changed_waterfall, 'last_changed_waterfall', inds_order, stroke_team_list, pretty_jitter=True)
 
 
-def callback_waterfall(selected_waterfall, last_changed_waterfall, last_changed_str, inds_order, stroke_team_list):
+def callback_waterfall(selected_waterfall, last_changed_waterfall, last_changed_str, inds_order, stroke_team_list, pretty_jitter=False):
     """
     # When the script is re-run, this value of selected bar doesn't
     # change. So if the script is re-run for another reason such as
@@ -1264,6 +1264,10 @@ def callback_waterfall(selected_waterfall, last_changed_waterfall, last_changed_
             # If a bar has been clicked, then the following line
             # will not throw up an IndexError:
             curve_selected = selected_waterfall[0]['curveNumber']
+            if pretty_jitter == True:
+                # Have to divide this by two because every other curve
+                # is a dot in the "final probability" row.
+                curve_selected = int(curve_selected*0.5)
             ind = inds_order[curve_selected]
             # Find which team this is:
             team_selected = stroke_team_list[ind]
