@@ -1383,7 +1383,6 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
     # # )
     # # st.write(df)
 
-    y_vals = [0, 1, 2]  #headers #np.arange(0, len(grid))
 
     # Find min/max/average value for each feature and grid:
     ave_list = np.median(grid, axis=1)
@@ -1398,6 +1397,11 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
 
     highlighted_teams = st.session_state['highlighted_teams']
     n_stroke_teams = grid.shape[1]
+
+
+    y_vals = [0, 1, 2]  #headers #np.arange(0, len(grid))
+    # Where to scatter the team markers:
+    y_offsets_scatter = np.linspace(0.2, -0.2, len(highlighted_teams))
 
     row_headers = [
         'Team',
@@ -1464,14 +1468,15 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
                 
         with cols[1]:
             fig = go.Figure()
-            plotly_colours = px.colors.qualitative.Plotly
+            # plotly_colours = px.colors.qualitative.Plotly
+            box_colour = 'black'  # plotly_colours[0]
 
             # Draw the box plots:
             fig.add_trace(go.Box(
                 x=grid[i],
                 y0=y_vals[0],
                 name='All',
-                line=dict(color=plotly_colours[0]),
+                line=dict(color=box_colour),
                 boxpoints=False,
                 hoveron='points'  # Switch off the hover label
                 ))
@@ -1479,7 +1484,7 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
                 x=grid_bench[i],
                 y0=y_vals[1],
                 name='Benchmark',
-                line=dict(color=plotly_colours[0]),
+                line=dict(color=box_colour),
                 boxpoints=False,
                 hoveron='points'  # Switch off the hover label
                 ))
@@ -1487,7 +1492,7 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
                 x=grid_non_bench[i],
                 y0=y_vals[2],
                 name='Not benchmark',
-                line=dict(color=plotly_colours[0]),
+                line=dict(color=box_colour),
                 boxpoints=False,
                 hoveron='points'  # Switch off the hover label
                 ))
@@ -1526,7 +1531,7 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
 
                     fig.add_trace(go.Scatter(
                         x=[team_effect],
-                        y=[y_val],
+                        y=[y_val + y_offsets_scatter[t]],
                         mode='markers',
                         name=team + extra_strs[y],
                         marker=dict(color=colour,

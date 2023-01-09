@@ -32,6 +32,9 @@ def choose_colours_for_highlights(highlighted_teams_list):
         st.session_state['highlighted_teams_colours']
     # Specify the indices to get a mix of colours:
     plotly_colours = px.colors.qualitative.Plotly
+    # Pick out some colours we prefer (not too close to existing colours):
+    inds_preferred = [1, 5, 4, 7, 8, 9, 6, 2, 3, 0]
+    preferred_colours = np.array(plotly_colours)[inds_preferred]
     
     for i, leg_entry in enumerate(highlighted_teams_list):
         try:
@@ -45,7 +48,7 @@ def choose_colours_for_highlights(highlighted_teams_list):
             else:
                 # Pick a colour that hasn't already been used.
                 unused_colours = list(np.setdiff1d(
-                    plotly_colours,
+                    preferred_colours,
                     list(highlighted_teams_colours.values())
                     ))
                 if len(unused_colours) < 1:
@@ -56,15 +59,26 @@ def choose_colours_for_highlights(highlighted_teams_list):
                         colour = mpl_colours[
                             np.random.randint(0, len(mpl_colours))]
                 else:
-                    # Take either the first or the last from this list
-                    # (mixes up the reds and blues a bit.)
-                    c_ind = 0 if i % 2 == 0 else -1
-                    colour = unused_colours[c_ind]
+                    # np.random.shuffle(unused_colours)
+                    # colour = unused_colours[0]
+                    # # Take either the first or the last from this list
+                    # # (mixes up the reds and blues a bit.)
+                    # c_ind = 0 if i % 2 == 0 else -1
+                    # colour = unused_colours[c_ind]
+                    # preferred_colours = [plotly_colours[1], ]
+                    success = 0
+                    j = 0
+                    while success < 1:
+                        colour = preferred_colours[j]
+                        if colour in highlighted_teams_colours.values():
+                            j += 1
+                        else:
+                            success = 1
 
             # Add this to the dictionary:
             highlighted_teams_colours[leg_entry] = colour
-        # Store the colour:
-        # highlighted_teams_colours.append(colour)
-        highlighted_teams_colours[leg_entry] = colour
+        # # Store the colour:
+        # # highlighted_teams_colours.append(colour)
+        # highlighted_teams_colours[leg_entry] = colour
     # Save the new colour dictionary to the session state:
     st.session_state['highlighted_teams_colours'] = highlighted_teams_colours
