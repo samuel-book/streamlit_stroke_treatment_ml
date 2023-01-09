@@ -119,3 +119,115 @@ def convert_explainer_01_to_noyes(sv):
         values=sv.values
     )
     return sv_fake
+
+
+def make_heat_grids(headers, stroke_team_list, sorted_inds,
+                    shap_values_probability):
+    # Experiment
+    n_teams = shap_values_probability.shape[0]
+    # n_features = len(shap_values_probability_extended[0].values)
+    grid = np.transpose(shap_values_probability)
+
+    # Expect most of the mismatched one-hot-encoded hospitals to make
+    # only a tiny contribution to the SHAP. Moosh them down into one
+    # column instead.
+
+    # Have 9 features other than teams. Index 9 is the first team.
+    ind_first_team = 9
+
+    # Make a new grid and copy over most of the values:
+    grid_cat = np.zeros((ind_first_team + 2, n_teams))
+    grid_cat[:ind_first_team, :] = grid[:ind_first_team, :]
+
+    # For the remaining column, loop over to pick out the value:
+    for i, sorted_ind in enumerate(sorted_inds):
+        row = i + ind_first_team
+        # Pick out the value we want:
+        value_of_matching_stroke_team = grid[row, i]
+        # Add the wanted value to the new grid:
+        grid_cat[ind_first_team, i] = value_of_matching_stroke_team
+        # Take the sum of all of the team values:
+        value_of_merged_stroke_teams = np.sum(grid[ind_first_team:, i])
+        # Subtract the value we want:
+        value_of_merged_stroke_teams -= value_of_matching_stroke_team
+        # And store this as a merged "all other teams" value:
+        grid_cat[ind_first_team+1, i] = value_of_merged_stroke_teams
+
+    # Multiply values by 100 to get probability in percent:
+    grid_cat *= 100.0
+
+    # Sort the values into the same order as sorted_results:
+    grid_cat_sorted = grid_cat[:, sorted_inds]
+
+    headers = np.append(headers[:9], 'This stroke team')
+    headers = np.append(headers, 'Other stroke teams')
+
+    # 2D grid of stroke_teams:
+    stroke_team_2d = np.tile(
+        stroke_team_list, len(headers)).reshape(grid_cat_sorted.shape)
+    return grid, grid_cat_sorted, stroke_team_2d, headers
+
+
+def make_waterfall_df(
+        grid_cat_sorted, headers, stroke_team_list, highlighted_team_list,
+        hb_team_list, base_values=0.2995270168908044
+        ):
+    base_values_perc = 100.0 * base_values
+
+    grid_waterfall = np.copy(grid_cat_sorted)
+    # Sort the grid in order of increasing standard deviation:
+    inds_std = np.argsort(np.std(grid_waterfall, axis=1))
+    grid_waterfall = grid_waterfall[inds_std, :]
+    features_waterfall = headers[inds_std]
+
+    # Add a row for the starting probability:
+    grid_waterfall = np.vstack(
+        (np.zeros(grid_waterfall.shape[1]), grid_waterfall))
+    # Make a cumulative probability line for each team:
+    grid_waterfall_cumsum = np.cumsum(grid_waterfall, axis=0)
+    # Add the starting probability to all values:
+    grid_waterfall_cumsum += base_values_perc
+    # Keep final probabilities separate:
+    final_probs_list = grid_waterfall_cumsum[-1, :]
+    # Feature names:
+    features_waterfall = np.append('Base probability', features_waterfall)
+    # features_waterfall = np.append(features_waterfall, 'Final probability')
+
+    # Get the grid into a better format for the data frame:
+    # Column containing shifts in probabilities for each feature:
+    column_probs_shifts = grid_waterfall.T.ravel()
+    # Column containing cumulative probabilities (for x axis):
+    column_probs_cum = grid_waterfall_cumsum.T.ravel()
+    # Column of feature names:
+    column_features = np.tile(features_waterfall, len(stroke_team_list))
+    # Column of the rank:
+    a = np.arange(1, len(stroke_team_list)+1)
+    column_sorted_rank = np.tile(a, len(features_waterfall))\
+        .reshape(len(features_waterfall), len(a)).T.ravel()
+    # Column of stroke teams:
+    column_stroke_team = np.tile(stroke_team_list, len(features_waterfall))\
+        .reshape(len(features_waterfall), len(stroke_team_list)).T.ravel()
+    # Column of highlighted teams:
+    column_highlighted_teams = np.tile(
+        highlighted_team_list, len(features_waterfall))\
+        .reshape(len(features_waterfall), len(highlighted_team_list)).T.ravel()
+    # Column of highlighted/benchmark teams:
+    column_hb_teams = np.tile(
+        hb_team_list, len(features_waterfall))\
+        .reshape(len(features_waterfall), len(hb_team_list)).T.ravel()
+    # Column of final probability of thrombolysis:
+    column_probs_final = np.tile(final_probs_list, len(features_waterfall))\
+        .reshape(len(features_waterfall), len(final_probs_list)).T.ravel()
+
+    # Put this into a data frame:
+    df_waterfalls = pd.DataFrame()
+    df_waterfalls['Sorted rank'] = column_sorted_rank
+    df_waterfalls['Stroke team'] = column_stroke_team
+    df_waterfalls['Probabilities'] = column_probs_cum
+    df_waterfalls['Prob shift'] = column_probs_shifts
+    df_waterfalls['Prob final'] = column_probs_final
+    df_waterfalls['Features'] = column_features
+    df_waterfalls['Highlighted team'] = column_highlighted_teams
+    df_waterfalls['HB team'] = column_hb_teams
+    return df_waterfalls, final_probs_list
+

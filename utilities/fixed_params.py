@@ -11,3 +11,6 @@ def page_setup():
         # layout='wide'
         )
     # n.b. this can be set separately for each separate page if you like.
+
+# Starting probability in the model:
+starting_probabilities = 0.2995270168908044

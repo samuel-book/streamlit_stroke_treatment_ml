@@ -10,17 +10,19 @@ done in functions stored in files named container_(something).py
 # ----- Imports -----
 import streamlit as st
 import numpy as np
-# Garbage collection to help reduce memory creep:
-import gc
 
 # Custom functions:
-from utilities.fixed_params import page_setup
+from utilities.fixed_params import page_setup, starting_probabilities
 # from utilities.inputs import \
 #     write_text_from_file
 import utilities.inputs
 import utilities.main_calculations
 # Containers:
 import utilities.container_inputs
+import utilities.container_metrics
+import utilities.container_bars
+import utilities.container_waterfalls
+import utilities.container_combo_waterfall
 import utilities.container_results
 # import utilities.container_details
 
@@ -58,11 +60,28 @@ with container_metrics:
         '### How many stroke teams _would_ thrombolyse this patient?'
         ]))
 
-container_team_probs = st.container()
-with container_team_probs:
+container_bar_chart = st.container()
+with container_bar_chart:
     st.markdown(''.join([
         '### Probability of thrombolysis from each team'
         ]))
+
+container_shapley_probs = st.container()
+with container_shapley_probs:
+    st.markdown('### Probability waterfalls')
+    st.markdown(''.join([
+        'We can look at how the model decides on the probability ',
+        'of thrombolysis. ',
+        'Before the model looks at any of the ',
+        'patient\'s details, the patient starts with a base probability',
+        f' of {100.0*starting_probabilities:.2f}%',
+        '. '
+        'The model then looks at the value of each feature of the patient ',
+        'in turn, and adjusts this probability upwards or downwards.'
+    ]))
+    st.markdown(''.join([
+        'The process can be visualised as a waterfall plot.'
+    ]))
 
 # # Draw a blue information box:
 # st.info(
@@ -100,18 +119,19 @@ explainer_probability = utilities.inputs.load_explainer_probability()
 benchmark_df = utilities.inputs.import_benchmark_data()
 # Make list of benchmark rank:
 # (original data is sorted alphabetically by stroke team)
-benchmark_rank_list = benchmark_df.sort_values('stroke_team')['Rank'].to_numpy()
+benchmark_rank_list = \
+    benchmark_df.sort_values('stroke_team')['Rank'].to_numpy()
 # Indices of benchmark data at the moment:
 inds_benchmark = np.where(benchmark_rank_list <= 30)[0]
 
 
 # ----- Highlighted teams -----
 
-bench_str = 'Benchmark \U00002605'
 plain_str = '-'
+bench_str = 'Benchmark \U00002605'
 
 # Receive the user inputs now and show this container now:
-with container_team_probs:
+with container_bar_chart:
     st.markdown(''.join([
         'To highlight stroke teams on the following charts, ',
         'select them in this box or click on them in the charts.'
@@ -146,8 +166,6 @@ st.session_state['hb_teams_input'] = hb_teams_input
 # Find colour lists for plotting (saved to session state):
 remove_old_colours_for_highlights(hb_teams_input)
 choose_colours_for_highlights(hb_teams_input)
-
-# highlighted_teams_input_extras.remove('-')
 
 
 # ##################################
@@ -195,6 +213,38 @@ else:
     utilities.main_calculations.find_shapley_values(
         explainer_probability, X)
 
+# Stuff for displaying SHAP probabilities:
+
+# Get big SHAP probability grid:
+grid, grid_cat_sorted, stroke_team_2d, headers = \
+    utilities.main_calculations.make_heat_grids(
+        headers_X,
+        sorted_results['Stroke team'],
+        sorted_results['Index'],
+        shap_values_probability_all
+        )
+
+# These grids have teams in the same order as sorted_results.
+# Pick out the subset of benchmark teams:
+inds_bench = np.where(sorted_results['Benchmark rank'].to_numpy() <= 30)[0]
+inds_nonbench = np.where(sorted_results['Benchmark rank'].to_numpy() > 30)[0]
+
+grid_cat_bench = grid_cat_sorted[:, inds_bench]
+grid_cat_nonbench = grid_cat_sorted[:, inds_nonbench]
+
+
+# Make dataframe for combo waterfalls:
+df_waterfalls, final_probs = \
+    utilities.main_calculations.make_waterfall_df(
+        grid_cat_sorted,
+        headers,
+        sorted_results['Stroke team'],
+        sorted_results['Highlighted team'],
+        sorted_results['HB team'],
+        base_values=starting_probabilities
+        )
+
+
 # ###########################
 # ######### RESULTS #########
 # ###########################
@@ -202,63 +252,118 @@ else:
 
 with container_metrics:
     # Print metrics for how many teams would thrombolyse:
-    utilities.container_results.show_metrics_benchmarks(sorted_results)
+    utilities.container_metrics.main(sorted_results)
 
+with container_bar_chart:
+    utilities.container_bars.main(sorted_results)
 
-# Draw a plot in this function:
-utilities.container_results.main(
-    sorted_results,
-    shap_values_probability_extended_high_mid_low,
-    shap_values_probability_extended_highlighted,
-    indices_high_mid_low,
-    indices_highlighted,
-    headers_X,
-    explainer_probability, X,
-    shap_values_probability_extended_all,
-    shap_values_probability_all
-    )
+with container_shapley_probs:
+    # Set up tabs:
+    tabs_waterfall = st.tabs([
+        'Max/min/median teams',
+        'Highlighted teams',
+        'All teams',
+        'Shifts for highlighted teams'
+        ])
 
+    # Use this string in the first two tabs:
+    waterfall_explanation_str = ''.join([
+            'The features are ordered from largest negative effect on ',
+            'probability to largest positive effect. ',
+            'The 9 largest features are shown individually and the rest ',
+            'are condensed into the "132 other features" bar. ',
+            'This bar mostly contains the effect of the patient _not_ ',
+            'attending the other stroke teams.'
+        ])
 
-# # TESTS - size of objects
-# from sys import getsizeof
-# things = [
-#     user_inputs_dict,
-#     X,
-#     sorted_results,
-#     stroke_teams_list,
-#     shap_values_probability_extended_high_mid_low,
-#     shap_values_probability_high_mid_low,
-#     shap_values_probability_extended_highlighted,
-#     shap_values_probability_highlighted,
-#     benchmark_rank_list,
-#     highlighted_teams_list,
-#     indices_high_mid_low,
-#     indices_highlighted,
-#     headers_X,
-#     headers_synthetic,
-#     explainer_probability,
-#     model,
-#     explainer
-# ]
-#
-#
-# for thing in things:
-#     st.write(type(thing), getsizeof(thing))
-#     st.write(' ')
+    with tabs_waterfall[0]:
+        # Individual waterfalls for the teams with the
+        # max / median / min probabilities of thrombolysis.
+        st.markdown(waterfall_explanation_str)
+        utilities.container_waterfalls.show_waterfalls_max_med_min(
+            shap_values_probability_extended_high_mid_low,
+            indices_high_mid_low,
+            sorted_results
+            )
 
+    # Highlighted teams
+    with tabs_waterfall[1]:
+        if len(indices_highlighted) < 1:
+            # Nothing to see here
+            st.write('No teams are highlighted.')
+        else:
+            # Individual waterfalls for the highlighted teams.
+            st.markdown(waterfall_explanation_str)
+            utilities.container_waterfalls.show_waterfalls_highlighted(
+                shap_values_probability_extended_highlighted,
+                indices_highlighted,
+                sorted_results
+                )
 
-# ###########################
-# ######### DETAILS #########
-# ###########################
-# st.write('-'*50)
-# st.header('Details of the calculation')
-# st.write('The following bits detail the calculation.')
+    with tabs_waterfall[2]:
+        # Combo waterfall:
+        st.markdown(''.join([
+            'The following chart shows the waterfall charts for all ',
+            'teams. Instead of red and blue bars, each team has ',
+            'a series of scatter points connected by lines. ',
+            'The features are ordered with the most agreed on features ',
+            'at the top, and the ones with more variation lower down. '
+        ]))
+        utilities.container_combo_waterfall.plot_combo_waterfalls(
+            df_waterfalls,
+            sorted_results,
+            final_probs
+            )
 
-# with st.expander('Some details'):
-#     # Draw the equation in this function:
-#     utilities.container_details.main(animal, feature, row_value)
+    with tabs_waterfall[3]:
+        # Box plot:
+        utilities.container_combo_waterfall.box_plot_of_prob_shifts(
+            grid_cat_sorted,
+            grid_cat_bench,
+            grid_cat_nonbench,
+            headers,
+            sorted_results
+            )
 
-# Garbage collection to reduce gradual memory creep
-gc.collect()
+# ----- The end (usually)! -----
+
+# #################################
+# ######### SANITY CHECKS #########
+# #################################
+show_sanity_check_plots = False
+if show_sanity_check_plots is False:
+    # Do nothing
+    pass
+else:
+    # Plots for testing and sanity checking:
+    # Imshow grid of all SHAP probability values:
+    utilities.container_results.plot_heat_grid_full(grid)
+    # Same imshow grid, but the one-hot-encoded stroke teams are
+    # compressed into two rows: "this team" and "other teams".
+    utilities.container_results.plot_heat_grid_compressed(
+        grid_cat_sorted,
+        sorted_results['Stroke team'],
+        headers,
+        stroke_team_2d
+        )
+    # Line chart equivalent of compressed imshow grid:
+    utilities.container_results.\
+        plot_all_prob_shifts_for_all_features_and_teams(
+            headers,
+            grid_cat_sorted
+            )
+
+    # Write statistics (median/std/min/max probability shift)
+    # for each feature:
+    st.markdown('All teams: ')
+    inds_std = utilities.container_results.write_feature_means_stds(
+        grid_cat_sorted, headers, return_inds=True)
+    st.markdown('Benchmark teams: ')
+    utilities.container_results.write_feature_means_stds(
+        grid_cat_bench, headers, inds=inds_std)
+
+    # Write sentences about the biggest probability shifts:
+    utilities.container_results.print_changes_info(
+        grid_cat_sorted, headers, stroke_team_2d)
 
 # ----- The end! -----
