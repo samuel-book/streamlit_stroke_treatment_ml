@@ -1370,19 +1370,35 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
     # Put it into the same order as in the input sidebar:
     inds = [4, 2, 0, 6, 8, 1, 3, 5, 7, 9, 10]
 
-    # Sort data:
+    # Sort feature order:
     if len(inds) > 0:
         grid = grid[inds, :]
         grid_bench = grid_bench[inds, :]
         grid_non_bench = grid_non_bench[inds, :]
         headers = headers[inds]
-    # # # Quick plot demo
-    # # df = pd.DataFrame(
-    # #     grid_cat_sorted.T,
-    # #     # columns=headers
-    # # )
-    # # st.write(df)
 
+    # Add final probability to grid:
+    final_probs = np.sum(grid, axis=0)
+    final_probs_bench = np.sum(grid_bench, axis=0)
+    final_probs_non_bench = np.sum(grid_non_bench, axis=0)
+    # Add base probabilities to these:
+    start_probs = 100.0 * 0.2995270168908044
+    final_probs += start_probs
+    final_probs_bench += start_probs
+    final_probs_non_bench += start_probs
+    
+
+    def add_feature_to_grid(old_grid, new_vals):
+        new_grid = np.zeros((old_grid.shape[0]+1, old_grid.shape[1]))
+        new_grid[1:, :] = old_grid
+        new_grid[0, :] = new_vals
+        return new_grid
+
+    grid = add_feature_to_grid(grid, final_probs)
+    grid_bench = add_feature_to_grid(grid_bench, final_probs_bench)
+    grid_non_bench = add_feature_to_grid(grid_non_bench, final_probs_non_bench)
+
+    headers = np.append('Final probability', headers)
 
     # Find min/max/average value for each feature and grid:
     ave_list = np.median(grid, axis=1)
@@ -1400,14 +1416,20 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
 
 
     y_vals = [0, 1, 2]  #headers #np.arange(0, len(grid))
+    y_gap = 0.05
+    y_max = 0.2
     # Where to scatter the team markers:
-    y_offsets_scatter = np.linspace(0.2, -0.2, len(highlighted_teams))
+    y_offsets_scatter = [0.0]
+    while len(y_offsets_scatter) < len(highlighted_teams):
+        y_extra = np.arange(y_gap, y_max, y_gap)
+        y_extra = np.stack((
+            y_extra, -y_extra
+        )).T.flatten()
+        y_offsets_scatter = np.append(y_offsets_scatter, y_extra)
+        y_gap = 0.5 * y_gap
 
-    row_headers = [
-        'Team',
-        f'Rank for this feature (of {n_stroke_teams} teams)',
-        'Effect on probability (%)'
-    ]
+
+
 
     for i, column in enumerate(grid):
         feature = headers[i]
@@ -1416,6 +1438,20 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
         # Store effects for highlighted teams in here:
         effect_vals = []
 
+        if i > 0:
+            row_headers = [
+                'Team',
+                f'Rank for this feature (of {n_stroke_teams} teams)',
+                'Effect on probability (%)'
+            ]
+        else:
+            # Overall probability:
+            row_headers = [
+                'Team',
+                f'Rank for this feature (of {n_stroke_teams} teams)',
+                'Probability (%)'
+            ]
+
         cols = st.columns(2)
         with cols[0]:
             st.markdown('### ' + feature)
@@ -1423,7 +1459,7 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
             for team in highlighted_teams:
                 team_for_table = sorted_results['HB team'][
                     sorted_results['Stroke team'] == team].to_numpy()[0]
-                
+
                 # Find where this team is in the overall list:
                 rank_overall = sorted_results['Sorted rank'][
                     sorted_results['Stroke team'] == team]
@@ -1433,7 +1469,7 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
                 # effect_val_perc = 100.0 * effect_val
                 # Find how it compares with the other features
                 rank_here = np.where(
-                    np.sort(feature_values) == effect_val_perc)[0][0]
+                    np.sort(feature_values)[::-1] == effect_val_perc)[0][0]
                 row0 = [team_for_table, rank_here, effect_val_perc]
                 table.append(row0)
 
@@ -1598,11 +1634,11 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
 
 
 
-            
+            x_title = 'Shift in probability (%)' if i > 0 else 'Probability (%)'
             # Update titles and labels:
             fig.update_layout(
                 # title='Effect on probability by feature',
-                xaxis_title='Shift in probability (%)',
+                xaxis_title=x_title,
                 # yaxis_title='Probability of giving<br>thrombolysis',
                 # legend_title='Highlighted team'
                 )
