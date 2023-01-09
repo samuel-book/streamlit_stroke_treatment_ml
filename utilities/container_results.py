@@ -257,7 +257,7 @@ def plot_sorted_probs(sorted_results):
             'Thrombolysis: %{customdata[1]}' +
             '<br>' +
             # Yes/no whether it's a benchmark team:
-            '%{customdata[2]}'
+            # '%{customdata[2]}'
             '<extra></extra>'
             )
         )
@@ -1036,7 +1036,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
     
     y_vals = np.arange(len(set(df_waterfalls['Features']))+1)*0.5 # for features + final prob
 
-    pretty_jitter = True
+    pretty_jitter = False
     if pretty_jitter == True:
         # # Generate random jitter values for the final probability row
         y_jigg = make_pretty_jitter_offsets(final_probs)
@@ -1355,25 +1355,46 @@ def callback_waterfall(selected_waterfall, last_changed_waterfall, last_changed_
 
 def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_results, inds=[]):
 
+    # Default order:
+    #  0 Arrival-to-scan time,
+    #  1 Infarction,
+    #  2 Stroke severity,
+    #  3 Precise onset time,
+    #  4 Prior disability level,
+    #  5 Use of AF anticoagulants,
+    #  6 Onset-to-arrival time,
+    #  7 Onset during sleep,
+    #  8 Age,
+    #  9 This stroke team,
+    # 10 Other stroke teams.
+    # Put it into the same order as in the input sidebar:
+    inds = [4, 2, 0, 6, 8, 1, 3, 5, 7, 9, 10]
+
     # Sort data:
     if len(inds) > 0:
         grid = grid[inds, :]
         grid_bench = grid_bench[inds, :]
         grid_non_bench = grid_non_bench[inds, :]
         headers = headers[inds]
-    # # Quick plot demo
-    # df = pd.DataFrame(
-    #     grid_cat_sorted.T,
-    #     # columns=headers
-    # )
-    # st.write(df)
+    # # # Quick plot demo
+    # # df = pd.DataFrame(
+    # #     grid_cat_sorted.T,
+    # #     # columns=headers
+    # # )
+    # # st.write(df)
 
     y_vals = [0, 1, 2]  #headers #np.arange(0, len(grid))
 
-    std_list = np.std(grid, axis=1)
+    # Find min/max/average value for each feature and grid:
     ave_list = np.median(grid, axis=1)
     max_list = np.max(grid, axis=1)
     min_list = np.min(grid, axis=1)
+    ave_list_bench = np.median(grid_bench, axis=1)
+    max_list_bench = np.max(grid_bench, axis=1)
+    min_list_bench = np.min(grid_bench, axis=1)
+    ave_list_non_bench = np.median(grid_non_bench, axis=1)
+    max_list_non_bench = np.max(grid_non_bench, axis=1)
+    min_list_non_bench = np.min(grid_non_bench, axis=1)
 
     highlighted_teams = st.session_state['highlighted_teams']
     n_stroke_teams = grid.shape[1]
@@ -1386,7 +1407,6 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
 
     for i, column in enumerate(grid):
         feature = headers[i]
-        st.markdown('### ' + feature)
         # Values for this feature:
         feature_values = grid[i]
         # Store effects for highlighted teams in here:
@@ -1394,20 +1414,54 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
 
         cols = st.columns(2)
         with cols[0]:
+            st.markdown('### ' + feature)
             table = []
             for team in highlighted_teams:
+                team_for_table = sorted_results['HB team'][
+                    sorted_results['Stroke team'] == team].to_numpy()[0]
+                
                 # Find where this team is in the overall list:
-                rank_overall = sorted_results['Sorted rank'][sorted_results['Stroke team'] == team]
+                rank_overall = sorted_results['Sorted rank'][
+                    sorted_results['Stroke team'] == team]
                 # Find the effect of this value for this feature:
                 effect_val_perc = grid[i][rank_overall-1][0]
                 effect_vals.append(effect_val_perc)
                 # effect_val_perc = 100.0 * effect_val
                 # Find how it compares with the other features
-                rank_here = np.where(np.sort(feature_values) == effect_val_perc)[0][0]
-                row0 = [team, rank_here, effect_val_perc]
+                rank_here = np.where(
+                    np.sort(feature_values) == effect_val_perc)[0][0]
+                row0 = [team_for_table, rank_here, effect_val_perc]
                 table.append(row0)
+
             df = pd.DataFrame(table, columns=row_headers)
             st.table(df)
+
+        effect_diffs = []
+        for t, team in enumerate(highlighted_teams):
+            # Find the difference between this effect_val and
+            # the min/max/average values for this feature
+            # and this benchmark category.
+
+            # Can definitely shorten this code a lot when tidying
+            # (build grid, slice, reshape result?)
+            v = effect_vals[t]
+            diff_ave = v - ave_list[i]
+            diff_max = v - max_list[i]
+            diff_min = v - min_list[i]
+            diff_ave_bench = v - ave_list_bench[i]
+            diff_max_bench = v - max_list_bench[i]
+            diff_min_bench = v - min_list_bench[i]
+            diff_ave_non_bench = v - ave_list_non_bench[i]
+            diff_max_non_bench = v - max_list_non_bench[i]
+            diff_min_non_bench = v - min_list_non_bench[i]
+
+            effect_diffs.append([
+                [diff_max, diff_min, diff_ave],
+                [diff_max_bench, diff_min_bench, diff_ave_bench],
+                [diff_max_non_bench, diff_min_non_bench, diff_ave_non_bench],
+            ])
+
+                
         with cols[1]:
             fig = go.Figure()
             plotly_colours = px.colors.qualitative.Plotly
@@ -1449,17 +1503,35 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
                 hb_team = sorted_results['HB team'].values[ind][0]
                 colour = st.session_state['highlighted_teams_colours'][hb_team]
                 team_effect = effect_vals[t]
+
                 # fig.add_vline(x=team_effect, line=dict(color=colour))
                 # Add a separate marker for each grid (all, bench, non-bench)
                 extra_strs = [' (All)', ' (Benchmark)', '(Non-benchmark)']
                 for y, y_val in enumerate(y_vals):
+                    diff_max = effect_diffs[t][y][0]
+                    diff_min = effect_diffs[t][y][1]
+                    diff_ave = effect_diffs[t][y][2]
+                    # # Make arrow strings depending on diff
+                    # arr_max = '\U00002191' if diff_max > 0 else '\U00002193'
+                    # arr_min = '\U00002191' if diff_min > 0 else '\U00002193'
+                    # arr_ave = '\U00002191' if diff_ave > 0 else '\U00002193'
+                    custom_data = np.stack([
+                        # effect_diffs[t][y],  # Differences
+                        # [arr_max, arr_min, arr_ave],  # Arrow strings
+                        # effect_diffs[t][y],
+                        [round(diff_max, 2)], [round(diff_min, 2)], [round(diff_ave, 2)],
+                        # [arr_max], [arr_min], [arr_ave]
+                        [hb_team]
+                    ], axis=-1)
+
                     fig.add_trace(go.Scatter(
                         x=[team_effect],
                         y=[y_val],
                         mode='markers',
                         name=team + extra_strs[y],
                         marker=dict(color=colour,
-                            line=dict(color='black', width=1.0))
+                            line=dict(color='black', width=1.0)),
+                        customdata=custom_data
                         ))
             # Setup for markers:
             # # Hover settings:
@@ -1470,7 +1542,16 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
             # # Update the information that appears on hover:
             fig.update_traces(
                 hovertemplate=(
-                    '%{x:.2f}%'
+                    'Team %{customdata[3]}' +
+                    '<br>' +
+                    'Effect: %{x:.2f}%' +
+                    '<br>' +
+                    '%{customdata[0]:+}% from max' +
+                    '<br>' +
+                    '%{customdata[1]:+}% from min' +
+                    '<br>' +
+                    '%{customdata[2]:+}% from median' +
+                    # '<br>' +
                     # # Stroke team:
                     # '%{customdata[0]}' +
                     # '<br>' +
@@ -1490,6 +1571,12 @@ def box_plot_of_prob_shifts(grid, grid_bench, grid_non_bench, headers, sorted_re
 
 
             # Setup:
+
+            # Change the background colour of stuff in the frame
+            # (stuff outside the frame is paper_bgcolor)
+            # fig.update_layout(plot_bgcolor='black')
+            
+
             fig.update_layout(
                 yaxis=dict(
                     tickmode='array',
