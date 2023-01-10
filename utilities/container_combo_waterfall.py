@@ -218,7 +218,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
         legend_title='Highlighted team'
         )
     fig.update_layout(
-        yaxis = dict(
+        yaxis=dict(
             tickmode='array',
             tickvals=np.append(y_vals, 'Final probability'),
             ticktext=np.append(df_team['Features'], 'Final probability')
@@ -239,21 +239,22 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
             '<extra></extra>'
             )
         )
-    # Update the hover text for the final probabilities:
-    fig.update_traces(
-        # hovertemplate=(
-        #     # 'Stroke team: %{customdata[0]}' +
-        #     # '<br>' +
-        #     # 'Final probability: %{customdata[1]:>.2f}%' +
-        #     # '<br>' +
-        #     # 'Rank: %{customdata[2]} of ' +
-        #     # f'{len(stroke_team_list)}' + ' teams' +
-        #     '<extra></extra>'
-        #     ),
-        # hoveron=False,
-        hoverinfo='skip',
-        selector={'name': 'Final Probability'}
-        )
+    # NEed the following for jitter option?
+    # # Update the hover text for the final probabilities:
+    # fig.update_traces(
+    #     # hovertemplate=(
+    #     #     # 'Stroke team: %{customdata[0]}' +
+    #     #     # '<br>' +
+    #     #     # 'Final probability: %{customdata[1]:>.2f}%' +
+    #     #     # '<br>' +
+    #     #     # 'Rank: %{customdata[2]} of ' +
+    #     #     # f'{len(stroke_team_list)}' + ' teams' +
+    #     #     '<extra></extra>'
+    #     #     ),
+    #     # hoveron=False,
+    #     hoverinfo='skip',
+    #     selector={'name': 'Final Probability'}
+    #     )
     # Explicitly set hover mode (else Streamlit sets this to 'x')
     fig.update_layout(hovermode='closest')
 
@@ -274,25 +275,10 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
 
     # Flip y-axis so bars are read from top to bottom.
     fig['layout']['yaxis']['autorange'] = 'reversed'
-
-    # Increase margin size:
-    # fig.update_layout(
-    #     margin=dict(l=50))#, r=20, t=20, b=20),
     # Reduce size of figure by adjusting margins:
-    fig.update_layout(
-        margin=dict(
-            l=150,
-            r=150,
-            b=80,
-            t=20,
-            # pad=4
-        ),
-        height=600,
-        # width=300
-        )
+    fig.update_layout(margin=dict(l=150, r=150, b=80, t=20), height=600)
+    # Make the y axis title stand out from the tick labels:
     fig.update_yaxes(automargin=True)
-
-
     # Move legend to side
     fig.update_layout(legend=dict(
         orientation='v', #'h',
@@ -301,14 +287,6 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
         xanchor='left',
         x=1.03
     ))
-    # fig.update_layout(legend=dict(
-    #     orientation='v', #'h',
-    #     yanchor='top',
-    #     y=-0.1,
-    #     xanchor="right",
-    #     x=1
-    # ))
-
     # Remove y=0 line:
     fig.update_yaxes(zeroline=False)
 
@@ -320,21 +298,11 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
     selected_waterfall = plotly_events(
         fig, click_event=True, key='waterfall_combo',
         override_height=600, override_width='100%')
-    
-    try:
-        # Pull the details out of the last bar that was changed
-        # (moved to or from the "highlighted" list due to being
-        # clicked on) out of the session state:
-        last_changed_waterfall = st.session_state['last_changed_waterfall']
-    except KeyError:
-        # Invent some nonsense. It doesn't matter whether it matches
-        # the default value of selected_bar before anything is clicked.
-        last_changed_waterfall = [0]
 
-    callback_waterfall(selected_waterfall, last_changed_waterfall, 'last_changed_waterfall', inds_order, stroke_team_list, pretty_jitter=pretty_jitter)
+    callback_waterfall(selected_waterfall, inds_order, stroke_team_list, pretty_jitter=pretty_jitter)
 
 
-def callback_waterfall(selected_waterfall, last_changed_waterfall, last_changed_str, inds_order, stroke_team_list, pretty_jitter=False):
+def callback_waterfall(selected_waterfall, inds_order, stroke_team_list, pretty_jitter=False):
     """
     # When the script is re-run, this value of selected bar doesn't
     # change. So if the script is re-run for another reason such as
@@ -355,6 +323,17 @@ def callback_waterfall(selected_waterfall, last_changed_waterfall, last_changed_
     # and so the following loop still happens despite x and y being
     # the same.
     """
+
+    try:
+        # Pull the details out of the last bar that was changed
+        # (moved to or from the "highlighted" list due to being
+        # clicked on) out of the session state:
+        last_changed_waterfall = st.session_state['last_changed_waterfall']
+    except KeyError:
+        # Invent some nonsense. It doesn't matter whether it matches
+        # the default value of selected_bar before anything is clicked.
+        last_changed_waterfall = [0]
+
     if selected_waterfall != last_changed_waterfall:
         # If the selected bar doesn't match the last changed bar,
         # then we need to update the graph and store the latest
@@ -363,7 +342,7 @@ def callback_waterfall(selected_waterfall, last_changed_waterfall, last_changed_
             # If a bar has been clicked, then the following line
             # will not throw up an IndexError:
             curve_selected = selected_waterfall[0]['curveNumber']
-            if pretty_jitter == True:
+            if pretty_jitter is True:
                 # Have to divide this by two because every other curve
                 # is a dot in the "final probability" row.
                 curve_selected = int(curve_selected*0.5)
@@ -389,7 +368,8 @@ def callback_waterfall(selected_waterfall, last_changed_waterfall, last_changed_
             # Keep a copy of the bar that we've just changed,
             # and put it in the session state so that we can still
             # access it once the script is re-run:
-            st.session_state[last_changed_str] = selected_waterfall.copy()
+            st.session_state['last_changed_waterfall'] = \
+                selected_waterfall.copy()
 
             # Re-run the script to get immediate feedback in the
             # multiselect input widget and the graph colours:
@@ -422,7 +402,7 @@ def box_plot_of_prob_shifts(
     #  9 This stroke team,
     # 10 Other stroke teams.
     # Put it into the same order as in the input sidebar:
-    inds = [4, 2, 0, 6, 8, 1, 3, 5, 7, 9, 10]
+    inds = [4, 2, 0, 6, 8, 1, 3, 5, 7, 9] #, 10]
 
     # Sort feature order:
     if len(inds) > 0:
@@ -583,6 +563,7 @@ def box_plot_of_prob_shifts(
                 boxpoints=False,
                 hoveron='points'  # Switch off the hover label
                 ))
+
 
             # Setup for box:
             fig.update_layout(boxgap=0.01)#, boxgroupgap=1)

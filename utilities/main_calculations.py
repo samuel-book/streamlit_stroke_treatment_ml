@@ -136,22 +136,25 @@ def make_heat_grids(headers, stroke_team_list, sorted_inds,
     ind_first_team = 9
 
     # Make a new grid and copy over most of the values:
-    grid_cat = np.zeros((ind_first_team + 2, n_teams))
+    grid_cat = np.zeros((ind_first_team + 1, n_teams))
     grid_cat[:ind_first_team, :] = grid[:ind_first_team, :]
 
     # For the remaining column, loop over to pick out the value:
     for i, sorted_ind in enumerate(sorted_inds):
         row = i + ind_first_team
-        # Pick out the value we want:
-        value_of_matching_stroke_team = grid[row, i]
-        # Add the wanted value to the new grid:
-        grid_cat[ind_first_team, i] = value_of_matching_stroke_team
-        # Take the sum of all of the team values:
-        value_of_merged_stroke_teams = np.sum(grid[ind_first_team:, i])
-        # Subtract the value we want:
-        value_of_merged_stroke_teams -= value_of_matching_stroke_team
-        # And store this as a merged "all other teams" value:
-        grid_cat[ind_first_team+1, i] = value_of_merged_stroke_teams
+        # Combine all SHAP values into one:
+        grid_cat[ind_first_team, i] = np.sum(grid[ind_first_team:, i])
+
+        # # Pick out the value we want:
+        # value_of_matching_stroke_team = grid[row, i]
+        # # Add the wanted value to the new grid:
+        # grid_cat[ind_first_team, i] = value_of_matching_stroke_team
+        # # Take the sum of all of the team values:
+        # value_of_merged_stroke_teams = np.sum(grid[ind_first_team:, i])
+        # # Subtract the value we want:
+        # value_of_merged_stroke_teams -= value_of_matching_stroke_team
+        # # And store this as a merged "all other teams" value:
+        # grid_cat[ind_first_team+1, i] = value_of_merged_stroke_teams
 
     # Multiply values by 100 to get probability in percent:
     grid_cat *= 100.0
@@ -159,8 +162,8 @@ def make_heat_grids(headers, stroke_team_list, sorted_inds,
     # Sort the values into the same order as sorted_results:
     grid_cat_sorted = grid_cat[:, sorted_inds]
 
-    headers = np.append(headers[:9], 'This stroke team')
-    headers = np.append(headers, 'Other stroke teams')
+    headers = np.append(headers[:9], 'Stroke team attended')
+    # headers = np.append(headers, 'Stroke teams not attended')
 
     # 2D grid of stroke_teams:
     stroke_team_2d = np.tile(

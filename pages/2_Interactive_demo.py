@@ -83,15 +83,6 @@ with container_shapley_probs:
         'The process can be visualised as a waterfall plot.'
     ]))
 
-# # Draw a blue information box:
-# st.info(
-#     ':information_source: ' +
-#     'For acronym reference, see the introduction page.'
-#     )
-# # Intro text:
-# write_text_from_file('pages/text_for_pages/2_Intro_for_demo.txt',
-#                      head_lines_to_skip=2)
-
 
 # ###########################
 # ########## SETUP ##########
@@ -248,7 +239,6 @@ df_waterfalls, final_probs = \
 # ###########################
 # ######### RESULTS #########
 # ###########################
-# st.header('Results')
 
 with container_metrics:
     # Print metrics for how many teams would thrombolyse:
@@ -316,7 +306,7 @@ with container_shapley_probs:
             )
 
     with tabs_waterfall[3]:
-        # Box plot:
+        # Box plots:
         utilities.container_combo_waterfall.box_plot_of_prob_shifts(
             grid_cat_sorted,
             grid_cat_bench,
