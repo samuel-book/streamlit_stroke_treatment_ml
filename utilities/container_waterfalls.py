@@ -271,7 +271,7 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
     # Add start and end prob annotations:
     fig.add_annotation(
         x=base_values_perc,
-        y=y_vals[-1],
+        y=y_vals[-1]-0.3,
         text=f'Start probability: {base_values_perc:.2f}%',
         showarrow=True,
         yshift=1,
@@ -279,7 +279,7 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
         )
     fig.add_annotation(
         x=final_prob_perc,
-        y=y_vals[0],
+        y=y_vals[0]+0.3,
         text=' <br>'+f'End probability: {final_prob_perc:.2f}%',
         showarrow=True,
         # yshift=-100,
