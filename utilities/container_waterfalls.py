@@ -296,7 +296,7 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
             tickvals=y_vals, # + 1e-7,
             # ticktext=feature_names_to_show
             ticktext=features_with_values_waterfall[::-1],
-            tickfont=dict(color='grey'),
+            tickfont=dict(color='darkgray'),
             range=y_range
         ),
     )
