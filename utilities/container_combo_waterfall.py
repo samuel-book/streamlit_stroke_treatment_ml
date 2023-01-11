@@ -348,7 +348,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
     # Reduce size of figure by adjusting margins:
     fig.update_layout(margin=dict(l=200, r=150, b=80, t=20), height=600)
     # Make the y axis title stand out from the tick labels:
-    fig.update_yaxes(automargin=True)
+    # fig.update_yaxes(automargin=True)
     # Move legend to side
     fig.update_layout(legend=dict(
         orientation='v', #'h',
