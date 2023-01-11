@@ -173,7 +173,7 @@ def make_heat_grids(headers, stroke_team_list, sorted_inds,
 
 def make_waterfall_df(
         grid_cat_sorted, headers, stroke_team_list, highlighted_team_list,
-        hb_team_list, base_values=0.2995270168908044
+        hb_team_list, patient_data_waterfall, base_values=0.2995270168908044
         ):
     base_values_perc = 100.0 * base_values
 
@@ -182,6 +182,7 @@ def make_waterfall_df(
     inds_std = np.argsort(np.std(grid_waterfall, axis=1))
     grid_waterfall = grid_waterfall[inds_std, :]
     features_waterfall = headers[inds_std]
+    patient_data_waterfall = patient_data_waterfall[inds_std]
 
     # Add a row for the starting probability:
     grid_waterfall = np.vstack(
@@ -232,5 +233,5 @@ def make_waterfall_df(
     df_waterfalls['Features'] = column_features
     df_waterfalls['Highlighted team'] = column_highlighted_teams
     df_waterfalls['HB team'] = column_hb_teams
-    return df_waterfalls, final_probs_list
+    return df_waterfalls, final_probs_list, patient_data_waterfall
 

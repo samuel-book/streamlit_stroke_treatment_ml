@@ -168,6 +168,24 @@ sorted_results = utilities.main_calculations.\
                       highlighted_teams_list, benchmark_rank_list,
                       hb_teams_list)
 
+# Pull out the feature values:
+patient_data_waterfall = X.iloc[0][:9].to_numpy()
+# Add empty value for stroke team attended:
+patient_data_waterfall = np.append(patient_data_waterfall, '')
+
+# Find which values are 0/1 choice and can be changed to no/yes:
+features_yn = [
+    'Infarction',
+    'Precise onset time',
+    'Use of AF anticoagulants',
+    'Onset during sleep',
+]
+
+for feature in features_yn:
+    i = np.where(np.array(headers_X) == feature)[0]
+    patient_data_waterfall[i] = 'Yes' if patient_data_waterfall[i] > 0 else 'No'
+
+
 # Get indices of highest, most average, and lowest probability teams.
 index_high = sorted_results.iloc[0]['Index']
 index_mid = sorted_results.iloc[int(len(sorted_results)/2)]['Index']
@@ -225,13 +243,14 @@ grid_cat_nonbench = grid_cat_sorted[:, inds_nonbench]
 
 
 # Make dataframe for combo waterfalls:
-df_waterfalls, final_probs = \
+df_waterfalls, final_probs, patient_data_waterfall = \
     utilities.main_calculations.make_waterfall_df(
         grid_cat_sorted,
         headers,
         sorted_results['Stroke team'],
         sorted_results['Highlighted team'],
         sorted_results['HB team'],
+        patient_data_waterfall,
         base_values=starting_probabilities
         )
 
@@ -302,7 +321,8 @@ with container_shapley_probs:
         utilities.container_combo_waterfall.plot_combo_waterfalls(
             df_waterfalls,
             sorted_results,
-            final_probs
+            final_probs,
+            patient_data_waterfall
             )
 
     with tabs_waterfall[3]:

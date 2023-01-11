@@ -12,7 +12,7 @@ import pandas as pd
 from streamlit_plotly_events import plotly_events
 
 
-def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
+def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_data_waterfall):
     """
     Add the elements to the chart in order so that the last thing
     added ends up on the top. Add the unhighlighted teams first,
@@ -64,7 +64,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
     # st.write(inds_order)
 
     
-    y_vals = np.arange(len(set(df_waterfalls['Features']))+1)*0.5 # for features + final prob
+    y_vals = np.arange(0, -(len(set(df_waterfalls['Features']))+1), -1)*0.5 # for features + final prob
 
     pretty_jitter = False
     if pretty_jitter == True:
@@ -116,7 +116,8 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
                 df_team['Stroke team'],
                 df_team['Prob shift'],
                 df_team['Prob final'],
-                df_team['Sorted rank']
+                df_team['Sorted rank'],
+                df_team['Features']
                 ), axis=-1),
             name=df_team['HB team'].iloc[0],
             showlegend=leggy
@@ -217,20 +218,88 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
         yaxis_title='Feature',
         legend_title='Highlighted team'
         )
+    # fig.update_layout(
+    #     yaxis=dict(
+    #         tickmode='array',
+    #         tickvals=np.append(y_vals, 'Final probability'),
+    #         ticktext=np.append(df_team['Features'], 'Final probability')
+    #     )
+    # )
+
+    # Sort out tick values and labels:
+    y_tickvals = y_vals # np.append(y_vals, 'Final probability')
+    y_ticktext = np.append(df_team['Features'], 'Final probability')
+    # Double up the ticks by slightly offsetting one set:
+    # y_tickvals = np.append(y_tickvals, y_tickvals + 1e-7)
+    # For the second set, add the feature values to the labels.
+    # Combine feature names and values for tick labels:
+    # (same idea as the original shap red/blue waterfall plot)
+    features_with_values_waterfall = ['Base probability']
+    for i, value in enumerate(patient_data_waterfall):
+        if value != '':
+            value = str(value)
+            if 'rrival' in y_ticktext[i+1]:
+                # Onset to arrival or arrival to scan time:
+                value += ' mins'
+            elif 'Age' in y_ticktext[i+1]:
+                value += ' years'
+            # If it's not a dummy feature value, add an equals sign:
+            value += ' = '
+        # Combine the value and the feature name:
+        feature_with_value = value + y_ticktext[i+1]
+        features_with_values_waterfall.append(feature_with_value)
+    features_with_values_waterfall.append('Final probability')
+
+    
+    # # Add these new tick labels to the existing list:
+    # y_ticktext = np.append(features_with_values_waterfall, y_ticktext)
+
+    # y_ticktext_colours = []
+    # for y, text in enumerate(y_ticktext):
+    #     colour = 'gray' if y < len(y_vals) else 'black'
+    #     # t = '$\color{' + str(colour) + '}{' + str(text) + '}$'
+    #     # t = '<color="' + colour + '">' + text #+ '</color>'
+    #     t = 'body{color:"' + colour + '"}' + text #+ '</color>'
+    #     y_ticktext_colours.append(t)
+    # st.write(y_ticktext_colours)
+
+    # y_range = [y_vals[0]+0.25, y_vals[-1]-0.25]
+    y_range = [y_vals[-1] - 0.5, y_vals[0] + 0.1]
     fig.update_layout(
         yaxis=dict(
             tickmode='array',
-            tickvals=np.append(y_vals, 'Final probability'),
-            ticktext=np.append(df_team['Features'], 'Final probability')
+            tickvals=y_tickvals,
+            # ticktext=y_ticktext,  #_colours
+            ticktext=features_with_values_waterfall,
+            tickfont=dict(color='darkgray'),
+            range=y_range
         )
     )
+
+    # Add empty trace to generate second axis:
+    fig.add_trace(go.Scatter(yaxis='y2'))
+    # Update second axis:
+    fig.update_layout(
+        yaxis2=dict(
+            tickmode='array',
+            tickvals=y_tickvals, # + 1e-7,
+            ticktext=y_ticktext,  #_colours
+            # ticktext=features_with_values_waterfall,
+            # tickfont=dict(color='grey'),
+            overlaying='y',
+            side='left',
+            range=y_range
+        ),
+    )
+
 
     # Update the hover text for the lines:
     fig.update_traces(
         hovertemplate=(
             'Stroke team: %{customdata[0]}' +
             '<br>' +
-            'Effect of %{y}: %{customdata[1]:>+.2f}%' +
+            # 'Effect of %{y}: %{customdata[1]:>+.2f}%' +
+            'Effect of %{customdata[4]}: %{customdata[1]:>+.2f}%' +
             '<br>' +
             'Final probability: %{customdata[2]:>.2f}%' +
             '<br>' +
@@ -274,7 +343,8 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs):
         ))
 
     # Flip y-axis so bars are read from top to bottom.
-    fig['layout']['yaxis']['autorange'] = 'reversed'
+    # fig['layout']['yaxis']['autorange'] = 'reversed'
+    # fig['layout']['yaxis2']['autorange'] = 'reversed'
     # Reduce size of figure by adjusting margins:
     fig.update_layout(margin=dict(l=150, r=150, b=80, t=20), height=600)
     # Make the y axis title stand out from the tick labels:
@@ -402,7 +472,7 @@ def box_plot_of_prob_shifts(
     #  9 This stroke team,
     # 10 Other stroke teams.
     # Put it into the same order as in the input sidebar:
-    inds = [4, 2, 0, 6, 8, 1, 3, 5, 7, 9] #, 10]
+    inds = [9, 4, 2, 0, 6, 8, 1, 3, 5, 7] #, 10]
 
     # Sort feature order:
     if len(inds) > 0:
@@ -536,7 +606,8 @@ def box_plot_of_prob_shifts(
         with cols[1]:
             fig = go.Figure()
             # plotly_colours = px.colors.qualitative.Plotly
-            box_colour = 'black'  # plotly_colours[0]
+            # (black doesn't show up well in dark mode)
+            box_colour = 'grey'  # plotly_colours[0]
 
             # Draw the box plots:
             fig.add_trace(go.Box(
