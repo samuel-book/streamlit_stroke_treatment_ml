@@ -346,7 +346,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
     # fig['layout']['yaxis']['autorange'] = 'reversed'
     # fig['layout']['yaxis2']['autorange'] = 'reversed'
     # Reduce size of figure by adjusting margins:
-    fig.update_layout(margin=dict(l=250, r=150, b=80, t=20), height=600)
+    fig.update_layout(margin=dict(l=200, r=150, b=80, t=20), height=600)
     # Make the y axis title stand out from the tick labels:
     fig.update_yaxes(automargin=True)
     # Move legend to side
