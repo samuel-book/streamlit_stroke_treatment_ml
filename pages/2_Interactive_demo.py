@@ -12,7 +12,8 @@ import streamlit as st
 import numpy as np
 
 # Custom functions:
-from utilities.fixed_params import page_setup, starting_probabilities
+from utilities.fixed_params import page_setup, starting_probabilities, \
+    plain_str, bench_str
 # from utilities.inputs import \
 #     write_text_from_file
 import utilities.inputs
@@ -118,9 +119,6 @@ inds_benchmark = np.where(benchmark_rank_list <= 30)[0]
 
 # ----- Highlighted teams -----
 
-plain_str = '-'
-bench_str = 'Benchmark \U00002605'
-
 # Receive the user inputs now and show this container now:
 with container_bar_chart:
     st.markdown(''.join([
@@ -137,7 +135,7 @@ highlighted_teams_list = np.array(
     ['-' for team in stroke_teams_list], dtype=object)
 # Combo highlighted and benchmark:
 hb_teams_list = np.array(
-    ['-' for team in stroke_teams_list], dtype=object)
+    [plain_str for team in stroke_teams_list], dtype=object)
 hb_teams_list[inds_benchmark] = bench_str
 # Put in selected Highlighteds (overwrites benchmarks):
 # inds_highlighted = []

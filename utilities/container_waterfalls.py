@@ -218,14 +218,18 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
     y_vals = np.arange(0, -len(feature_names_to_show), -1)
     y_range = [0.5, y_vals[-1] - 0.5]
 
-    fig = go.Figure(go.Waterfall(
+
+    fig = go.Figure()
+    # Main plot:
+    fig.add_trace(go.Waterfall(
         orientation='h',  # horizontal
         measure=measures,
         y=y_vals[::-1],
         x=shap_probs_perc,
         base=base_values_perc,
-        decreasing={'marker': {'color': '#008bfa'}},
-        increasing={'marker': {'color': '#ff0050'}}
+        decreasing={'marker': {'color': '#008bfa'}},  # Blue bars
+        increasing={'marker': {'color': '#ff0050'}},  # Red bars
+        hoverinfo='skip'  # Nothing happens when you hover.
     ))
 
 
@@ -234,34 +238,35 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
     # Add the custom data:
     fig.update_traces(customdata=custom_data, selector=dict(type='waterfall'))
 
+    # Hover options:
+    # # When hovering, show bar at this y value:
+    # fig.update_layout(hovermode='y')
 
-  
-    # When hovering, show bar at this y value:
-    fig.update_layout(hovermode='y')
-
-    # Update the hover message with the stroke team:
-    fig.update_traces(hovertemplate=(
-        # 'Team %{customdata[0]}' +
-        # '<br>' +
-        # 'Rank: %{x}' +
-        # '<br>' +
-        # 'Feature value: %{customdata[1]}' +
-        # '<br>' +
-        'Effect on probability: %{customdata[0]:.2f}%' +
-        # Need the following line to remove default "trace" bit
-        # in second "extra" box:
-        '<extra></extra>'
-        ))
+    # # Update the hover message with the stroke team:
+    # fig.update_traces(hovertemplate=(
+    #     # 'Team %{customdata[0]}' +
+    #     # '<br>' +
+    #     # 'Rank: %{x}' +
+    #     # '<br>' +
+    #     # 'Feature value: %{customdata[1]}' +
+    #     # '<br>' +
+    #     'Effect on probability: %{customdata[0]:.2f}%' +
+    #     # Need the following line to remove default "trace" bit
+    #     # in second "extra" box:
+    #     '<extra></extra>'
+    #     ))
 
     # Change axis:
     # fig.update_xaxes(range=[0, 100])
 
     # Write the size of each bar within the bar:
-    fig.update_traces(text=np.round(shap_probs_perc, 2),
-                      selector=dict(type='waterfall'))
-    fig.update_traces(textposition='inside', selector=dict(type='waterfall'))
-    fig.update_traces(texttemplate='%{text:+}%',
-                      selector=dict(type='waterfall'))
+    fig.update_traces(text=np.round(shap_probs_perc, 2))
+    # Set text position to "auto" so it sits inside the bar if there's
+    # room, and outside the bar if there's not enough room.
+    # For everything inside and auto-size the text, use "inside".
+    fig.update_traces(textposition='auto')
+    # Explicitly ask for + and - signs:
+    fig.update_traces(texttemplate='%{text:+}%')
 
     # Set axis labels:
     fig.update_xaxes(title_text=' <br>Probability of thrombolysis (%)')
@@ -285,16 +290,26 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
         # yshift=-100,
         ax=0,  # Make arrow vertical - a = arrow, x = x-shift.
         ay=35,  # Make the arrow sit below the final bar
-         )
+        )
 
+    # Update x range manually so that bar labels don't get cut off.
+    # Find current plotted extent:
+    x_values_plotted = base_values_perc + np.cumsum(shap_probs_perc)
+    x_min = np.min(x_values_plotted)
+    x_max = np.max(x_values_plotted)
+    # Choose a padding value that's a fraction of the current extent:
+    x_pad = (x_max - x_min) * 0.15
+    fig.update_layout(xaxis=dict(range=[
+        x_min - x_pad,
+        x_max + x_pad
+    ]))
 
     # Explicitly set some axis information
     # so that the second axis can match it exactly:
     fig.update_layout(
         yaxis=dict(
             tickmode='array',
-            tickvals=y_vals, # + 1e-7,
-            # ticktext=feature_names_to_show
+            tickvals=y_vals,
             ticktext=features_with_values_waterfall[::-1],
             tickfont=dict(color='darkgray'),
             range=y_range
@@ -306,19 +321,25 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
     fig.update_layout(
         yaxis2=dict(
             tickmode='array',
-            tickvals=y_vals,  # + 1e-7,
-            ticktext=feature_names_to_show[::-1],  #_colours
-            # ticktext=features_with_values_waterfall,
-            # tickfont=dict(color='grey'),
+            tickvals=y_vals,
+            ticktext=feature_names_to_show[::-1],
             overlaying='y',
             side='left',
             range=y_range
         ),
     )
 
-    # Remove y=0 line:
+    # Add vertical line at starting probability.
+    fig.add_vline(
+        x=base_values_perc,
+        line=dict(color='silver', width=1.0),
+        layer='below'  # Puts it below the waterfall
+        )
+    # Remove y=0 and x=0 lines:
     fig.update_yaxes(zeroline=False)
-
+    fig.update_xaxes(zeroline=False)
+    # Remove other vertical grid lines:
+    fig.update_xaxes(showgrid=False)
 
     # Flip y-axis so bars are read from top to bottom.
     # fig['layout']['yaxis']['autorange'] = 'reversed'
@@ -326,24 +347,3 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
 
     # Write to streamlit:
     st.plotly_chart(fig, use_container_width=True)
-
-
-"""
-def plot_shap_waterfall_matplotlib(shap_values):
-    with _lock:
-        fig = waterfall.waterfall(
-            shap_values,
-            show=False, max_display=10, y_reverse=True, rank_absolute=False
-            )
-        # # Access the axis limits with this:
-        # current_xlim = plt.xlim()
-        # st.write(current_xlim)
-        # # Update:
-        # plt.xlim(-0.5, 1.5) # doesn't work fully as expected
-
-        st.pyplot(fig)
-
-        plt.close(fig)
-        # Delete the figure - attempt to help memory usage:
-        # del fig
-"""

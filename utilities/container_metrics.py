@@ -36,10 +36,10 @@ def main(sorted_results):
             f'{perc_thrombolyse_all:.0f}%'
             )
         st.write(''.join([
-            ':heavy_check_mark:' + f' {n_thrombolyse_all} teams '
+            ':heavy_check_mark:' + f' {n_thrombolyse_all} teams ',
             ':x:' + f' {n_all - n_thrombolyse_all} teams'
             ]))
-
+            
     with cols[1]:
         st.metric(
             f'Benchmark teams',

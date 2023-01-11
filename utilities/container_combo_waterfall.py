@@ -11,6 +11,8 @@ import pandas as pd
 # For clickable plotly events:
 from streamlit_plotly_events import plotly_events
 
+from utilities.fixed_params import bench_str, plain_str
+
 
 def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_data_waterfall):
     """
@@ -24,9 +26,6 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
 
     # Find the indices of the non-highlighted teams:
     # inds_order = list(set(np.arange(0, len(stroke_team_list))).difference(indices_highlighted))
-
-    bench_str = 'Benchmark \U00002605'
-    plain_str = '-'
 
     # Getting muddled with pandas indexing so switch to numpy:
     # index_list = sorted_results['Index'].to_numpy()
@@ -88,7 +87,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
             opacity = 1.0
             width = 2.0
         else:
-            if df_team['HB team'].iloc[0] == '-':
+            if df_team['HB team'].iloc[0] == plain_str:
                 if drawn_blank_legend_line > 0:
                     leggy = False
                 else:
@@ -215,7 +214,8 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
     fig.update_layout(
         # title='Waterfalls for all stroke teams',
         xaxis_title='Probability of thrombolysis (%)',
-        yaxis_title='Feature',
+        # Add some blank lines below "feature" to help position it.
+        yaxis_title='Feature<br> <br> <br>',
         legend_title='Highlighted team'
         )
     # fig.update_layout(
@@ -359,6 +359,8 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
     ))
     # Remove y=0 line:
     fig.update_yaxes(zeroline=False)
+    # Remove other vertical grid lines:
+    fig.update_xaxes(showgrid=False)
 
     # Write to streamlit:
     # st.plotly_chart(fig, use_container_width=True)

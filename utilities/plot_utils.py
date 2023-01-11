@@ -6,6 +6,7 @@ import matplotlib
 import numpy as np
 import streamlit as st
 
+from utilities.fixed_params import plain_str, bench_str
 
 # Functions:
 
@@ -35,15 +36,17 @@ def choose_colours_for_highlights(highlighted_teams_list):
     # Pick out some colours we prefer (not too close to existing colours):
     inds_preferred = [1, 5, 4, 7, 8, 9, 6, 2, 3, 0]
     preferred_colours = np.array(plotly_colours)[inds_preferred]
-    
+
     for i, leg_entry in enumerate(highlighted_teams_list):
         try:
             # Check if there's already a designated colour:
             colour = highlighted_teams_colours[leg_entry]
         except KeyError:
-            if leg_entry == '-':
+            if leg_entry == plain_str:
                 colour = 'grey'
-            elif 'Benchmark' in leg_entry:
+            # elif leg_entry == '-':
+            #     colour = 'grey'
+            elif leg_entry == bench_str:
                 colour = 'Navy'
             else:
                 # Pick a colour that hasn't already been used.

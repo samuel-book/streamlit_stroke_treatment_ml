@@ -14,3 +14,7 @@ def page_setup():
 
 # Starting probability in the model:
 starting_probabilities = 0.2995270168908044
+
+# How to label non-highlighted teams:
+plain_str = 'Non-benchmark team'
+bench_str = 'Benchmark team: \U00002605'

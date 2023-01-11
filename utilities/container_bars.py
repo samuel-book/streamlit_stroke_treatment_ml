@@ -1,14 +1,9 @@
 import streamlit as st
 import numpy as np
-# import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
 # For clickable plotly events:
 from streamlit_plotly_events import plotly_events
-
-# # For matplotlib plots:
-# from matplotlib.backends.backend_agg import RendererAgg
-# _lock = RendererAgg.lock
 
 
 def main(sorted_results):
@@ -17,15 +12,8 @@ def main(sorted_results):
     """
 
     # Add the bars to the chart in the same order as the highlighted
-    # teams list. Otherwise by default the bars would be added in the
-    # order of sorted rank, and adding a new highlighted team could
-    # change the colours of the existing teams.
-    # (Currently removing a team does shuffle the colours but I don't
-    # see an easy fix to that.)
-    # Make the ordered list of things to add:
+    # teams list.
     highlighted_teams_list = st.session_state['hb_teams_input']
-    # highlighted_teams_list = np.append(['-', '\U00002605' + ' (Benchmark)'], highlighted_teams_list)
-    # Store the colours used in here:
     highlighted_teams_colours = st.session_state['highlighted_teams_colours']
 
     fig = go.Figure()
@@ -66,7 +54,7 @@ def main(sorted_results):
     fig.update_layout(
         # title='Effect on probability by feature',
         xaxis_title=f'Rank out of {sorted_results.shape[0]} stroke teams',
-        yaxis_title='Probability of giving<br>thrombolysis',
+        yaxis_title='Probability of giving<br>thrombolysis (%)',
         legend_title='Highlighted team'
         )
 
@@ -121,22 +109,14 @@ def main(sorted_results):
     # Clickable version:
     # Write the plot to streamlit, and store the details of the last
     # bar that was clicked:
-    selected_bar = plotly_events(fig, click_event=True, key='bars',
-        override_height=250)#, override_width='50%')
-    try:
-        # Pull the details out of the last bar that was changed
-        # (moved to or from the "highlighted" list due to being
-        # clicked on) out of the session state:
-        last_changed_bar = st.session_state['last_changed_bar']
-    except KeyError:
-        # Invent some nonsense. It doesn't matter whether it matches
-        # the default value of selected_bar before anything is clicked.
-        last_changed_bar = [0]
-    callback_bar(selected_bar, last_changed_bar, 'last_changed_bar', sorted_results)
+    selected_bar = plotly_events(
+        fig, click_event=True, key='bars', override_height=250)
+
+    callback_bar(selected_bar, sorted_results)
     # return selected_bar
 
 
-def callback_bar(selected_bar, last_changed_bar, last_changed_str, sorted_results):
+def callback_bar(selected_bar, sorted_results):
     """
     # When the script is re-run, this value of selected bar doesn't
     # change. So if the script is re-run for another reason such as
@@ -157,6 +137,16 @@ def callback_bar(selected_bar, last_changed_bar, last_changed_str, sorted_result
     # and so the following loop still happens despite x and y being
     # the same.
     """
+    try:
+        # Pull the details out of the last bar that was changed
+        # (moved to or from the "highlighted" list due to being
+        # clicked on) out of the session state:
+        last_changed_bar = st.session_state['last_changed_bar']
+    except KeyError:
+        # Invent some nonsense. It doesn't matter whether it matches
+        # the default value of selected_bar before anything is clicked.
+        last_changed_bar = [0]
+
     if selected_bar != last_changed_bar:
         # If the selected bar doesn't match the last changed bar,
         # then we need to update the graph and store the latest
@@ -186,7 +176,7 @@ def callback_bar(selected_bar, last_changed_bar, last_changed_str, sorted_result
             # Keep a copy of the bar that we've just changed,
             # and put it in the session state so that we can still
             # access it once the script is re-run:
-            st.session_state[last_changed_str] = selected_bar.copy()
+            st.session_state['last_changed_bar'] = selected_bar.copy()
 
             # Re-run the script to get immediate feedback in the
             # multiselect input widget and the graph colours:
@@ -195,20 +185,3 @@ def callback_bar(selected_bar, last_changed_bar, last_changed_str, sorted_result
         except IndexError:
             # Nothing has been clicked yet, so don't change anything.
             pass
-
-
-def plot_sorted_probs_matplotlib(sorted_results):
-
-    fig = plt.figure(figsize=(8, 5))
-    ax = fig.add_subplot()
-    x_chart = range(len(sorted_results))
-    ax.bar(x_chart, sorted_results['Probability'], width=0.5)
-    ax.plot([0, len(sorted_results)], [0.5, 0.5], c='k')
-    ax.axes.get_xaxis().set_ticks([])
-    ax.set_xlabel('Stroke team')
-    ax.set_ylabel('Probability of giving patient thrombolysis')
-
-    ax.set_ylim(0, 1)
-    st.pyplot(fig)
-    plt.close(fig)
-
