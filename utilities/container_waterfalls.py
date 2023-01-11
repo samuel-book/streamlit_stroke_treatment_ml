@@ -95,8 +95,8 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
     extra_bits = {
         'Onset-to-arrival time': ' minutes',
         'Arrival-to-scan time': ' minutes',
-        'Stroke severity': ' (out of 42)',
-        'Prior disability level': ' (mRS)',
+        # 'Stroke severity': ' (out of 42)',
+        # 'Prior disability level': ' (mRS)',
         'Age': ' years',
     }
     for feature in extra_bits.keys():
@@ -209,24 +209,33 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
     # shift or a new total.
     measures = ['relative'] * (len(shap_probs_to_show))
 
+    features_with_values_waterfall = []
+    for i, value in enumerate(patient_data_to_show):
+        # Combine the value and the feature name:
+        feature_with_value = str(value) + ' = ' + feature_names_to_show[i]
+        features_with_values_waterfall.append(feature_with_value)
+
+    y_vals = np.arange(0, -len(feature_names_to_show), -1)
+    y_range = [0.5, y_vals[-1] - 0.5]
+
     fig = go.Figure(go.Waterfall(
         orientation='h',  # horizontal
         measure=measures,
-        y=feature_names_to_show,
+        y=y_vals[::-1],
         x=shap_probs_perc,
         base=base_values_perc,
         decreasing={'marker': {'color': '#008bfa'}},
         increasing={'marker': {'color': '#ff0050'}}
     ))
 
+
     # For some reason, custom_data needs to be columns rather than rows:
     custom_data = np.stack((shap_probs_perc, patient_data_to_show), axis=-1)
     # Add the custom data:
     fig.update_traces(customdata=custom_data, selector=dict(type='waterfall'))
 
-    # Flip y-axis so bars are read from top to bottom.
-    fig['layout']['yaxis']['autorange'] = 'reversed'
 
+  
     # When hovering, show bar at this y value:
     fig.update_layout(hovermode='y')
 
@@ -236,10 +245,11 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
         # '<br>' +
         # 'Rank: %{x}' +
         # '<br>' +
-        'Feature value: %{customdata[1]}' +
-        '<br>' +
+        # 'Feature value: %{customdata[1]}' +
+        # '<br>' +
         'Effect on probability: %{customdata[0]:.2f}%' +
-        # Need the following line to remove default "trace" bit:
+        # Need the following line to remove default "trace" bit
+        # in second "extra" box:
         '<extra></extra>'
         ))
 
@@ -261,7 +271,7 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
     # Add start and end prob annotations:
     fig.add_annotation(
         x=base_values_perc,
-        y=-0.4,
+        y=y_vals[-1],
         text=f'Start probability: {base_values_perc:.2f}%',
         showarrow=True,
         yshift=1,
@@ -269,13 +279,50 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
         )
     fig.add_annotation(
         x=final_prob_perc,
-        y=n_to_show-0.6,
+        y=y_vals[0],
         text=' <br>'+f'End probability: {final_prob_perc:.2f}%',
         showarrow=True,
         # yshift=-100,
         ax=0,  # Make arrow vertical - a = arrow, x = x-shift.
         ay=35,  # Make the arrow sit below the final bar
          )
+
+
+    # Explicitly set some axis information
+    # so that the second axis can match it exactly:
+    fig.update_layout(
+        yaxis=dict(
+            tickmode='array',
+            tickvals=y_vals, # + 1e-7,
+            # ticktext=feature_names_to_show
+            ticktext=features_with_values_waterfall[::-1],
+            tickfont=dict(color='grey'),
+            range=y_range
+        ),
+    )
+    # Add empty trace to generate second axis:
+    fig.add_trace(go.Scatter(yaxis='y2'))
+    # Update second axis:
+    fig.update_layout(
+        yaxis2=dict(
+            tickmode='array',
+            tickvals=y_vals,  # + 1e-7,
+            ticktext=feature_names_to_show[::-1],  #_colours
+            # ticktext=features_with_values_waterfall,
+            # tickfont=dict(color='grey'),
+            overlaying='y',
+            side='left',
+            range=y_range
+        ),
+    )
+
+    # Remove y=0 line:
+    fig.update_yaxes(zeroline=False)
+
+
+    # Flip y-axis so bars are read from top to bottom.
+    # fig['layout']['yaxis']['autorange'] = 'reversed'
+    # fig['layout']['yaxis2']['autorange'] = 'reversed'
 
     # Write to streamlit:
     st.plotly_chart(fig, use_container_width=True)

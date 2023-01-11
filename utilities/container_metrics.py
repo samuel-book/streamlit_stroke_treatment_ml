@@ -32,7 +32,7 @@ def main(sorted_results):
     cols = st.columns(3)
     with cols[0]:
         st.metric(
-            f'All {n_all} teams',
+            f'All teams',
             f'{perc_thrombolyse_all:.0f}%'
             )
         st.write(''.join([
@@ -42,7 +42,7 @@ def main(sorted_results):
 
     with cols[1]:
         st.metric(
-            f'{n_benchmark} Benchmark teams',
+            f'Benchmark teams',
             f'{perc_thrombolyse_benchmark:.0f}%'
             )
         st.write(''.join([
@@ -53,7 +53,7 @@ def main(sorted_results):
 
     with cols[2]:
         st.metric(
-            f'{n_non_benchmark} Non-benchmark teams',
+            f'Non-benchmark teams',
             f'{perc_thrombolyse_non_benchmark:.0f}%'
             )
         st.write(''.join([
