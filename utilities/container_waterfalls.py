@@ -294,7 +294,8 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
 
     # Update x range manually so that bar labels don't get cut off.
     # Find current plotted extent:
-    x_values_plotted = base_values_perc + np.cumsum(shap_probs_perc)
+    x_values_plotted = np.append(
+        base_values_perc, base_values_perc + np.cumsum(shap_probs_perc))
     x_min = np.min(x_values_plotted)
     x_max = np.max(x_values_plotted)
     # Choose a padding value that's a fraction of the current extent:
