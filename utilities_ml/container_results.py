@@ -11,7 +11,7 @@ import pandas as pd
 # import matplotlib
 
 # For creating SHAP waterfall in response to click:
-import utilities.main_calculations
+import utilities_ml.main_calculations
 # For clickable plotly events:
 from streamlit_plotly_events import plotly_events
 
@@ -20,7 +20,7 @@ from matplotlib.backends.backend_agg import RendererAgg
 _lock = RendererAgg.lock
 
 # Import local package
-from utilities import waterfall
+from utilities_ml import waterfall
 # Force package to be reloaded
 importlib.reload(waterfall)
 

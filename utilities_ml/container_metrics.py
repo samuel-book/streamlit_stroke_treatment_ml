@@ -29,7 +29,7 @@ def main(sorted_results):
     perc_thrombolyse_non_benchmark = (
         100.0 * n_thrombolyse_non_benchmark / n_non_benchmark)
     
-    cols = st.columns(3)
+    cols = st.columns(3, gap='large')
     with cols[0]:
         st.metric(
             f'All teams',
@@ -39,7 +39,7 @@ def main(sorted_results):
             ':heavy_check_mark:' + f' {n_thrombolyse_all} teams ',
             ':x:' + f' {n_all - n_thrombolyse_all} teams'
             ]))
-            
+
     with cols[1]:
         st.metric(
             f'Benchmark teams',

@@ -6,7 +6,7 @@ import matplotlib
 import numpy as np
 import streamlit as st
 
-from utilities.fixed_params import plain_str, bench_str
+from utilities_ml.fixed_params import plain_str, bench_str
 
 # Functions:
 

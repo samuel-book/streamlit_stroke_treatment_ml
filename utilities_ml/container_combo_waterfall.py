@@ -11,7 +11,7 @@ import pandas as pd
 # For clickable plotly events:
 from streamlit_plotly_events import plotly_events
 
-from utilities.fixed_params import bench_str, plain_str
+from utilities_ml.fixed_params import bench_str, plain_str
 
 
 def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_data_waterfall):

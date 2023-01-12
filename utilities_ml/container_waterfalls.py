@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 # import importlib
 # import matplotlib
 
-import utilities.main_calculations
+import utilities_ml.main_calculations
 
 # For matplotlib plots:
 from matplotlib.backends.backend_agg import RendererAgg
@@ -34,7 +34,7 @@ def show_waterfalls_max_med_min(
         # Find the data:
         sv = shap_values_probability_extended_high_mid_low[i_here]
         # Change integer 0/1 to str no/yes for display:
-        sv_to_display = utilities.main_calculations.\
+        sv_to_display = utilities_ml.main_calculations.\
             convert_explainer_01_to_noyes(sv)
 
         # Write to streamlit:
@@ -63,7 +63,7 @@ def show_waterfalls_highlighted(
         # Find the data:
         sv = shap_values_probability_extended_highlighted[i_here]
         # Change integer 0/1 to str no/yes for display:
-        sv_to_display = utilities.main_calculations.\
+        sv_to_display = utilities_ml.main_calculations.\
             convert_explainer_01_to_noyes(sv)
         # Final probability:
         final_prob = sorted_results['Probability'].loc[i]
