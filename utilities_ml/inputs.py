@@ -6,6 +6,11 @@ import numpy as np
 import pandas as pd
 import pickle
 
+try:
+    stroke_teams_test = pd.read_csv('./data_ml/stroke_teams.csv')
+    dir = './'
+except FileNotFoundError:
+    dir = 'streamlit_stroke_treatment_ml/'
 
 def write_text_from_file(filename, head_lines_to_skip=0):
     """
@@ -27,13 +32,13 @@ def write_text_from_file(filename, head_lines_to_skip=0):
 
 @st.cache
 def import_patient_data():
-    synthetic = pd.read_csv('./data_ml/synthetic_10_features.csv')
+    synthetic = pd.read_csv(dir + 'data_ml/synthetic_10_features.csv')
     return synthetic
 
 
 @st.cache
 def import_benchmark_data():
-    all_teams_and_probs = pd.read_csv('./data_ml/hospital_10k_thrombolysis.csv')
+    all_teams_and_probs = pd.read_csv(dir + 'data_ml/hospital_10k_thrombolysis.csv')
     # Add an index row to rank the teams:
     all_teams_and_probs['Rank'] = \
         np.arange(1, len(all_teams_and_probs['stroke_team'])+1)
@@ -73,7 +78,7 @@ def one_hot_encode_data(synthetic):
 
 @st.cache
 def read_stroke_teams_from_file():
-    stroke_teams = pd.read_csv('./data_ml/stroke_teams.csv')
+    stroke_teams = pd.read_csv(dir + 'data_ml/stroke_teams.csv')
     stroke_teams = stroke_teams.values.ravel()
     return stroke_teams
 
@@ -123,7 +128,7 @@ def build_dataframe_from_inputs(dict, stroke_teams_list):
 @st.cache(hash_funcs={'builtins.dict': lambda _: None})
 def load_pretrained_model():
     # Load XGB Model
-    filename = ('./data_ml/model.p')
+    filename = (dir + 'data_ml/model.p')
     with open(filename, 'rb') as filehandler:
         model = pickle.load(filehandler)
     return model
@@ -132,7 +137,7 @@ def load_pretrained_model():
 @st.cache(hash_funcs={'builtins.dict': lambda _: None})
 def load_explainer():
     # Load SHAP explainers
-    filename = ('./data_ml/shap_explainer.p')
+    filename = (dir + 'data_ml/shap_explainer.p')
     with open(filename, 'rb') as filehandler:
         explainer = pickle.load(filehandler)
     return explainer
@@ -140,7 +145,8 @@ def load_explainer():
 
 @st.cache(hash_funcs={'builtins.dict': lambda _: None})
 def load_explainer_probability():
-    filename = ('./data_ml/shap_explainer_probability.p')
+    filename = (dir + 'data_ml/shap_explainer_probability.p')
     with open(filename, 'rb') as filehandler:
         explainer_probability = pickle.load(filehandler)
     return explainer_probability
+

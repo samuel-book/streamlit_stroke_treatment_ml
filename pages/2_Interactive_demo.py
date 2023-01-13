@@ -38,7 +38,6 @@ import utilities_ml.container_bars
 import utilities_ml.container_waterfalls
 import utilities_ml.container_combo_waterfall
 import utilities_ml.container_results
-# import utilities_ml.container_details
 
 from utilities_ml.plot_utils import remove_old_colours_for_highlights, \
                                  choose_colours_for_highlights
