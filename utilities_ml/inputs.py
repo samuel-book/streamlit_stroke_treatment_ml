@@ -12,6 +12,9 @@ try:
 except FileNotFoundError:
     dir = 'streamlit_stroke_treatment_ml/'
 
+from utilities_ml.fixed_params import plain_str, bench_str
+
+
 def write_text_from_file(filename, head_lines_to_skip=0):
     """
     Write text from 'filename' into streamlit.
@@ -30,10 +33,10 @@ def write_text_from_file(filename, head_lines_to_skip=0):
     st.markdown(f"""{text_to_print}""")
 
 
-@st.cache
-def import_patient_data():
-    synthetic = pd.read_csv(dir + 'data_ml/synthetic_10_features.csv')
-    return synthetic
+# @st.cache
+# def import_patient_data():
+#     synthetic = pd.read_csv(dir + 'data_ml/synthetic_10_features.csv')
+#     return synthetic
 
 
 @st.cache
@@ -52,15 +55,13 @@ def build_X(user_inputs_dict, stroke_teams_list):
     # function so the "synthetic" array doesn't sit in memory.
     synthetic = build_dataframe_from_inputs(
         user_inputs_dict, stroke_teams_list)
-    # Store the column names:
-    headers_synthetic = tuple(synthetic.columns)
 
     # Make a copy of this data that is ready for the model.
     # The same data except the Stroke Team column is one-hot-encoded.
     X = one_hot_encode_data(synthetic)
     # Store the column names:
     headers_X = tuple(X.columns)
-    return X, headers_X, headers_synthetic
+    return X, headers_X
 
 
 def one_hot_encode_data(synthetic):
@@ -150,3 +151,36 @@ def load_explainer_probability():
         explainer_probability = pickle.load(filehandler)
     return explainer_probability
 
+
+def find_highlighted_hb_teams(stroke_teams_list, inds_benchmark, highlighted_teams_input):
+    # Create a "Highlighted teams" column for the sorted_results.
+    # Start off with everything '-' (NOT as plain_str):
+    highlighted_teams_list = np.array(
+        ['-' for team in stroke_teams_list], dtype=object)
+    # Create a combined highlighted and benchmark (HB) column.
+    # Initially mark all of the teams with the plain string:
+    hb_teams_list = np.array(
+        [plain_str for team in stroke_teams_list], dtype=object)
+    # Then change the benchmark teams to the benchmark string:
+    hb_teams_list[inds_benchmark] = bench_str
+
+    # Keep a shorter list of all of the unique values in hb_teams_list:
+    hb_teams_input = [plain_str, bench_str]
+
+    # In the following loop, update the highlighted column, HB column,
+    # and HB input list with the input highlighted teams:
+    for team in highlighted_teams_input:
+        # Find where this team is in the full list:
+        ind_t = np.argwhere(stroke_teams_list == team)[0][0]
+        # Set the highlighted teams column here to just the name
+        # of the highlighted team:
+        highlighted_teams_list[ind_t] = team
+        # Check whether this team is also a benchmark team.
+        # If it is, add this string (unicode for a star).
+        if ind_t in inds_benchmark:
+            team = team + ' \U00002605'
+        # Update this team in the HB column...
+        hb_teams_list[ind_t] = team
+        # ... and add it to the shorter unique values list.
+        hb_teams_input.append(team)
+    return highlighted_teams_list, hb_teams_list, hb_teams_input

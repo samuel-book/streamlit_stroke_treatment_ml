@@ -234,4 +234,3 @@ def make_waterfall_df(
     df_waterfalls['Highlighted team'] = column_highlighted_teams
     df_waterfalls['HB team'] = column_hb_teams
     return df_waterfalls, final_probs_list, patient_data_waterfall
-

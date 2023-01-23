@@ -6,14 +6,14 @@ import plotly.graph_objects as go
 from streamlit_plotly_events import plotly_events
 
 
-def main(sorted_results):
+def main(sorted_results, hb_teams_input):
     """
     Plot sorted probability bar chart
     """
 
     # Add the bars to the chart in the same order as the highlighted
     # teams list.
-    highlighted_teams_list = st.session_state['hb_teams_input']
+    highlighted_teams_list = hb_teams_input  # st.session_state['hb_teams_input']
     highlighted_teams_colours = st.session_state['highlighted_teams_colours']
 
     fig = go.Figure()
