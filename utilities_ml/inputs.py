@@ -12,7 +12,8 @@ try:
 except FileNotFoundError:
     dir = 'streamlit_stroke_treatment_ml/'
 
-from utilities_ml.fixed_params import plain_str, bench_str
+from utilities_ml.fixed_params import plain_str, bench_str, \
+    display_name_of_default_highlighted_team, default_highlighted_team
 
 
 def write_text_from_file(filename, head_lines_to_skip=0):
@@ -170,6 +171,8 @@ def find_highlighted_hb_teams(stroke_teams_list, inds_benchmark, highlighted_tea
     # In the following loop, update the highlighted column, HB column,
     # and HB input list with the input highlighted teams:
     for team in highlighted_teams_input:
+        if team == display_name_of_default_highlighted_team:
+            team = default_highlighted_team
         # Find where this team is in the full list:
         ind_t = np.argwhere(stroke_teams_list == team)[0][0]
         # Set the highlighted teams column here to just the name

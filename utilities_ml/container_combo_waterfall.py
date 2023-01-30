@@ -11,7 +11,8 @@ import pandas as pd
 # For clickable plotly events:
 from streamlit_plotly_events import plotly_events
 
-from utilities_ml.fixed_params import bench_str, plain_str
+from utilities_ml.fixed_params import bench_str, plain_str, \
+    default_highlighted_team, display_name_of_default_highlighted_team
 
 
 def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_data_waterfall):
@@ -36,7 +37,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
     inds_bench = np.where(hb_list == bench_str)[0]
     # inds_highlighted = np.where(
     #     (hb_list != plain_str) & (hb_list != bench_str))[0]
-    
+
     # # inds_plain = sorted_results['Index'].loc[sorted_results['HB team'] == plain_str].values
     # # inds_bench = sorted_results['Index'].loc[sorted_results['HB team'] == bench_str].values
     # # inds_order = np.concatenate((inds_plain, inds_bench))
@@ -47,8 +48,12 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
     # Do this way to retain order of input:
     inds_highlighted = []
     for team in highlighted_teams_input:
+        if team == display_name_of_default_highlighted_team:
+            df_team = default_highlighted_team
+        else:
+            df_team = team
         # ind_h = sorted_results['Index'].loc[sorted_results['Highlighted team'] == team].values[0]
-        ind_h = np.where(sorted_results['Highlighted team'].to_numpy() == team)[0][0]
+        ind_h = np.where(sorted_results['Highlighted team'].to_numpy() == df_team)[0][0]
         inds_highlighted.append(ind_h)
 
     # # hb_team_list = hb_team_list.to_numpy()
@@ -104,6 +109,13 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
             width = 1.0
         colour = highlighted_teams_colours[df_team['HB team'].iloc[0]]
 
+        if team == default_highlighted_team:
+            name_list = [display_name_of_default_highlighted_team] * len(df_team['Stroke team'])
+            trace_name = display_name_of_default_highlighted_team
+        else:
+            name_list = df_team['Stroke team']
+            trace_name = df_team['HB team'].iloc[0]
+
         # Draw the waterfall
         fig.add_trace(go.Scatter(
             x=df_team['Probabilities'],
@@ -112,13 +124,13 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
             line=dict(width=width, color=colour), opacity=opacity,
             # c=df_waterfalls['Stroke team'],
             customdata=np.stack((
-                df_team['Stroke team'],
+                name_list,
                 df_team['Prob shift'],
                 df_team['Prob final'],
                 df_team['Sorted rank'],
                 df_team['Features']
                 ), axis=-1),
-            name=df_team['HB team'].iloc[0],
+            name=trace_name,
             showlegend=leggy
             ))
 
@@ -560,12 +572,17 @@ def box_plot_of_prob_shifts(
             st.markdown('### ' + feature)
             table = []
             for team in highlighted_teams:
-                team_for_table = sorted_results['HB team'][
-                    sorted_results['Stroke team'] == team].to_numpy()[0]
+                if team == display_name_of_default_highlighted_team:
+                    df_team = default_highlighted_team
+                    team_for_table = display_name_of_default_highlighted_team
+                else:
+                    df_team = team
+                    team_for_table = sorted_results['HB team'][
+                        sorted_results['Stroke team'] == df_team].to_numpy()[0]
 
                 # Find where this team is in the overall list:
                 rank_overall = sorted_results['Sorted rank'][
-                    sorted_results['Stroke team'] == team]
+                    sorted_results['Stroke team'] == df_team]
                 # Find the effect of this value for this feature:
                 effect_val_perc = grid[i][rank_overall-1][0]
                 effect_vals.append(effect_val_perc)
@@ -644,8 +661,17 @@ def box_plot_of_prob_shifts(
 
             # Mark the highlighted teams:
             for t, team in enumerate(highlighted_teams):
+                if team == display_name_of_default_highlighted_team:
+                    df_team = default_highlighted_team
+                else:
+                    df_team = team
+
+                if team == display_name_of_default_highlighted_team:
+                    name_for_customdata = team
+                else:
+                    name_for_customdata = hb_team
                 # Index in the big array:
-                ind = np.where(sorted_results['Stroke team'].values == team)[0]
+                ind = np.where(sorted_results['Stroke team'].values == df_team)[0]
                 hb_team = sorted_results['HB team'].values[ind][0]
                 colour = st.session_state['highlighted_teams_colours'][hb_team]
                 team_effect = effect_vals[t]
@@ -667,14 +693,14 @@ def box_plot_of_prob_shifts(
                         # effect_diffs[t][y],
                         [round(diff_max, 2)], [round(diff_min, 2)], [round(diff_ave, 2)],
                         # [arr_max], [arr_min], [arr_ave]
-                        [hb_team]
+                        [name_for_customdata]
                     ], axis=-1)
 
                     fig.add_trace(go.Scatter(
                         x=[team_effect],
                         y=[y_val + y_offsets_scatter[t]],
                         mode='markers',
-                        name=team + extra_strs[y],
+                        # name=team + extra_strs[y],
                         marker=dict(color=colour,
                             line=dict(color='black', width=1.0)),
                         customdata=custom_data

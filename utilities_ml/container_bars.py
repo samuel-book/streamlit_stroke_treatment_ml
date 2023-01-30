@@ -5,6 +5,9 @@ import plotly.graph_objects as go
 # For clickable plotly events:
 from streamlit_plotly_events import plotly_events
 
+from utilities_ml.fixed_params import \
+    default_highlighted_team, display_name_of_default_highlighted_team
+
 
 def main(sorted_results, hb_teams_input):
     """
@@ -24,18 +27,25 @@ def main(sorted_results, hb_teams_input):
             sorted_results['HB team'] == leg_entry]
         # Choose the colour of this bar:
         colour = highlighted_teams_colours[leg_entry]
+
+        if leg_entry == default_highlighted_team:
+            display_name = display_name_of_default_highlighted_team
+            name_list = [display_name_of_default_highlighted_team] * len(results_here['Stroke team'])
+        else:
+            display_name = leg_entry
+            name_list = results_here['Stroke team']
         # Add bar(s) to the chart for this highlighted team:
         fig.add_trace(go.Bar(
             x=results_here['Sorted rank'],
             y=results_here['Probability_perc'],
             # Extra data for hover popup:
             customdata=np.stack([
-                results_here['Stroke team'],
+                name_list,
                 results_here['Thrombolyse_str'],
                 # results_here['Benchmark']
                 ], axis=-1),
             # Name for the legend:
-            name=leg_entry,
+            name=display_name,
             # Set bars colours:
             marker=dict(color=colour)
             ))

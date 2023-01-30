@@ -20,7 +20,8 @@ import utilities_ml.main_calculations
 # importlib.reload(waterfall)
 
 
-# from utilities_ml.fixed_params import \
+from utilities_ml.fixed_params import \
+    default_highlighted_team, display_name_of_default_highlighted_team
 #     starting_probabilities
 
 
@@ -73,11 +74,14 @@ def show_waterfalls_highlighted(
         final_prob = sorted_results['Probability'].loc[i]
 
         # Write to streamlit:
+        team_name = sorted_results['Stroke team'].loc[i]
+        if team_name == default_highlighted_team:
+            team_name = display_name_of_default_highlighted_team
         # title = 'Team ' + sorted_results['Stroke team'].loc[i]
         sorted_rank = sorted_results['Sorted rank'].loc[i]
         team_info = (
             'Team ' +
-            sorted_results['Stroke team'].loc[i] +
+            team_name +
             f' (Rank {sorted_rank} of {sorted_results.shape[0]})'
         )
         # st.markdown(team_info)
@@ -106,6 +110,10 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
     for feature in extra_bits.keys():
         i = np.where(feature_names == feature)[0][0]
         patient_data[i] = f'{patient_data[i]}' + extra_bits[feature]
+
+    # Rename the default highlighted team
+    i = np.where(feature_names == 'team_' + default_highlighted_team)[0][0]
+    feature_names[i] = 'team_' + display_name_of_default_highlighted_team
 
     # Start probability:
     # base_values = starting_probabilities

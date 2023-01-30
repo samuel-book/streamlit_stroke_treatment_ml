@@ -4,6 +4,8 @@ All of the content for the Inputs section.
 # Imports
 import streamlit as st
 
+from utilities_ml.fixed_params import \
+    display_name_of_default_highlighted_team, default_highlighted_team
 
 def user_inputs():
     # Prior disability level
@@ -146,11 +148,20 @@ def highlighted_teams(stroke_teams_list):
         existing_teams = st.session_state['highlighted_teams_with_click']
     except KeyError:
         # Make a dummy list so streamlit behaves as normal:
-        existing_teams = []
+        existing_teams = [display_name_of_default_highlighted_team]
+
+    # Swap out the default highlighted team's name for
+    # the label chosen in fixed_params.
+    teams_input_list = stroke_teams_list.copy().tolist()
+    # Remove the chosen default team...
+    teams_input_list.remove(default_highlighted_team)
+    # ... and add the new name to the start of the list.
+    teams_input_list = [display_name_of_default_highlighted_team] + \
+                       teams_input_list
 
     highlighted_teams_input = st.multiselect(
         'Stroke teams to highlight:',
-        stroke_teams_list,
+        teams_input_list,
         # help='Pick up to 9 before the colours repeat.',
         key='highlighted_teams',
         default=existing_teams
