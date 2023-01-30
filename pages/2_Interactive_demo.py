@@ -104,7 +104,7 @@ def main():
         st.markdown(''.join([
             'The process can be visualised as a waterfall plot.'
         ]))
-    
+
         # Set up tabs:
         tabs_waterfall = st.tabs([
             'Max/min/median teams',

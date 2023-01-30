@@ -4,7 +4,7 @@ Main calculations.
 # Imports:
 import numpy as np
 import pandas as pd
-import shap
+# import shap
 import streamlit as st
 
 

@@ -6,23 +6,23 @@ import numpy as np
 # import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
-import importlib
+# import importlib
 import pandas as pd
 # import matplotlib
 
 # For creating SHAP waterfall in response to click:
-import utilities_ml.main_calculations
+# import utilities_ml.main_calculations
 # For clickable plotly events:
-from streamlit_plotly_events import plotly_events
+# from streamlit_plotly_events import plotly_events
 
-# For matplotlib plots:
-from matplotlib.backends.backend_agg import RendererAgg
-_lock = RendererAgg.lock
+# # For matplotlib plots:
+# from matplotlib.backends.backend_agg import RendererAgg
+# _lock = RendererAgg.lock
 
-# Import local package
-from utilities_ml import waterfall
-# Force package to be reloaded
-importlib.reload(waterfall)
+# # Import local package
+# from utilities_ml import waterfall
+# # Force package to be reloaded
+# importlib.reload(waterfall)
 
 
 def main(sorted_results,

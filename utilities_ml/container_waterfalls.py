@@ -8,16 +8,20 @@ import plotly.graph_objects as go
 # import importlib
 # import matplotlib
 
-import utilities_ml.main_calculations
+# import utilities_ml.main_calculations
 
-# For matplotlib plots:
-from matplotlib.backends.backend_agg import RendererAgg
-_lock = RendererAgg.lock
+# # For matplotlib plots:
+# from matplotlib.backends.backend_agg import RendererAgg
+# _lock = RendererAgg.lock
 
 # # Import local package
 # from utilities import waterfall
 # # Force package to be reloaded
 # importlib.reload(waterfall)
+
+
+# from utilities_ml.fixed_params import \
+#     starting_probabilities
 
 
 def show_waterfalls_max_med_min(
@@ -32,10 +36,10 @@ def show_waterfalls_max_med_min(
         ]
     for i_here, i in enumerate(indices_high_mid_low):
         # Find the data:
-        sv = shap_values_probability_extended_high_mid_low[i_here]
+        sv_to_display = shap_values_probability_extended_high_mid_low[i_here]
         # Change integer 0/1 to str no/yes for display:
-        sv_to_display = utilities_ml.main_calculations.\
-            convert_explainer_01_to_noyes(sv)
+        # sv_to_display = utilities_ml.main_calculations.\
+        #     convert_explainer_01_to_noyes(sv)
 
         # Write to streamlit:
         sorted_rank = sorted_results['Sorted rank'].loc[i]
@@ -61,10 +65,10 @@ def show_waterfalls_highlighted(
         ):
     for i_here, i in enumerate(indices_highlighted):
         # Find the data:
-        sv = shap_values_probability_extended_highlighted[i_here]
-        # Change integer 0/1 to str no/yes for display:
-        sv_to_display = utilities_ml.main_calculations.\
-            convert_explainer_01_to_noyes(sv)
+        sv_to_display = shap_values_probability_extended_highlighted[i_here]
+        # # Change integer 0/1 to str no/yes for display:
+        # sv_to_display = utilities_ml.main_calculations.\
+        #     convert_explainer_01_to_noyes(sv)
         # Final probability:
         final_prob = sorted_results['Probability'].loc[i]
 
@@ -103,7 +107,11 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
         i = np.where(feature_names == feature)[0][0]
         patient_data[i] = f'{patient_data[i]}' + extra_bits[feature]
 
+    # Convert 0/1 values to Yes/No:
+    # TO DO
+
     # Start probability:
+    # base_values = starting_probabilities
     base_values = shap_values.base_values
     base_values_perc = base_values * 100.0
     # End probability:
