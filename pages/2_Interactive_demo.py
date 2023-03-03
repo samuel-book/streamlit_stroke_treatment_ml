@@ -107,10 +107,10 @@ def main():
 
         # Set up tabs:
         tabs_waterfall = st.tabs([
-            'Max/min/median teams',
             'Highlighted teams',
             'All teams',
-            'Shifts for highlighted teams'
+            'Shifts for highlighted teams',
+            'Max/min/median teams',
             ])
 
         # Use this string in the first two tabs:
@@ -123,7 +123,7 @@ def main():
                 'attending the other stroke teams.'
             ])
 
-        with tabs_waterfall[2]:
+        with tabs_waterfall[1]:
             # Combo waterfall explanation:
             st.markdown(''.join([
                 'The following chart shows the waterfall charts for all ',
@@ -326,17 +326,8 @@ def main():
         utilities_ml.container_bars.main(sorted_results, hb_teams_input)
 
     with container_shapley_probs:
-        with tabs_waterfall[0]:
-            # Individual waterfalls for the teams with the
-            # max / median / min probabilities of thrombolysis.
-            st.markdown(waterfall_explanation_str)
-            utilities_ml.container_waterfalls.show_waterfalls_max_med_min(
-                shap_values_probability_extended_high_mid_low,
-                indices_high_mid_low,
-                sorted_results
-                )
 
-        with tabs_waterfall[1]:
+        with tabs_waterfall[0]:
             # Individual waterfalls for highlighted teams.
             if len(indices_highlighted) < 1:
                 # Nothing to see here
@@ -350,7 +341,7 @@ def main():
                     sorted_results
                     )
 
-        with tabs_waterfall[2]:
+        with tabs_waterfall[1]:
             # Combo waterfall (all teams).
             utilities_ml.container_combo_waterfall.plot_combo_waterfalls(
                 df_waterfalls,
@@ -359,13 +350,23 @@ def main():
                 patient_data_waterfall
                 )
 
-        with tabs_waterfall[3]:
+        with tabs_waterfall[2]:
             # Box plots:
             utilities_ml.container_combo_waterfall.box_plot_of_prob_shifts(
                 grid_cat_sorted,
                 grid_cat_bench,
                 grid_cat_nonbench,
                 headers,
+                sorted_results
+                )
+
+        with tabs_waterfall[3]:
+            # Individual waterfalls for the teams with the
+            # max / median / min probabilities of thrombolysis.
+            st.markdown(waterfall_explanation_str)
+            utilities_ml.container_waterfalls.show_waterfalls_max_med_min(
+                shap_values_probability_extended_high_mid_low,
+                indices_high_mid_low,
                 sorted_results
                 )
 
