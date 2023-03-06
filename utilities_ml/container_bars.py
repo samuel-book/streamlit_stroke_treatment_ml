@@ -129,7 +129,7 @@ def main(sorted_results, hb_teams_input):
             # pad=4
         ),
         height=250,
-        width=700
+        width=690
         )
     # fig.update_xaxes(automargin=True)
 
@@ -155,7 +155,7 @@ def main(sorted_results, hb_teams_input):
     # Write the plot to streamlit, and store the details of the last
     # bar that was clicked:
     selected_bar = plotly_events(
-        fig, click_event=True, key='bars', override_height=250, override_width=700)
+        fig, click_event=True, key='bars', override_height=250, override_width='900%')
 
     callback_bar(selected_bar, sorted_results)
     # return selected_bar
