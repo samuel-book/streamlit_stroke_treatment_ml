@@ -467,6 +467,10 @@ def callback_waterfall(selected_waterfall, inds_order, stroke_team_list, pretty_
             # Find which team this is:
             team_selected = stroke_team_list[ind]
 
+            # Update the label if this is "St Elsewhere":
+            if team_selected == default_highlighted_team:
+                team_selected = display_name_of_default_highlighted_team
+
             # Copy the current highlighted teams list
             highlighted_teams_list_updated = \
                 st.session_state['highlighted_teams']

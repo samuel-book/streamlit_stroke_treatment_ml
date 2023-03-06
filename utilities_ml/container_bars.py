@@ -34,6 +34,16 @@ def main(sorted_results, hb_teams_input):
         else:
             display_name = leg_entry
             name_list = results_here['Stroke team']
+            # Update the default highlighted team label when it is
+            # not selected as a highlighted team:
+            try:
+                ind_to_update = np.where(name_list.values == default_highlighted_team)
+                name_list.iloc[ind_to_update] = display_name_of_default_highlighted_team
+            except IndexError:
+                # Nothing to update.
+                pass
+
+        
         # Add bar(s) to the chart for this highlighted team:
         fig.add_trace(go.Bar(
             x=results_here['Sorted rank'],
@@ -168,6 +178,11 @@ def callback_bar(selected_bar, sorted_results):
             # Find which team this is:
             team_selected = sorted_results['Stroke team'].loc[
                 sorted_results['Sorted rank'] == rank_selected].values[0]
+            
+            # Update the label if this is "St Elsewhere":
+            if team_selected == default_highlighted_team:
+                team_selected = display_name_of_default_highlighted_team
+
             # Copy the current highlighted teams list
             highlighted_teams_list_updated = \
                 st.session_state['highlighted_teams']
