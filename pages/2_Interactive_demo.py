@@ -335,6 +335,7 @@ def main():
         utilities_ml.container_metrics.main(sorted_results)
 
     with container_bar_chart:
+        draw_sneaky_bar()
         # Top interactive bar chart:
         utilities_ml.container_bars.main(sorted_results, hb_teams_input)
 

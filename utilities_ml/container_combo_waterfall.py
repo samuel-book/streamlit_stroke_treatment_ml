@@ -389,6 +389,8 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
     fig.update_layout(
         xaxis=dict(fixedrange=True),
         yaxis=dict(fixedrange=True),
+        xaxis2=dict(fixedrange=True),
+        yaxis2=dict(fixedrange=True),
         )
 
     # Turn off legend click events
