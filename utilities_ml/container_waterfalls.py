@@ -363,7 +363,7 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
     fig.update_layout(
         # Main subplot:
         xaxis=dict(fixedrange=True),
-        yaxis=dict(fixedrange=True)
+        yaxis=dict(fixedrange=True),
         # Second subplot for y-axis labels
         xaxis2=dict(fixedrange=True),
         yaxis2=dict(fixedrange=True),
