@@ -373,5 +373,14 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
         'toImageButtonOptions': {'height': None, 'width': None},
         }
 
+    # Set a specific width, not container width,
+    # for the sake of viewing on thin mobile screens where
+    # half the plot width is used for the y-axis labels.
+    fig.update_layout(width=650)
+
     # Write to streamlit:
-    st.plotly_chart(fig, use_container_width=True, config=plotly_config)
+    st.plotly_chart(
+        fig,
+        # use_container_width=True,
+        config=plotly_config
+        )

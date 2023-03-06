@@ -32,7 +32,7 @@ except ModuleNotFoundError:
 
 # Custom functions:
 from utilities_ml.fixed_params import \
-    starting_probabilities, plain_str, bench_str
+    starting_probabilities, plain_str, bench_str, draw_sneaky_bar
 # from utilities_ml.inputs import \
 #     write_text_from_file
 import utilities_ml.inputs
@@ -48,6 +48,17 @@ import utilities_ml.container_results
 from utilities_ml.plot_utils import remove_old_colours_for_highlights, \
                                     choose_colours_for_highlights
 
+def draw_sneaky_bar():
+            # Add an invisible bar that's wider than the column:
+            file_ = open('./utilities_ml/sneaky_bar.png', "rb")
+            contents = file_.read()
+            data_url = base64.b64encode(contents).decode("utf-8")
+            file_.close()
+            st.markdown(
+                f'''<center><img src="data:image/png;base64,{data_url}" width="500"
+                    height="1" alt="It's a secret to everybody">''',
+                unsafe_allow_html=True,
+            )
 
 def main():
     # ###########################
@@ -337,6 +348,7 @@ def main():
             else:
                 # Individual waterfalls for the highlighted teams.
                 st.markdown(waterfall_explanation_str)
+                draw_sneaky_bar()
                 utilities_ml.container_waterfalls.show_waterfalls_highlighted(
                     shap_values_probability_extended_highlighted,
                     indices_highlighted,
@@ -345,6 +357,7 @@ def main():
 
         with tabs_waterfall[1]:
             # Combo waterfall (all teams).
+            draw_sneaky_bar()
             utilities_ml.container_combo_waterfall.plot_combo_waterfalls(
                 df_waterfalls,
                 sorted_results,
@@ -366,16 +379,7 @@ def main():
             # Individual waterfalls for the teams with the
             # max / median / min probabilities of thrombolysis.
             st.markdown(waterfall_explanation_str)
-            # Add an invisible bar that's wider than the column:
-            file_ = open('./utilities_ml/sneaky_bar.png', "rb")
-            contents = file_.read()
-            data_url = base64.b64encode(contents).decode("utf-8")
-            file_.close()
-            st.markdown(
-                f'''<center><img src="data:image/png;base64,{data_url}" width="500"
-                    height="1" alt="It's a secret to everybody">''',
-                unsafe_allow_html=True,
-            )
+            draw_sneaky_bar()
             utilities_ml.container_waterfalls.show_waterfalls_max_med_min(
                 shap_values_probability_extended_high_mid_low,
                 indices_high_mid_low,
