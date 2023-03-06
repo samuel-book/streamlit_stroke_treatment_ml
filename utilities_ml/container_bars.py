@@ -128,7 +128,8 @@ def main(sorted_results, hb_teams_input):
             t=20,
             # pad=4
         ),
-        height=250
+        height=250,
+        width=700
         )
     # fig.update_xaxes(automargin=True)
 
