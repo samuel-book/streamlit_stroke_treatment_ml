@@ -30,11 +30,11 @@ def show_waterfalls_max_med_min(
         indices_high_mid_low,
         sorted_results
         ):
-    titles = [
-        'Maximum probability',
-        'Median probability',
-        'Minimum probability'
-        ]
+    # titles = [
+    #     'Maximum probability',
+    #     'Median probability',
+    #     'Minimum probability'
+    #     ]
     for i_here, i in enumerate(indices_high_mid_low):
         # Find the data:
         sv_to_display = shap_values_probability_extended_high_mid_low[i_here]
@@ -47,13 +47,13 @@ def show_waterfalls_max_med_min(
         # Final probability:
         final_prob = sorted_results['Probability'].loc[i]
 
-        title = '__' + titles[i_here] + ' of thrombolysis__'
+        # title = '__' + titles[i_here] + ' of thrombolysis__'
         team_info = (
             'Team ' +
             sorted_results['Stroke team'].loc[i] +
             f' (Rank {sorted_rank} of {sorted_results.shape[0]})'
         )
-        st.markdown(title)
+        # st.markdown(title)
         # st.markdown(team_info)
         # Plot:
         plot_shap_waterfall(sv_to_display, final_prob, team_info)

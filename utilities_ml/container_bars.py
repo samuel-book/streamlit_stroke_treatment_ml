@@ -109,11 +109,21 @@ def main(sorted_results, hb_teams_input):
         tickvals=[0, 20, 40, 50, 60, 80, 100],
         ))
 
+    # Move legend to bottom
+    fig.update_layout(legend=dict(
+        orientation='h', #'h',
+        yanchor='top',
+        y=-0.4,
+        # xanchor='right',
+        # x=1.03,
+        # itemwidth=50
+    ))
+        
     # Reduce size of figure by adjusting margins:
     fig.update_layout(
         margin=dict(    
             # l=50,
-            # r=50,
+            r=0,
             b=80,
             t=20,
             # pad=4
