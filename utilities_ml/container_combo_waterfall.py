@@ -397,14 +397,15 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
     #     }
 
 
+    # This doesn't work with plotly_events:
     # fig.update_layout(modebar_remove=[
-    #     'zoom', 'pan', 'select', 'zoomIn', 
+    #     'zoom', 'pan', 'select', 'zoomIn',
     #     'zoomOut', 'autoScale', 'lasso2d'
     #     ])
 
-    # Fake a legend with annotations:
-    fig.add_annotation(dict(x=1.0, y=0.7, xref="paper", yref="paper", 
-                            text='testing', showarrow=False))
+    # # Fake a legend with annotations:
+    # fig.add_annotation(dict(x=1.0, y=0.7, xref="paper", yref="paper", 
+    #                         text='testing', showarrow=False))
 
     # # Write to streamlit:
     # st.plotly_chart(fig, use_container_width=True)
