@@ -703,15 +703,16 @@ def box_plot_of_prob_shifts(
                 else:
                     df_team = team
 
-                if team == display_name_of_default_highlighted_team:
-                    name_for_customdata = team
-                else:
-                    name_for_customdata = hb_team
                 # Index in the big array:
                 ind = np.where(sorted_results['Stroke team'].values == df_team)[0]
                 hb_team = sorted_results['HB team'].values[ind][0]
                 colour = st.session_state['highlighted_teams_colours'][hb_team]
                 team_effect = effect_vals[t]
+
+                if team == display_name_of_default_highlighted_team:
+                    name_for_customdata = team
+                else:
+                    name_for_customdata = hb_team
 
                 # fig.add_vline(x=team_effect, line=dict(color=colour))
                 # Add a separate marker for each grid (all, bench, non-bench)
@@ -810,8 +811,22 @@ def box_plot_of_prob_shifts(
                 )
             # st.write(fig.data[0].hovertemplate)
 
+            plotly_config = {
+                # Mode bar always visible:
+                # 'displayModeBar': True,
+                # Plotly logo in the mode bar:
+                'displaylogo': False,
+                # Remove the following from the mode bar:
+                'modeBarButtonsToRemove': [
+                    'zoom', 'pan', 'select', 'zoomIn', 'zoomOut', 'autoScale',
+                    'lasso2d'
+                    ],
+                # Options when the image is saved:
+                'toImageButtonOptions': {'height': None, 'width': None},
+                }
+
             # Write to streamlit:
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, config=plotly_config)
 
 
 def make_pretty_jitter_offsets(final_probs):
