@@ -385,6 +385,20 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
     fig.update_xaxes(showgrid=False)
 
 
+    # Disable zoom and pan:
+    fig.update_layout(
+        # Left subplot:
+        xaxis=dict(fixedrange=True),
+        yaxis=dict(fixedrange=True)
+        )
+
+    # Turn off legend click events
+    # (default is click on legend item, remove that item from the plot)
+    fig.update_layout(legend_itemclick=False)
+    # Only change the specific item being clicked on, not the whole
+    # legend group:
+    # # fig.update_layout(legend=dict(groupclick="toggleitem"))
+
     # plotly_config = {
     #     # Mode bar always visible:
     #     # 'displayModeBar': True,
@@ -827,6 +841,24 @@ def box_plot_of_prob_shifts(
                 # Options when the image is saved:
                 'toImageButtonOptions': {'height': None, 'width': None},
                 }
+
+
+            # Disable zoom and pan:
+            fig.update_layout(
+                # Left subplot:
+                xaxis=dict(fixedrange=True),
+                yaxis=dict(fixedrange=True),
+                # Right subplot:
+                xaxis2=dict(fixedrange=True),
+                yaxis2=dict(fixedrange=True)
+                )
+
+            # Turn off legend click events
+            # (default is click on legend item, remove that item from the plot)
+            fig.update_layout(legend_itemclick=False)
+            # Only change the specific item being clicked on, not the whole
+            # legend group:
+            # # fig.update_layout(legend=dict(groupclick="toggleitem"))
 
             # Write to streamlit:
             st.plotly_chart(fig, use_container_width=True, config=plotly_config)

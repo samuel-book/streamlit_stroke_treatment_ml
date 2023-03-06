@@ -132,6 +132,20 @@ def main(sorted_results, hb_teams_input):
         )
     # fig.update_xaxes(automargin=True)
 
+    # Disable zoom and pan:
+    fig.update_layout(
+        # Left subplot:
+        xaxis=dict(fixedrange=True),
+        yaxis=dict(fixedrange=True)
+        )
+
+    # Turn off legend click events
+    # (default is click on legend item, remove that item from the plot)
+    fig.update_layout(legend_itemclick=False)
+    # Only change the specific item being clicked on, not the whole
+    # legend group:
+    # # fig.update_layout(legend=dict(groupclick="toggleitem"))
+
     # Write to streamlit:
     # # Non-interactive version:
     # st.plotly_chart(fig, use_container_width=True)

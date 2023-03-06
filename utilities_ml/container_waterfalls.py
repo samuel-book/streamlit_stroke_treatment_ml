@@ -359,6 +359,20 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
     # fig['layout']['yaxis']['autorange'] = 'reversed'
     # fig['layout']['yaxis2']['autorange'] = 'reversed'
 
+    # Disable zoom and pan:
+    fig.update_layout(
+        # Left subplot:
+        xaxis=dict(fixedrange=True),
+        yaxis=dict(fixedrange=True)
+        )
+
+    # Turn off legend click events
+    # (default is click on legend item, remove that item from the plot)
+    fig.update_layout(legend_itemclick=False)
+    # Only change the specific item being clicked on, not the whole
+    # legend group:
+    # # fig.update_layout(legend=dict(groupclick="toggleitem"))
+
     plotly_config = {
         # Mode bar always visible:
         # 'displayModeBar': True,
