@@ -11,6 +11,8 @@ done in functions stored in files named container_(something).py
 # ----- Imports -----
 import streamlit as st
 import numpy as np
+# For drawing a sneaky bar:
+import base64
 
 # For compatibility with combo app,
 # add an extra bit to the path if we need to.
@@ -364,6 +366,16 @@ def main():
             # Individual waterfalls for the teams with the
             # max / median / min probabilities of thrombolysis.
             st.markdown(waterfall_explanation_str)
+            # Add an invisible bar that's wider than the column:
+            file_ = open('./utilities_ml/sneaky_bar.png', "rb")
+            contents = file_.read()
+            data_url = base64.b64encode(contents).decode("utf-8")
+            file_.close()
+            st.markdown(
+                f'''<center><img src="data:image/png;base64,{data_url}" width="500"
+                    height="1" alt="It's a secret to everybody">''',
+                unsafe_allow_html=True,
+            )
             utilities_ml.container_waterfalls.show_waterfalls_max_med_min(
                 shap_values_probability_extended_high_mid_low,
                 indices_high_mid_low,
