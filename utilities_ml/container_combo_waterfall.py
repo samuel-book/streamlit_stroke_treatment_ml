@@ -131,7 +131,8 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
                 df_team['Features']
                 ), axis=-1),
             name=trace_name,
-            showlegend=leggy
+            showlegend=leggy,
+            # legendgroup='2',
             ))
 
         if pretty_jitter == True:
@@ -153,7 +154,8 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
                     [df_short['Sorted rank']]
                     ), axis=-1),
                 name='Final Probability', #df_short['HB team'],
-                showlegend=show_legend_dot
+                showlegend=show_legend_dot,
+                # legendgroup='2',
                 ))
             # st.write(df_short['Probabilities'], y_jigg[ind], colour, df_short['HB team'])
 
@@ -211,7 +213,8 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
         y0=y_vals[-1],
         orientation='h',
         name='Final Probability',
-        points=False  # 'all'
+        points=False,  # 'all'
+        # legendgroup='2',
         ))
 
     # Update x axis limits:
@@ -228,8 +231,10 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
         xaxis_title='Probability of thrombolysis (%)',
         # Add some blank lines below "feature" to help position it.
         yaxis_title='Feature<br> <br> <br>',
-        legend_title='Highlighted team'
+        legend_title='Highlighted team'  # + '~'*20
         )
+
+
     # fig.update_layout(
     #     yaxis=dict(
     #         tickmode='array',
@@ -352,6 +357,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
         name='Final Probability',
         showlegend=False,
         hoverinfo='skip',
+        # legendgroup='2',
         ))
 
     # Flip y-axis so bars are read from top to bottom.
@@ -366,22 +372,48 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
         orientation='v', #'h',
         yanchor='top',
         y=1,
-        xanchor='left',
-        x=1.03
+        xanchor='right',
+        x=1.03,
+        # itemwidth=50
     ))
     # Remove y=0 line:
     fig.update_yaxes(zeroline=False)
     # Remove other vertical grid lines:
     fig.update_xaxes(showgrid=False)
 
-    # Write to streamlit:
+
+    # plotly_config = {
+    #     # Mode bar always visible:
+    #     # 'displayModeBar': True,
+    #     # Plotly logo in the mode bar:
+    #     'displaylogo': False,
+    #     # Remove the following from the mode bar:
+    #     'modeBarButtonsToRemove': [
+    #         'zoom', 'pan', 'select', 'zoomIn', 'zoomOut', 'autoScale',
+    #         'lasso2d'
+    #         ],
+    #     # Options when the image is saved:
+    #     'toImageButtonOptions': {'height': None, 'width': None},
+    #     }
+
+
+    # fig.update_layout(modebar_remove=[
+    #     'zoom', 'pan', 'select', 'zoomIn', 
+    #     'zoomOut', 'autoScale', 'lasso2d'
+    #     ])
+
+    # Fake a legend with annotations:
+    fig.add_annotation(dict(x=1.0, y=0.7, xref="paper", yref="paper", 
+                            text='testing', showarrow=False))
+
+    # # Write to streamlit:
     # st.plotly_chart(fig, use_container_width=True)
     # Clickable version:
     # Write the plot to streamlit, and store the details of the last
     # bar that was clicked:
     selected_waterfall = plotly_events(
         fig, click_event=True, key='waterfall_combo',
-        override_height=600, override_width='100%')
+        override_height=600, override_width='100%')#, config=plotly_config)
 
     callback_waterfall(selected_waterfall, inds_order, stroke_team_list, pretty_jitter=pretty_jitter)
 
