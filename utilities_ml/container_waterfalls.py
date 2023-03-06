@@ -361,9 +361,12 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
 
     # Disable zoom and pan:
     fig.update_layout(
-        # Left subplot:
+        # Main subplot:
         xaxis=dict(fixedrange=True),
         yaxis=dict(fixedrange=True)
+        # Second subplot for y-axis labels
+        xaxis2=dict(fixedrange=True),
+        yaxis2=dict(fixedrange=True),
         )
 
     # Turn off legend click events

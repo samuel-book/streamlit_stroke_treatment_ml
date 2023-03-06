@@ -387,9 +387,8 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
 
     # Disable zoom and pan:
     fig.update_layout(
-        # Left subplot:
         xaxis=dict(fixedrange=True),
-        yaxis=dict(fixedrange=True)
+        yaxis=dict(fixedrange=True),
         )
 
     # Turn off legend click events
