@@ -359,6 +359,10 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
     # fig['layout']['yaxis']['autorange'] = 'reversed'
     # fig['layout']['yaxis2']['autorange'] = 'reversed'
 
+
+    # Update margins to prevent annotations being cut off:
+    fig.update_layout(margin=dict(r=50))
+
     # Disable zoom and pan:
     fig.update_layout(
         # Main subplot:
@@ -393,7 +397,7 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
     # Set a specific width, not container width,
     # for the sake of viewing on thin mobile screens where
     # half the plot width is used for the y-axis labels.
-    fig.update_layout(width=650)
+    fig.update_layout(width=700)
 
     # Write to streamlit:
     st.plotly_chart(

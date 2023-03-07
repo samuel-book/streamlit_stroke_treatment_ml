@@ -43,6 +43,14 @@ def draw_sneaky_bar():
     )
 
 
+def write_markdown_in_colour(string, colour):
+    write_str = (
+        '<p style="color:' + colour +
+        '">' + string + '</p>'
+    )
+    st.markdown(write_str, unsafe_allow_html=True)
+
+
 # Starting probability in the model:
 starting_probabilities = 0.2995270168908044
 

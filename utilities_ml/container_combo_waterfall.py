@@ -545,6 +545,7 @@ def box_plot_of_prob_shifts(
         grid_non_bench,
         headers,
         sorted_results,
+        hb_teams_input,
         inds=[]
         ):
 
@@ -611,7 +612,7 @@ def box_plot_of_prob_shifts(
     y_gap = 0.05
     y_max = 0.2
     # Where to scatter the team markers:
-    y_offsets_scatter = [0.0]
+    y_offsets_scatter = []#[0.0]
     while len(y_offsets_scatter) < len(highlighted_teams):
         y_extra = np.arange(y_gap, y_max, y_gap)
         y_extra = np.stack((
@@ -668,8 +669,19 @@ def box_plot_of_prob_shifts(
                 row0 = [team_for_table, rank_here, effect_val_perc]
                 table.append(row0)
 
+            def colour_for_table(team):
+                if team == display_name_of_default_highlighted_team:
+                    team = default_highlighted_team
+                if team in hb_teams_input:
+                    colour = st.session_state['highlighted_teams_colours'][team]
+                else:
+                    colour = None
+
+                return 'color: %s' % colour
+
             df = pd.DataFrame(table, columns=row_headers)
-            st.table(df)
+            # st.table(df)
+            st.table(df.style.applymap(colour_for_table))
 
         effect_diffs = []
         for t, team in enumerate(highlighted_teams):
@@ -704,30 +716,38 @@ def box_plot_of_prob_shifts(
             box_colour = 'grey'  # plotly_colours[0]
 
             # Draw the box plots:
-            fig.add_trace(go.Box(
+            fig.add_trace(go.Violin(
                 x=grid[i],
                 y0=y_vals[0],
                 name='All',
                 line=dict(color=box_colour),
-                boxpoints=False,
-                hoveron='points'  # Switch off the hover label
+                # boxpoints=False,
+                hoveron='points',  # Switch off the hover label
+                orientation='h',
+                points=False
                 ))
-            fig.add_trace(go.Box(
+            fig.add_trace(go.Violin(
                 x=grid_bench[i],
                 y0=y_vals[1],
                 name='Benchmark',
                 line=dict(color=box_colour),
-                boxpoints=False,
-                hoveron='points'  # Switch off the hover label
+                # boxpoints=False,
+                hoveron='points',  # Switch off the hover label
+                orientation='h',
+                points=False
                 ))
-            fig.add_trace(go.Box(
+            fig.add_trace(go.Violin(
                 x=grid_non_bench[i],
                 y0=y_vals[2],
                 name='Not benchmark',
                 line=dict(color=box_colour),
-                boxpoints=False,
-                hoveron='points'  # Switch off the hover label
+                # boxpoints=False,
+                hoveron='points',  # Switch off the hover label
+                orientation='h',
+                points=False
                 ))
+
+
 
 
             # Setup for box:
@@ -803,7 +823,44 @@ def box_plot_of_prob_shifts(
                     '<extra></extra>'
                     )
                 )
-
+            
+            # Add three scatter markers for min/max/median
+            # with horizontal line connecting them:
+            # (KEEP THIS AFTER HOVER TEMPLATE SET FOR WATERFALLS
+            # otherwise it'll overwrite the request to not show any
+            # info on hover).
+            fig.add_trace(go.Scatter(
+                x=[np.min(grid[i]), np.max(grid[i]), np.median(grid[i])],
+                y=[y_vals[0]]*3,
+                line_color='black',
+                marker=dict(size=20, symbol='line-ns-open'),
+                # name='Final Probability',
+                showlegend=False,
+                hoverinfo='skip',
+                # legendgroup='2',
+                ))
+        
+            fig.add_trace(go.Scatter(
+                x=[np.min(grid_bench[i]), np.max(grid_bench[i]), np.median(grid_bench[i])],
+                y=[y_vals[1]]*3,
+                line_color='black',
+                marker=dict(size=20, symbol='line-ns-open'),
+                # name='Final Probability',
+                showlegend=False,
+                hoverinfo='skip',
+                # legendgroup='2',
+                ))
+        
+            fig.add_trace(go.Scatter(
+                x=[np.min(grid_non_bench[i]), np.max(grid_non_bench[i]), np.median(grid_non_bench[i])],
+                y=[y_vals[2]]*3,
+                line_color='black',
+                marker=dict(size=20, symbol='line-ns-open'),
+                # name='Final Probability',
+                showlegend=False,
+                hoverinfo='skip',
+                # legendgroup='2',
+                ))
 
 
             # Setup:

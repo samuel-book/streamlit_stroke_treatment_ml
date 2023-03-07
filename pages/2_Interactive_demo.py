@@ -30,7 +30,9 @@ except ModuleNotFoundError:
 
 # Custom functions:
 from utilities_ml.fixed_params import \
-    starting_probabilities, plain_str, bench_str, draw_sneaky_bar
+    starting_probabilities, plain_str, bench_str, draw_sneaky_bar, \
+    default_highlighted_team, display_name_of_default_highlighted_team, \
+    write_markdown_in_colour
 # from utilities_ml.inputs import \
 #     write_text_from_file
 import utilities_ml.inputs
@@ -54,55 +56,130 @@ def main():
     page_setup()
 
     # Title:
-    st.markdown('# Interactive demo')
-    st.markdown(''.join([
-        'To use this demo, '
-        'change the patient details in the left sidebar.'
-        ]))
+    st.markdown('# :crystal_ball: Thrombolysis prediction demo')
 
-    st.markdown(''.join([
-        # 'The line at 50% is the cut-off for thrombolysis. ',
-        'The model returns the probability of each team thrombolysing ',
-        'this patient. '
-        'Stroke teams with a probability below 50% are unlikely to ',
-        'thrombolyse the patient, and other teams are ',
-        'likely to thrombolyse. ',
-        'We record teams below 50% as :x: not thrombolysing this patient ',
-        'and other teams as :heavy_check_mark: thrombolysing this patient.'
-        ]))
+    st.markdown('''
+        The SAMueL-2 model gives the probability of 
+        any stroke team thrombolysing any patient.
+        ''')
+    
+    # Draw the image with the basic model summary.
+    try:
+        st.image('./utilities_ml/SAMueL2_model_wide.png')
+    except FileNotFoundError:
+        # Add an extra bit to the path for the combo app.
+        st.image('./streamlit_stroke_treatment_ml/' +
+                 'utilities_ml/SAMueL2_model_wide.png')
+
+    st.markdown('''
+        We can use the model to give the same patient details
+        to all stroke teams and decide how likely each team is
+        to thrombolyse that patient.
+
+        Stroke teams with a probability below 50% are unlikely to 
+        thrombolyse the patient, and other teams are 
+        likely to thrombolyse. 
+        ''')
+
+    st.markdown('### How we categorise the results')
+    cols_method = st.columns(3)
+
+    with cols_method[1]:
+        st.error(
+            '''
+            __Benchmark teams__
+
+            These 30 teams are consistently more likely than average to 
+            thrombolyse any given patient.
+
+            They are used to compare the treatment decisions 
+            of stroke teams with highly-thrombolysing units.
+            '''
+            )
+    with cols_method[0]:
+        st.info(
+        '''
+        __Thrombolysis: yes or no?__
+
+        If probability is at least 50%:
+
+        :heavy_check_mark: thrombolyse
+
+        If probability is below 50%:
+
+        :x: do not thrombolyse
+        '''
+        )
+
+    with cols_method[2]:
+        st.error(
+        '''
+        __Benchmark decision__
+
+        If at least half of the benchmark teams would thrombolyse:
+
+        :heavy_check_mark: thrombolyse
+
+        Otherwise:
+
+        :x: do not thrombolyse
+        '''
+        )
+        # If under half of the benchmark teams would thrombolyse:
+
+
+    st.markdown('-' * 50)
+    st.markdown('''
+        ## :abacus: Predictions for this patient
+        ''')
+    st.info(''.join([
+        'The patient details can be viewed and changed ',
+        'in the left sidebar.'
+        ]), icon='ℹ️')
 
     # Draw some empty containers on the page.
     # They'll appear in this order, but we'll fill them in another order.
     container_metrics = st.container()
     with container_metrics:
+        st.markdown('## ')  # Breathing room
         st.markdown(''.join([
-            '### How many stroke teams _would_ thrombolyse this patient?'
+            '### ',  # :abacus: ',
+            'How many teams would thrombolyse this patient?'
+            ]))
+
+    container_highlighted_summary = st.container()
+    with container_highlighted_summary:
+        st.markdown('## ')  # Breathing room
+        st.markdown(''.join([
+            '### ',  # :chart_with_upwards_trend: ',
+            'What would your team do?'
             ]))
 
     container_bar_chart = st.container()
     with container_bar_chart:
+        st.markdown('## ')  # Breathing room
         st.markdown(''.join([
-            '### Probability of thrombolysis from each team'
+            '### ',  # :chart_with_upwards_trend: ',
+            'What would each of the teams do?'
             ]))
+        st.caption('To see the team names, hover or click on a bar.')
 
     container_shapley_probs = st.container()
     with container_shapley_probs:
+        st.markdown('## ')  # Breathing room
+        st.markdown('-' * 50)
         # Keep this explanation outside of a .txt file so that the
         # format string for starting probability can be added.
-        st.markdown('### Probability waterfalls')
+        st.markdown('## :scales: How does the model work?')
+        st.markdown('''
+            + Before the model looks at any of the patient\'s details, the patient starts with a base probability''' + f' of {100.0*starting_probabilities:.2f}%.' + '''
+
+            + The model then looks at the value of each feature of the patient in turn, and adjusts this probability upwards or downwards. The size of the adjustment depends on which stroke team the patient is being assessed by.
+
+            + The final probability is found when all of the features have been considered. 
+        ''')
         st.markdown(''.join([
-            'We can look at how the model decides on the probability ',
-            'of thrombolysis. ',
-            'Before the model looks at any of the ',
-            'patient\'s details, the patient starts with a base probability',
-            f' of {100.0*starting_probabilities:.2f}%',
-            '. '
-            'The model then looks at the value of each feature of the ',
-            'patient in turn, and adjusts this probability upwards or ',
-            'downwards.'
-        ]))
-        st.markdown(''.join([
-            'The process can be visualised as a waterfall plot.'
+            'Here we have visualised this process as waterfall plots.'
         ]))
 
         # Set up tabs:
@@ -133,6 +210,14 @@ def main():
                 'at the top, and the ones with more variation lower down. '
             ]))
 
+        with tabs_waterfall[2]:
+            # Box plots explanation:
+            st.markdown('''
+                Here the range of shifts in probability caused by
+                each feature are shown as violin plots.
+                The highlighted teams are overlaid as scatter circles.
+                ''')
+
 
     # ###########################
     # ########## SETUP ##########
@@ -144,7 +229,7 @@ def main():
         st.markdown('# Patient details')
         user_inputs_dict = utilities_ml.container_inputs.user_inputs()
         # Write an empty header to give breathing room at the bottom:
-        st.markdown('# ')
+        # st.markdown('# ')
 
     # List of stroke teams that this patient will be sent to:
     stroke_teams_list = utilities_ml.inputs.read_stroke_teams_from_file()
@@ -183,14 +268,18 @@ def main():
     # in the following container, or by clicking directly on
     # certain plots.
     # Receive the user inputs now and show this container now:
-    with container_bar_chart:
-        st.markdown(''.join([
-            'To highlight stroke teams on the following charts, ',
-            'select them in this box or click on them in the charts.'
+    with container_highlighted_summary:
+        st.caption(''.join([
+            'To highlight stroke teams, ',
+            'select them in this box ',
+            'or click on them in the interactive charts.'
         ]))
-        # Pick teams to highlight on the bar chart:
-        highlighted_teams_input = utilities_ml.container_inputs.\
-            highlighted_teams(stroke_teams_list)
+
+        cols_highlighted_summary = st.columns(4)
+        with cols_highlighted_summary[0]:
+            # Pick teams to highlight on the bar chart:
+            highlighted_teams_input = utilities_ml.container_inputs.\
+                highlighted_teams(stroke_teams_list)
 
     # Columns for highlighted teams and highlighted+benchmark (HB),
     # and a shorter list hb_teams_input with just the unique values
@@ -320,6 +409,7 @@ def main():
     # Add an option for removing plotly_events()
     # which doesn't play well on skinny screens / touch devices.
     with st.sidebar:
+        st.markdown('-' * 50)
         if st.checkbox('Disable interactive plots'):
             use_plotly_events = False
         else:
@@ -333,6 +423,49 @@ def main():
     with container_metrics:
         # Print metrics for how many teams would thrombolyse:
         utilities_ml.container_metrics.main(sorted_results)
+
+    with container_highlighted_summary:
+        highlighted_teams_colours = st.session_state['highlighted_teams_colours']
+        # Print results for highlighted teams.
+        cols = cols_highlighted_summary
+        i = 1
+        for t, team in enumerate(hb_teams_input):
+            if 'enchmark' not in team:
+                try:
+                    col = cols[i]
+                except IndexError:
+                    # st.markdown('-'*50)
+                    # cols = st.columns(4)
+                    i = 1
+                    col = cols[i]
+                i += 1
+
+                df_here = sorted_results[sorted_results['HB team'] == team]
+                colour_here = highlighted_teams_colours[team]
+                if team == default_highlighted_team:
+                    team = display_name_of_default_highlighted_team
+                else:
+                    team = 'Team ' + team
+                with col:
+                    # st.markdown('-' * 50)
+                    write_markdown_in_colour('<strong>' + team + '</strong>', colour=colour_here)
+                    prob_here = df_here['Probability_perc'].values[0]
+                    thromb_here = df_here['Thrombolyse_str'].values[0]
+                    if thromb_here == 'Yes':
+                        emoji_here = ':heavy_check_mark: '
+                        extra_str = ''
+                    else:
+                        emoji_here = ':x: '
+                        extra_str = 'do not '
+                    # rank_here = df_here['Sorted rank'].values[0]
+                    st.markdown(f'Probability: {prob_here:.2f}%')
+                    st.markdown(emoji_here + extra_str + 'thrombolyse')
+                    # st.markdown(f'Thrombolysis: {emoji_here}')
+                    # st.markdown(f'Rank: {rank_here} of {len(stroke_teams_list)} teams')
+                    # st.write(df_here.loc['Probability'])
+                    st.markdown('-' * 50)
+                    # HTML horizontal rule is <hr> but appears in grey.
+
 
     with container_bar_chart:
         # Top interactive bar chart:
@@ -366,6 +499,11 @@ def main():
                 patient_data_waterfall,
                 use_plotly_events
                 )
+            st.caption('''
+                If no graph appears above this message,
+                try changing the patient details
+                to reload the app.
+                ''')
 
         with tabs_waterfall[2]:
             # Box plots:
@@ -374,7 +512,8 @@ def main():
                 grid_cat_bench,
                 grid_cat_nonbench,
                 headers,
-                sorted_results
+                sorted_results,
+                hb_teams_input
                 )
 
         with tabs_waterfall[3]:
