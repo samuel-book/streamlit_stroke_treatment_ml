@@ -3,6 +3,9 @@ import streamlit as st
 # For drawing a sneaky bar:
 import base64
 
+
+
+
 def page_setup():
     # ----- Page setup -----
     # The following options set up the display in the tab in your browser.
@@ -16,8 +19,20 @@ def page_setup():
 
 
 def draw_sneaky_bar():
+    # Add an extra bit to the path if we need to.
+    # Try importing something as though we're running this from the same
+    # directory as the landing page.
+    try:
+        file_ = open('./utilities_ml/sneaky_bar.png', "rb")
+    except FileNotFoundError:
+        # If the import fails, add the landing page directory to path.
+        # Assume that the script is being run from the directory above
+        # the landing page directory, which is called
+        # stroke_outcome_app.
+        import sys
+        sys.path.append('./streamlit_stroke_treatment_ml/')
+        file_ = open('./streamlit_stroke_treatment_ml/utilities_ml/sneaky_bar.png', "rb")
     # Add an invisible bar that's wider than the column:
-    file_ = open('./utilities_ml/sneaky_bar.png', "rb")
     contents = file_.read()
     data_url = base64.b64encode(contents).decode("utf-8")
     file_.close()
