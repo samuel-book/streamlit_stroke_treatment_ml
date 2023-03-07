@@ -428,6 +428,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
     # # Write to streamlit:
     if use_plotly_events is False:
         # Non-interactive version:
+        fig.update_layout(width=700)
         plotly_config = {
             # Mode bar always visible:
             # 'displayModeBar': True,
@@ -441,7 +442,10 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
             # Options when the image is saved:
             'toImageButtonOptions': {'height': None, 'width': None},
             }
-        st.plotly_chart(fig, use_container_width=True, config=plotly_config)
+        st.plotly_chart(
+            fig,
+            # use_container_width=True,
+            config=plotly_config)
     else:
         # Clickable version:
         # Write the plot to streamlit, and store the details of the last

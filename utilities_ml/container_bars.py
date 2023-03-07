@@ -149,6 +149,7 @@ def main(sorted_results, hb_teams_input, use_plotly_events):
 
     # Write to streamlit:
     if use_plotly_events is False:
+        fig.update_layout(width=700)
         # Non-interactive version:
         plotly_config = {
             # Mode bar always visible:
@@ -163,7 +164,10 @@ def main(sorted_results, hb_teams_input, use_plotly_events):
             # Options when the image is saved:
             'toImageButtonOptions': {'height': None, 'width': None},
             }
-        st.plotly_chart(fig, use_container_width=True, config=plotly_config)
+        st.plotly_chart(
+            fig,
+            # use_container_width=True, 
+            config=plotly_config)
     else:
         # Clickable version:
         # Write the plot to streamlit, and store the details of the last
