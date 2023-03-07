@@ -1,5 +1,7 @@
 import streamlit as st
 
+# For drawing a sneaky bar:
+import base64
 
 def page_setup():
     # ----- Page setup -----

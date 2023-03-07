@@ -9,7 +9,7 @@ from utilities_ml.fixed_params import \
     default_highlighted_team, display_name_of_default_highlighted_team
 
 
-def main(sorted_results, hb_teams_input):
+def main(sorted_results, hb_teams_input, use_plotly_events):
     """
     Plot sorted probability bar chart
     """
@@ -148,17 +148,31 @@ def main(sorted_results, hb_teams_input):
     # # fig.update_layout(legend=dict(groupclick="toggleitem"))
 
     # Write to streamlit:
-    # # Non-interactive version:
-    # st.plotly_chart(fig, use_container_width=True)
+    if use_plotly_events is False:
+        # Non-interactive version:
+        plotly_config = {
+            # Mode bar always visible:
+            # 'displayModeBar': True,
+            # Plotly logo in the mode bar:
+            'displaylogo': False,
+            # Remove the following from the mode bar:
+            'modeBarButtonsToRemove': [
+                'zoom', 'pan', 'select', 'zoomIn', 'zoomOut', 'autoScale',
+                'lasso2d'
+                ],
+            # Options when the image is saved:
+            'toImageButtonOptions': {'height': None, 'width': None},
+            }
+        st.plotly_chart(fig, use_container_width=True, config=plotly_config)
+    else:
+        # Clickable version:
+        # Write the plot to streamlit, and store the details of the last
+        # bar that was clicked:
+        selected_bar = plotly_events(
+            fig, click_event=True, key='bars', override_height=250, override_width='900%')
 
-    # Clickable version:
-    # Write the plot to streamlit, and store the details of the last
-    # bar that was clicked:
-    selected_bar = plotly_events(
-        fig, click_event=True, key='bars', override_height=250, override_width='900%')
-
-    callback_bar(selected_bar, sorted_results)
-    # return selected_bar
+        callback_bar(selected_bar, sorted_results)
+        # return selected_bar
 
 
 def callback_bar(selected_bar, sorted_results):
