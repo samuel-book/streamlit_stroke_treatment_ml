@@ -66,7 +66,7 @@ def main():
     # Draw the image with the basic model summary.
     try:
         st.image('./utilities_ml/SAMueL2_model_wide.png')
-    except FileNotFoundError:
+    except (FileNotFoundError, st.runtime.media_file_storage.MediaFileStorageError):
         # Add an extra bit to the path for the combo app.
         st.image('./streamlit_stroke_treatment_ml/' +
                  'utilities_ml/SAMueL2_model_wide.png')
