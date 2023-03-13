@@ -33,7 +33,7 @@ def main(sorted_results, hb_teams_input, use_plotly_events):
             name_list = [display_name_of_default_highlighted_team] * len(results_here['Stroke team'])
         else:
             display_name = leg_entry
-            name_list = results_here['Stroke team']
+            name_list = results_here['Stroke team'].copy(deep=True)
             # Update the default highlighted team label when it is
             # not selected as a highlighted team:
             try:

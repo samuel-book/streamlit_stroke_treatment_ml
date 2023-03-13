@@ -40,7 +40,7 @@ def write_text_from_file(filename, head_lines_to_skip=0):
 #     return synthetic
 
 
-@st.cache
+@st.cache_data()
 def import_benchmark_data():
     all_teams_and_probs = pd.read_csv(dir + 'data_ml/hospital_10k_thrombolysis.csv')
     # Add an index row to rank the teams:
@@ -78,7 +78,7 @@ def one_hot_encode_data(synthetic):
     return X
 
 
-@st.cache
+@st.cache_data()
 def read_stroke_teams_from_file():
     stroke_teams = pd.read_csv(dir + 'data_ml/stroke_teams.csv')
     stroke_teams = stroke_teams.values.ravel()
@@ -127,7 +127,7 @@ def build_dataframe_from_inputs(dict, stroke_teams_list):
     return df
 
 
-@st.cache(hash_funcs={'builtins.dict': lambda _: None})
+@st.cache_resource()  #hash_funcs={'builtins.dict': lambda _: None})
 def load_pretrained_model():
     # Load XGB Model
     filename = (dir + 'data_ml/model.p')
@@ -136,7 +136,7 @@ def load_pretrained_model():
     return model
 
 
-@st.cache(hash_funcs={'builtins.dict': lambda _: None})
+@st.cache_resource()  #hash_funcs={'builtins.dict': lambda _: None})
 def load_explainer():
     # Load SHAP explainers
     filename = (dir + 'data_ml/shap_explainer.p')
@@ -145,7 +145,7 @@ def load_explainer():
     return explainer
 
 
-@st.cache(hash_funcs={'builtins.dict': lambda _: None})
+@st.cache_resource()  #hash_funcs={'builtins.dict': lambda _: None})
 def load_explainer_probability():
     filename = (dir + 'data_ml/shap_explainer_probability.p')
     with open(filename, 'rb') as filehandler:
