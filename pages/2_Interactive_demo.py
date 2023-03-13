@@ -56,7 +56,7 @@ def main():
     page_setup()
 
     # Title:
-    st.markdown('# :crystal_ball: Thrombolysis prediction demo')
+    st.markdown('# :crystal_ball: Thrombolysis decisions')
 
     st.markdown('''
         The SAMueL-2 model gives the probability of 
