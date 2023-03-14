@@ -171,6 +171,9 @@ def main():
         # Keep this explanation outside of a .txt file so that the
         # format string for starting probability can be added.
         st.markdown('## :scales: How does the model work?')
+        st.markdown(''.join([
+            'Here we have visualised the process with waterfall plots.'
+        ]))
         st.markdown('''
             + Before the model looks at any of the patient\'s details, the patient starts with a base probability''' + f' of {100.0*starting_probabilities:.2f}%.' + '''
 
@@ -178,9 +181,6 @@ def main():
 
             + The final probability is found when all of the features have been considered. 
         ''')
-        st.markdown(''.join([
-            'Here we have visualised this process as waterfall plots.'
-        ]))
 
         # Set up tabs:
         tabs_waterfall = st.tabs([
@@ -226,7 +226,7 @@ def main():
     # ----- Build the X array -----
     # All patient detail widgets go in the sidebar:
     with st.sidebar:
-        st.markdown('# Patient details')
+        st.markdown('## Patient details')
         user_inputs_dict = utilities_ml.container_inputs.user_inputs()
         # Write an empty header to give breathing room at the bottom:
         # st.markdown('# ')

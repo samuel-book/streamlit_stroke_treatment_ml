@@ -230,7 +230,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
         # title='Waterfalls for all stroke teams',
         xaxis_title='Probability of thrombolysis (%)',
         # Add some blank lines below "feature" to help position it.
-        yaxis_title='Feature<br> <br> <br>',
+        yaxis_title=None, #'Feature<br> <br> <br> ',
         legend_title='Highlighted team'  # + '~'*20
         )
 
@@ -365,7 +365,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
     # fig['layout']['yaxis2']['autorange'] = 'reversed'
     # Reduce size of figure by adjusting margins:
     fig.update_layout(margin=dict(
-        l=200, 
+        l=200,
         r=20,  # 150, 
         b=80, t=20), height=600)
     # Make the y axis title stand out from the tick labels:
@@ -376,7 +376,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
         yanchor='top',
         y=1,
         xanchor='right',
-        x=1.03,
+        x=1.04,
         # itemwidth=50
     ))
     # Remove y=0 line:
