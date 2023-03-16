@@ -5,21 +5,21 @@
 
 Please cite this model as: 
 
-    @software{your_reference_here,
-        author       = {Me, I and Myself, I},
-        title        = {template\_app Streamlit app v1.0.0},
-        month        = nov,
-        year         = 2022,
+    @software{stroke_predictions_app,
+        author       = {Laws, Anna and Pearn, Kerry and Allen, Michael},
+        title        = {Stroke Predictions: Streamlit app v1.0.0},
+        month        = mar,
+        year         = 2023,
         publisher    = {Zenodo},
         version      = {v1.0.0},
-        doi          = {your DOI here},
-        url          = {DOI URL here}
+        doi          = {10.5281/zenodo.7733752},
+        url          = {https://zenodo.org/record/7733752#.ZBCOzbTP3wI}
 	}
-	
-To make a Zenodo citation, follow the instructions on this link: [https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content)
 
-There are some parts that you then have to do manually by editing the record on Zenodo. For example, the authors and licence won't copy over from GitHub. 
-	
-On the Zenodo website, you can also copy a markdown badge to use as a link for a DOI.
-Here is a badge for another streamlit app: 
-[![DOI](https://zenodo.org/badge/536700822.svg)](https://zenodo.org/badge/latestdoi/536700822)
+[![DOI](https://zenodo.org/badge/587327115.svg)](https://zenodo.org/badge/latestdoi/587327115)
+
+This citation actually points towards a larger app that combines 
+the main interactive demo here with a number of other demos.
+The combined app can be viewed here:
+
+[![](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://stroke-predictions.streamlit.app/)

@@ -1,44 +1,40 @@
 # To be printed as markdown on the landing page. 
 # ---------------------------------------------------------------------
 
-# Streamlit app template
+# Thrombolysis decisions
 
 ## Summary
 
-Give a short summary of what the app does here. You could also include some links that contain more information than there's space for here. 
+This app uses pre-trained machine learning models 
+that can be fed imaginary patient data.
+The models output the predict the probability of each of 132 hospitals providing thrombolysis to the generated patient.
 
++ __Inputs:__ Patient details
++ __Outputs:__ Thrombolysis probability from each hospital.
 
-## Background information 
-
-It's worth having a quick overview of what the app is about, if it's not obvious. 
-
-We're looking at how 
-
-+ input 1 
-+ input 2 and
-+ input 3
-
-affect the output. 
-
-Emoji can be written too. For :ambulance: the `:ambulance:` format can be used in markdown, and the `\U0001f691` format can be used in streamlit input labels. 
+For a summary of stroke and the motivation behind this research,
+see the [SAMueL online book](https://samuel-book.github.io/samuel-1/introduction/intro.html).
 
 
 ## How to use this app
 
 Go to the "Interactive demo" in the left sidebar.
-There you can change **the input parameters** to see the resulting effect on **the output**.
 
 To change between light mode and dark mode or to make the display wider, change the settings under the Menu in the top right of the screen.
 
 
-### Acronym reference 
-
-| Acronym | Full name | 
-|---|---|
-| WAUA | Weird And Unusual Acronym  | 
-| TCBU | This Can Be Useful  |
-
-
 ### Limitations 
 
-Is there anything your app *does not* do but that people might reasonably misunderstand it to be doing? 
+This app uses models that have been trained on synthetic data
+that resembles real patient data for emergency stroke admissions in England and Wales.
+As part of the training and checking the accuracy, this input data must include information about whether the 
+patient was given thrombolysis.
+The data is also restricted to the information on the SSNAP survey and 
+cannot include any nuances or details gained from speaking to a patient and 
+their family in person. 
+As a result, this and similar models are not intended to be used as live prediction 
+tools for deciding whether to give thrombolysis.
+
+The intended use of this tool is for "what-if" scenarios,
+for example: if this real patient had had a shorter arrival-to-scan time,
+how much more likely would they have been to receive thrombolysis?

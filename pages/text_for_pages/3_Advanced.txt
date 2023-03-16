@@ -3,6 +3,6 @@
 
 # Advanced options
 
-Perhaps this page could allow the user to upload their own file, and then a result could be calculated. 
+Sorry, there's nothing here yet.
 
-There are lots of things that Streamlit can do. [Have a look here for ideas](https://docs.streamlit.io/library/api-reference).
+I intend to add a feature where you can upload your own .csv file and run it through our models.
