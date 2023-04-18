@@ -265,8 +265,8 @@ def main():
         benchmark_team_column = 'Hospital code'
 
         # Default highlighted team:
-        default_highlighted_team = 'team_101'
-        display_name_of_default_highlighted_team = '"St Elsewhere"'
+        default_highlighted_team = 'team_100'
+        display_name_of_default_highlighted_team = 'team_100'
 
         starting_probabilities = 0.3314
 
@@ -532,8 +532,8 @@ def main():
                 colour_here = highlighted_teams_colours[team]
                 if team == default_highlighted_team:
                     team = display_name_of_default_highlighted_team
-                else:
-                    team = 'Team ' + team
+                # else:
+                    # team = 'Team ' + team
                 with col:
                     write_markdown_in_colour(
                         '<strong>' + team + '</strong>',

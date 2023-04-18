@@ -823,7 +823,7 @@ def box_plot_of_prob_shifts(
             # # Update the information that appears on hover:
             fig.update_traces(
                 hovertemplate=(
-                    'Team %{customdata[3]}' +
+                    '%{customdata[3]}' +
                     '<br>' +
                     'Effect: %{x:.2f}%' +
                     '<br>' +

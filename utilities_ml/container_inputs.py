@@ -141,8 +141,11 @@ def user_inputs():
     return user_input_dict
 
 
-def highlighted_teams(stroke_teams_list, 
-    default_highlighted_team, display_name_of_default_highlighted_team):
+def highlighted_teams(
+        stroke_teams_list,
+        default_highlighted_team,
+        display_name_of_default_highlighted_team
+        ):
     try:
         # If we've already selected highlighted teams using the
         # clickable plotly graphs, then load that list:
@@ -159,6 +162,11 @@ def highlighted_teams(stroke_teams_list,
     # ... and add the new name to the start of the list.
     teams_input_list = [display_name_of_default_highlighted_team] + \
                        teams_input_list
+
+    # Remove any existing teams that are not in this input list.
+    existing_teams = [team for team in existing_teams
+                      if team in teams_input_list]
+    st.session_state['highlighted_teams_with_click'] = existing_teams
 
     highlighted_teams_input = st.multiselect(
         'Stroke teams to highlight:',
