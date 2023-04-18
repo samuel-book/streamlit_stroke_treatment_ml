@@ -65,7 +65,7 @@ def find_shapley_values(explainer_probability, X):
     return shap_values_probability_extended, shap_values_probability
 
 
-def convert_explainer_01_to_noyes(sv):
+def convert_explainer_01_to_noyes(sv, model_version='SAMueL-1'):
     """
     Change some SHAP explainer data values so that input 0/1 features
     are changed to "no" or "yes" strings for display on waterfall.
@@ -80,12 +80,20 @@ def convert_explainer_01_to_noyes(sv):
     data_yn = np.copy(sv.data)
 
     # Swap out the data for these features:
-    expected_features = [
-        'Infarction',
-        'Precise onset time',
-        'Use of AF anticoagulants',
-        'Onset during sleep'
-        ]
+    if 'SAMueL-1' in model_version:
+        expected_features = [
+            'Infarction',
+            'Precise onset time',
+            'Use of AF anticoagulants',
+            'Onset during sleep'
+            ]
+    else:
+        expected_features = [
+            'infarction',
+            'precise onset known',
+            'use of AF anticoagulants',
+            'onset during sleep'
+            ]
     # Find where these features are in the list:
     inds = [sv.feature_names.index(feature) for feature in expected_features]
 

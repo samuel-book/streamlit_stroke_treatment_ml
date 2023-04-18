@@ -5,11 +5,12 @@ import plotly.graph_objects as go
 # For clickable plotly events:
 from streamlit_plotly_events import plotly_events
 
-from utilities_ml.fixed_params import \
-    default_highlighted_team, display_name_of_default_highlighted_team
+# from utilities_ml.fixed_params import \
+#     default_highlighted_team, display_name_of_default_highlighted_team
 
 
-def main(sorted_results, hb_teams_input, use_plotly_events):
+def main(sorted_results, hb_teams_input, use_plotly_events, 
+    default_highlighted_team, display_name_of_default_highlighted_team):
     """
     Plot sorted probability bar chart
     """
@@ -175,11 +176,13 @@ def main(sorted_results, hb_teams_input, use_plotly_events):
         selected_bar = plotly_events(
             fig, click_event=True, key='bars', override_height=250, override_width='900%')
 
-        callback_bar(selected_bar, sorted_results)
+        callback_bar(selected_bar, sorted_results,
+            default_highlighted_team, display_name_of_default_highlighted_team)
         # return selected_bar
 
 
-def callback_bar(selected_bar, sorted_results):
+def callback_bar(selected_bar, sorted_results, 
+        default_highlighted_team, display_name_of_default_highlighted_team):
     """
     # When the script is re-run, this value of selected bar doesn't
     # change. So if the script is re-run for another reason such as
@@ -221,7 +224,7 @@ def callback_bar(selected_bar, sorted_results):
             # Find which team this is:
             team_selected = sorted_results['Stroke team'].loc[
                 sorted_results['Sorted rank'] == rank_selected].values[0]
-            
+
             # Update the label if this is "St Elsewhere":
             if team_selected == default_highlighted_team:
                 team_selected = display_name_of_default_highlighted_team

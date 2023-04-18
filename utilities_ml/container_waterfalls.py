@@ -20,15 +20,18 @@ import utilities_ml.main_calculations
 # importlib.reload(waterfall)
 
 
-from utilities_ml.fixed_params import \
-    default_highlighted_team, display_name_of_default_highlighted_team
-#     starting_probabilities
+# from utilities_ml.fixed_params import \
+#     default_highlighted_team, display_name_of_default_highlighted_team
+# #     starting_probabilities
 
 
 def show_waterfalls_max_med_min(
         shap_values_probability_extended_high_mid_low,
         indices_high_mid_low,
-        sorted_results
+        sorted_results,
+        default_highlighted_team,
+        display_name_of_default_highlighted_team,
+        model_version='SAMueL-1'
         ):
     # titles = [
     #     'Maximum probability',
@@ -40,7 +43,7 @@ def show_waterfalls_max_med_min(
         sv_to_display = shap_values_probability_extended_high_mid_low[i_here]
         # Change integer 0/1 to str no/yes for display:
         sv_to_display = utilities_ml.main_calculations.\
-            convert_explainer_01_to_noyes(sv_to_display)
+            convert_explainer_01_to_noyes(sv_to_display, model_version)
 
         # Write to streamlit:
         sorted_rank = sorted_results['Sorted rank'].loc[i]
@@ -56,20 +59,28 @@ def show_waterfalls_max_med_min(
         # st.markdown(title)
         # st.markdown(team_info)
         # Plot:
-        plot_shap_waterfall(sv_to_display, final_prob, team_info)
+        plot_shap_waterfall(
+            sv_to_display, final_prob,
+            default_highlighted_team,
+            display_name_of_default_highlighted_team,
+            team_info, model_version=model_version
+        )
 
 
 def show_waterfalls_highlighted(
         shap_values_probability_extended_highlighted,
         indices_highlighted,
-        sorted_results
+        sorted_results,
+        default_highlighted_team,
+        display_name_of_default_highlighted_team,
+        model_version='SAMueL-1'
         ):
     for i_here, i in enumerate(indices_highlighted):
         # Find the data:
         sv_to_display = shap_values_probability_extended_highlighted[i_here]
         # # Change integer 0/1 to str no/yes for display:
         sv_to_display = utilities_ml.main_calculations.\
-            convert_explainer_01_to_noyes(sv_to_display)
+            convert_explainer_01_to_noyes(sv_to_display, model_version)
         # Final probability:
         final_prob = sorted_results['Probability'].loc[i]
 
@@ -88,10 +99,21 @@ def show_waterfalls_highlighted(
         # st.markdown(
         #     f'Rank: {sorted_rank} of {sorted_results.shape[0]}')
         # Plot:
-        plot_shap_waterfall(sv_to_display, final_prob, team_info)
+        plot_shap_waterfall(
+            sv_to_display,
+            final_prob,
+            default_highlighted_team,
+            display_name_of_default_highlighted_team,
+            team_info,
+            model_version=model_version
+            )
 
 
-def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
+def plot_shap_waterfall(
+        shap_values, final_prob,
+        default_highlighted_team,
+        display_name_of_default_highlighted_team,
+        title='', n_to_show=9, model_version='SAMueL-1'):
 
     # Make lists of all of the features:
     shap_probs = shap_values.values
@@ -100,13 +122,22 @@ def plot_shap_waterfall(shap_values, final_prob, title='', n_to_show=9):
     # Collect the input patient data:
     patient_data = shap_values.data
     # Adjust some values to add units for showing on the plot:
-    extra_bits = {
-        'Onset-to-arrival time': ' minutes',
-        'Arrival-to-scan time': ' minutes',
-        # 'Stroke severity': ' (out of 42)',
-        # 'Prior disability level': ' (mRS)',
-        'Age': ' years',
-    }
+    if 'SAMueL-1' in model_version:
+        extra_bits = {
+            'Onset-to-arrival time': ' minutes',
+            'Arrival-to-scan time': ' minutes',
+            # 'Stroke severity': ' (out of 42)',
+            # 'Prior disability level': ' (mRS)',
+            'Age': ' years',
+        }
+    else:
+        extra_bits = {
+            'onset-to-arrival time': ' minutes',
+            'arrival-to-scan time': ' minutes',
+            # 'Stroke severity': ' (out of 42)',
+            # 'Prior disability level': ' (mRS)',
+            'age': ' years',
+        }
     for feature in extra_bits.keys():
         i = np.where(feature_names == feature)[0][0]
         patient_data[i] = f'{patient_data[i]}' + extra_bits[feature]

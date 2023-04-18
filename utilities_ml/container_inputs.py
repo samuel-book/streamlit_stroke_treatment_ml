@@ -4,8 +4,8 @@ All of the content for the Inputs section.
 # Imports
 import streamlit as st
 
-from utilities_ml.fixed_params import \
-    display_name_of_default_highlighted_team, default_highlighted_team
+# from utilities_ml.fixed_params import \
+#     display_name_of_default_highlighted_team, default_highlighted_team
 
 def user_inputs():
     # Prior disability level
@@ -141,7 +141,8 @@ def user_inputs():
     return user_input_dict
 
 
-def highlighted_teams(stroke_teams_list):
+def highlighted_teams(stroke_teams_list, 
+    default_highlighted_team, display_name_of_default_highlighted_team):
     try:
         # If we've already selected highlighted teams using the
         # clickable plotly graphs, then load that list:

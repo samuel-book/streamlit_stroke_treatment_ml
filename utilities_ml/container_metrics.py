@@ -28,7 +28,7 @@ def main(sorted_results):
     perc_thrombolyse_benchmark = 100.0 * n_thrombolyse_benchmark / n_benchmark
     perc_thrombolyse_non_benchmark = (
         100.0 * n_thrombolyse_non_benchmark / n_non_benchmark)
-    
+
     cols = st.columns(4, gap='large')
     with cols[1]:
         st.metric(

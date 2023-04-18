@@ -11,11 +11,12 @@ import pandas as pd
 # For clickable plotly events:
 from streamlit_plotly_events import plotly_events
 
-from utilities_ml.fixed_params import bench_str, plain_str, \
-    default_highlighted_team, display_name_of_default_highlighted_team
+from utilities_ml.fixed_params import bench_str, plain_str#, \
+    # default_highlighted_team, display_name_of_default_highlighted_team
 
 
-def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_data_waterfall, use_plotly_events=True):
+def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_data_waterfall, 
+                          default_highlighted_team, display_name_of_default_highlighted_team, use_plotly_events=True):
     """
     Add the elements to the chart in order so that the last thing
     added ends up on the top. Add the unhighlighted teams first,
@@ -454,29 +455,39 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
             fig, click_event=True, key='waterfall_combo',
             override_height=600, override_width='100%')#, config=plotly_config)
 
-        callback_waterfall(selected_waterfall, inds_order, stroke_team_list, pretty_jitter=pretty_jitter)
+        callback_waterfall(
+            selected_waterfall, inds_order, stroke_team_list,
+            default_highlighted_team,
+            display_name_of_default_highlighted_team,
+            pretty_jitter=pretty_jitter)
 
 
-def callback_waterfall(selected_waterfall, inds_order, stroke_team_list, pretty_jitter=False):
+def callback_waterfall(
+        selected_waterfall,
+        inds_order,
+        stroke_team_list,
+        default_highlighted_team,
+        display_name_of_default_highlighted_team,
+        pretty_jitter=False):
     """
-    # When the script is re-run, this value of selected bar doesn't
-    # change. So if the script is re-run for another reason such as
-    # a streamlit input widget being changed, then the selected bar
-    # is remembered and it looks indistinguishable from the user
-    # clicking the bar again. To make sure we only make updates if
-    # the user actually clicked the bar, compare the current returned
-    # bar details with the details of the last bar *before* it was
-    # changed.
-    # When moved to or from the highlighted list, the bar is drawn
-    # as part of a different trace and so its details such as
-    # curveNumber change.
-    # When the user clicks on the same bar twice in a row, we do want
-    # the bar to change. For example, a non-highlighted bar might have
-    # curveNumber=0, then when clicked changes to curveNumber=1.
-    # When clicked again, the last_changed_waterfall has curveNumber=0,
-    # but selected_waterfall has curveNumber=1. The bar details have changed
-    # and so the following loop still happens despite x and y being
-    # the same.
+    When the script is re-run, this value of selected bar doesn't
+    change. So if the script is re-run for another reason such as
+    a streamlit input widget being changed, then the selected bar
+    is remembered and it looks indistinguishable from the user
+    clicking the bar again. To make sure we only make updates if
+    the user actually clicked the bar, compare the current returned
+    bar details with the details of the last bar *before* it was
+    changed.
+    When moved to or from the highlighted list, the bar is drawn
+    as part of a different trace and so its details such as
+    curveNumber change.
+    When the user clicks on the same bar twice in a row, we do want
+    the bar to change. For example, a non-highlighted bar might have
+    curveNumber=0, then when clicked changes to curveNumber=1.
+    When clicked again, the last_changed_waterfall has curveNumber=0,
+    but selected_waterfall has curveNumber=1. The bar details have changed
+    and so the following loop still happens despite x and y being
+    the same.
     """
 
     try:
@@ -546,6 +557,8 @@ def box_plot_of_prob_shifts(
         headers,
         sorted_results,
         hb_teams_input,
+        default_highlighted_team,
+        display_name_of_default_highlighted_team,
         inds=[]
         ):
 

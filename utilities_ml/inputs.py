@@ -12,8 +12,8 @@ try:
 except FileNotFoundError:
     dir = 'streamlit_stroke_treatment_ml/'
 
-from utilities_ml.fixed_params import plain_str, bench_str, \
-    display_name_of_default_highlighted_team, default_highlighted_team
+from utilities_ml.fixed_params import plain_str, bench_str#, \
+    # display_name_of_default_highlighted_team, default_highlighted_team
 
 
 def write_text_from_file(filename, head_lines_to_skip=0):
@@ -41,119 +41,161 @@ def write_text_from_file(filename, head_lines_to_skip=0):
 
 
 @st.cache_data()
-def import_benchmark_data():
-    all_teams_and_probs = pd.read_csv(dir + 'data_ml/hospital_10k_thrombolysis.csv')
+def import_benchmark_data(filename='hospital_10k_thrombolysis.csv',
+                          team_col='stroke_team'):
+    all_teams_and_probs = pd.read_csv(dir + 'data_ml/' + filename)
     # Add an index row to rank the teams:
     all_teams_and_probs['Rank'] = \
-        np.arange(1, len(all_teams_and_probs['stroke_team'])+1)
+        np.arange(1, len(all_teams_and_probs[team_col])+1)
     return all_teams_and_probs
 
 
-def build_X(user_inputs_dict, stroke_teams_list):
+def build_X(user_inputs_dict, stroke_teams_list, stroke_team_col='Stroke team', model_version='SAMueL-1'):
     """
     """
     # Banished this call to build_dataframe_from_inputs() to this
     # function so the "synthetic" array doesn't sit in memory.
     synthetic = build_dataframe_from_inputs(
-        user_inputs_dict, stroke_teams_list)
+        user_inputs_dict, stroke_teams_list, model_version)
 
     # Make a copy of this data that is ready for the model.
     # The same data except the Stroke Team column is one-hot-encoded.
-    X = one_hot_encode_data(synthetic)
+    X = one_hot_encode_data(synthetic, one_hot_column=stroke_team_col)
     # Store the column names:
     headers_X = tuple(X.columns)
     return X, headers_X
 
 
-def one_hot_encode_data(synthetic):
+def one_hot_encode_data(synthetic, one_hot_column='Stroke team'):
     # One-hot encode hospitals
     # Keep copy of original, with 'Stroke team' not one-hot encoded
     X = synthetic.copy(deep=True)
 
     # One-hot encode 'Stroke team'
-    X_hosp = pd.get_dummies(X['Stroke team'], prefix='team')
+    X_hosp = pd.get_dummies(X[one_hot_column], prefix='team')
     X = pd.concat([X, X_hosp], axis=1)
-    X.drop('Stroke team', axis=1, inplace=True)
+    X.drop(one_hot_column, axis=1, inplace=True)
 
     return X
 
 
 @st.cache_data()
-def read_stroke_teams_from_file():
-    stroke_teams = pd.read_csv(dir + 'data_ml/stroke_teams.csv')
+def read_stroke_teams_from_file(filename='stroke_teams.csv'):
+    stroke_teams = pd.read_csv(dir + 'data_ml/' + filename)
     stroke_teams = stroke_teams.values.ravel()
     return stroke_teams
 
 
-def build_dataframe_from_inputs(dict, stroke_teams_list):
+def build_dataframe_from_inputs(dict, stroke_teams_list, model_type):
     # First build a 2D array where each row is the patient details.
-    # Column headings:
-    headers = np.array([
-        'Arrival-to-scan time',
-        'Infarction',
-        'Stroke severity',
-        'Precise onset time',
-        'Prior disability level',
-        'Stroke team',
-        'Use of AF anticoagulants',
-        'Onset-to-arrival time',
-        'Onset during sleep',
-        'Age'
-    ])
 
-    # One row of the array:
-    row = np.array([
-        dict['arrival_to_scan_time'],
-        dict['infarction'],
-        dict['stroke_severity'],
-        dict['onset_time_precise'],
-        dict['prior_disability'],
-        'temp',  # Stroke team
-        dict['anticoag'],
-        dict['onset_to_arrival_time'],
-        dict['onset_during_sleep'],
-        dict['age']
-        ], dtype=object)
+    if 'SAMueL-1' in model_type:
+        # Column headings:
+        headers = np.array([
+            'Arrival-to-scan time',
+            'Infarction',
+            'Stroke severity',
+            'Precise onset time',
+            'Prior disability level',
+            'Stroke team',
+            'Use of AF anticoagulants',
+            'Onset-to-arrival time',
+            'Onset during sleep',
+            'Age'
+        ])
+
+        # One row of the array:
+        row = np.array([
+            dict['arrival_to_scan_time'],
+            dict['infarction'],
+            dict['stroke_severity'],
+            dict['onset_time_precise'],
+            dict['prior_disability'],
+            'temp',  # Stroke team
+            dict['anticoag'],
+            dict['onset_to_arrival_time'],
+            dict['onset_during_sleep'],
+            dict['age']
+            ], dtype=object)
+
+        stroke_team_col = 5
+    else:
+        # Column headings:
+        headers = np.array([
+            'stroke team',
+            'age',
+            'infarction',
+            'stroke severity',
+            'onset-to-arrival time',
+            'precise onset known',
+            'onset during sleep',
+            'use of AF anticoagulants',
+            'prior disability',
+            'arrival-to-scan time',
+            # 'thrombolysis'
+        ])
+
+        # One row of the array:
+        row = np.array([
+            'temp',  # Stroke team
+            dict['age'],
+            dict['infarction'],
+            dict['stroke_severity'],
+            dict['onset_to_arrival_time'],
+            dict['onset_time_precise'],
+            dict['onset_during_sleep'],
+            dict['anticoag'],
+            dict['prior_disability'],
+            dict['arrival_to_scan_time']
+            ], dtype=object)
+
+        stroke_team_col = 0
 
     # Repeat these row values for the number of stroke teams:
     table = np.tile(row, len(stroke_teams_list))
     # Reshape to a 2D array:
     table = table.reshape(len(stroke_teams_list), len(headers))
     # Update the "Stroke team" column with the names:
-    table[:, 5] = stroke_teams_list
+    table[:, stroke_team_col] = stroke_teams_list
 
     # Turn this array into a DataFrame with labelled columns.
     df = pd.DataFrame(table, columns=headers)
     return df
 
 
-@st.cache_resource()  #hash_funcs={'builtins.dict': lambda _: None})
-def load_pretrained_model():
+# @st.cache_resource()  #hash_funcs={'builtins.dict': lambda _: None})
+def load_pretrained_model(model_file='model.p'):
     # Load XGB Model
-    filename = (dir + 'data_ml/model.p')
+    filename = (dir + 'data_ml/' + model_file)
     with open(filename, 'rb') as filehandler:
         model = pickle.load(filehandler)
     return model
 
 
-@st.cache_resource()  #hash_funcs={'builtins.dict': lambda _: None})
-def load_explainer():
-    # Load SHAP explainers
-    filename = (dir + 'data_ml/shap_explainer.p')
-    with open(filename, 'rb') as filehandler:
-        explainer = pickle.load(filehandler)
-    return explainer
+# @st.cache_resource()  #hash_funcs={'builtins.dict': lambda _: None})
+# def load_explainer():
+#     # Load SHAP explainers
+#     filename = (dir + 'data_ml/shap_explainer.p')
+#     with open(filename, 'rb') as filehandler:
+#         explainer = pickle.load(filehandler)
+#     return explainer
 
 
-@st.cache_resource()  #hash_funcs={'builtins.dict': lambda _: None})
-def load_explainer_probability():
-    filename = (dir + 'data_ml/shap_explainer_probability.p')
+# @st.cache_resource()  #hash_funcs={'builtins.dict': lambda _: None})
+def load_explainer_probability(model_file='shap_explainer_probability.p'):
+    filename = (dir + 'data_ml/' + model_file)
     with open(filename, 'rb') as filehandler:
         explainer_probability = pickle.load(filehandler)
     return explainer_probability
 
 
-def find_highlighted_hb_teams(stroke_teams_list, inds_benchmark, highlighted_teams_input):
+def find_highlighted_hb_teams(
+        stroke_teams_list,
+        inds_benchmark,
+        highlighted_teams_input,
+        default_highlighted_team,
+        display_name_of_default_highlighted_team
+        ):
     # Create a "Highlighted teams" column for the sorted_results.
     # Start off with everything '-' (NOT as plain_str):
     highlighted_teams_list = np.array(
