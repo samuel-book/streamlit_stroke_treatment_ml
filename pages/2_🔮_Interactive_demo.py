@@ -32,9 +32,6 @@ except ModuleNotFoundError:
 from utilities_ml.fixed_params import \
     plain_str, bench_str, draw_sneaky_bar, \
     write_markdown_in_colour
-    # default_highlighted_team, display_name_of_default_highlighted_team, \
-# from utilities_ml.inputs import \
-#     write_text_from_file
 import utilities_ml.inputs
 import utilities_ml.main_calculations
 # Containers:
@@ -257,7 +254,8 @@ def main():
     else:
         stroke_teams_file = 'stroke_teams_samuel2_anon.csv'
         ml_model_file = 'thrombolysis_xgb_model_anonymised_2017_2019.pkl'
-        explainer_file = 'thrombolysis_xgb_explainer_anonymised_probability_2017_2019.pkl'
+        explainer_file = \
+            'thrombolysis_xgb_explainer_anonymised_probability_2017_2019.pkl'
 
         # Stroke team column heading for the model
         stroke_team_col = 'stroke team'
@@ -271,7 +269,6 @@ def main():
         display_name_of_default_highlighted_team = '"St Elsewhere"'
 
         starting_probabilities = 0.3314
-
 
     # This is down here so that the starting probability is ok.
     with container_shap_explanation:
@@ -289,7 +286,7 @@ def main():
             + The final probability is found when all of the features
             have been considered.
             ''')
-        
+
     # List of stroke teams that this patient will be sent to:
     stroke_teams_list = utilities_ml.inputs.read_stroke_teams_from_file(
         stroke_teams_file
@@ -329,7 +326,6 @@ def main():
     # Find indices of benchmark data at the moment
     # for making a combined benchmark-highlighted team list.
     inds_benchmark = np.where(benchmark_rank_list <= 30)[0]
-
 
     # ----- Highlighted teams -----
     # The user can select teams to highlight on various plots.
@@ -379,7 +375,6 @@ def main():
     explainer_probability = utilities_ml.inputs.load_explainer_probability(
         explainer_file
         )
-
 
     # ##################################
     # ########## CALCULATIONS ##########
