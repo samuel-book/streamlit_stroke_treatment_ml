@@ -1,13 +1,13 @@
 import streamlit as st
 
 
-def main(sorted_results):
+def main(sorted_results, n_benchmark_teams):
     # Show metrics for all, benchmark, non-bench teams.
-    
+
     # Benchmark teams:
     # sorted_results['Benchmark rank']
 
-    inds_benchmark = sorted_results['Benchmark rank'] <= 30
+    inds_benchmark = sorted_results['Benchmark rank'] <= n_benchmark_teams
 
     results_all = sorted_results
     results_benchmark = sorted_results.loc[inds_benchmark]

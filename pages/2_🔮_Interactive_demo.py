@@ -87,7 +87,7 @@ def main():
             '''
             __Benchmark teams__
 
-            These 30 teams are consistently more likely than average to
+            These teams are consistently more likely than average to
             thrombolyse any given patient.
 
             They are used to compare the treatment decisions
@@ -188,7 +188,7 @@ def main():
                 'The features are ordered from largest negative effect on ',
                 'probability to largest positive effect. ',
                 'The 9 largest features are shown individually and the rest ',
-                'are condensed into the "132 other features" bar. ',
+                'are condensed into the "other features" bar. ',
                 'This bar mostly contains the effect of the patient _not_ ',
                 'attending the other stroke teams.'
             ])
@@ -325,7 +325,8 @@ def main():
         benchmark_df.sort_values(benchmark_team_column)['Rank'].to_numpy()
     # Find indices of benchmark data at the moment
     # for making a combined benchmark-highlighted team list.
-    inds_benchmark = np.where(benchmark_rank_list <= 30)[0]
+    n_benchmark_teams = 25
+    inds_benchmark = np.where(benchmark_rank_list <= n_benchmark_teams)[0]
 
     # ----- Highlighted teams -----
     # The user can select teams to highlight on various plots.
@@ -428,9 +429,9 @@ def main():
 
     # Pick out the subset of benchmark teams:
     inds_bench = np.where(
-        sorted_results['Benchmark rank'].to_numpy() <= 30)[0]
+        sorted_results['Benchmark rank'].to_numpy() <= n_benchmark_teams)[0]
     inds_nonbench = np.where(
-        sorted_results['Benchmark rank'].to_numpy() > 30)[0]
+        sorted_results['Benchmark rank'].to_numpy() > n_benchmark_teams)[0]
     # Make separate grids of just the benchmark or non-benchmark teams:
     grid_cat_bench = grid_cat_sorted[:, inds_bench]
     grid_cat_nonbench = grid_cat_sorted[:, inds_nonbench]
@@ -509,7 +510,7 @@ def main():
 
     with container_metrics:
         # Print metrics for how many teams would thrombolyse:
-        utilities_ml.container_metrics.main(sorted_results)
+        utilities_ml.container_metrics.main(sorted_results, n_benchmark_teams)
 
     with container_highlighted_summary:
         highlighted_teams_colours = \
