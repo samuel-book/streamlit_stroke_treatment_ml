@@ -82,6 +82,7 @@ def one_hot_encode_data(synthetic, one_hot_column='Stroke team'):
 @st.cache_data()
 def read_stroke_teams_from_file(filename='stroke_teams.csv'):
     stroke_teams = pd.read_csv(dir + 'data_ml/' + filename)
+    stroke_teams = stroke_teams.astype(dtype={'team_code': str})
     stroke_teams = stroke_teams.values.ravel()
     return stroke_teams
 
@@ -89,67 +90,98 @@ def read_stroke_teams_from_file(filename='stroke_teams.csv'):
 def build_dataframe_from_inputs(dict, stroke_teams_list, model_type):
     # First build a 2D array where each row is the patient details.
 
-    if 'SAMueL-1' in model_type:
-        # Column headings:
-        headers = np.array([
-            'Arrival-to-scan time',
-            'Infarction',
-            'Stroke severity',
-            'Precise onset time',
-            'Prior disability level',
-            'Stroke team',
-            'Use of AF anticoagulants',
-            'Onset-to-arrival time',
-            'Onset during sleep',
-            'Age'
-        ])
+    # if 'SAMueL-1' in model_type:
+    #     # Column headings:
+    #     headers = np.array([
+    #         'Arrival-to-scan time',
+    #         'Infarction',
+    #         'Stroke severity',
+    #         'Precise onset time',
+    #         'Prior disability level',
+    #         'Stroke team',
+    #         'Use of AF anticoagulants',
+    #         'Onset-to-arrival time',
+    #         'Onset during sleep',
+    #         'Age'
+    #     ])
 
-        # One row of the array:
-        row = np.array([
-            dict['arrival_to_scan_time'],
-            dict['infarction'],
-            dict['stroke_severity'],
-            dict['onset_time_precise'],
-            dict['prior_disability'],
-            'temp',  # Stroke team
-            dict['anticoag'],
-            dict['onset_to_arrival_time'],
-            dict['onset_during_sleep'],
-            dict['age']
-            ], dtype=object)
+    #     # One row of the array:
+    #     row = np.array([
+    #         dict['arrival_to_scan_time'],
+    #         dict['infarction'],
+    #         dict['stroke_severity'],
+    #         dict['onset_time_precise'],
+    #         dict['prior_disability'],
+    #         'temp',  # Stroke team
+    #         dict['anticoag'],
+    #         dict['onset_to_arrival_time'],
+    #         dict['onset_during_sleep'],
+    #         dict['age']
+    #         ], dtype=object)
 
-        stroke_team_col = 5
-    else:
-        # Column headings:
-        headers = np.array([
-            'stroke team',
-            'age',
-            'infarction',
-            'stroke severity',
-            'onset-to-arrival time',
-            'precise onset known',
-            'onset during sleep',
-            'use of AF anticoagulants',
-            'prior disability',
-            'arrival-to-scan time',
-            # 'thrombolysis'
-        ])
+    #     stroke_team_col = 5
+    # else:
+    #     # Column headings:
+    #     headers = np.array([
+    #         'stroke team',
+    #         'age',
+    #         'infarction',
+    #         'stroke severity',
+    #         'onset-to-arrival time',
+    #         'precise onset known',
+    #         'onset during sleep',
+    #         'use of AF anticoagulants',
+    #         'prior disability',
+    #         'arrival-to-scan time',
+    #         # 'thrombolysis'
+    #     ])
 
-        # One row of the array:
-        row = np.array([
-            'temp',  # Stroke team
-            dict['age'],
-            dict['infarction'],
-            dict['stroke_severity'],
-            dict['onset_to_arrival_time'],
-            dict['onset_time_precise'],
-            dict['onset_during_sleep'],
-            dict['anticoag'],
-            dict['prior_disability'],
-            dict['arrival_to_scan_time']
-            ], dtype=object)
+    #     # One row of the array:
+    #     row = np.array([
+    #         'temp',  # Stroke team
+    #         dict['age'],
+    #         dict['infarction'],
+    #         dict['stroke_severity'],
+    #         dict['onset_to_arrival_time'],
+    #         dict['onset_time_precise'],
+    #         dict['onset_during_sleep'],
+    #         dict['anticoag'],
+    #         dict['prior_disability'],
+    #         dict['arrival_to_scan_time']
+    #         ], dtype=object)
 
-        stroke_team_col = 0
+    #     stroke_team_col = 0
+
+    # Column headings:
+    headers = np.array([
+        'stroke_team_id',
+        'stroke_severity',
+        'prior_disability',
+        'age',
+        'infarction',
+        'onset_to_arrival_time',
+        'precise_onset_known',
+        'onset_during_sleep',
+        'arrival_to_scan_time',
+        'afib_anticoagulant'
+        # 'thrombolysis'
+    ])
+
+    # One row of the array:
+    row = np.array([
+        'temp',  # Stroke team
+        dict['stroke_severity'],
+        dict['prior_disability'],
+        dict['age'],
+        dict['infarction'],
+        dict['onset_to_arrival_time'],
+        dict['onset_time_precise'],
+        dict['onset_during_sleep'],
+        dict['arrival_to_scan_time'],
+        dict['anticoag']
+        ], dtype=object)
+
+    stroke_team_col = 0
 
     # Repeat these row values for the number of stroke teams:
     table = np.tile(row, len(stroke_teams_list))
@@ -159,7 +191,23 @@ def build_dataframe_from_inputs(dict, stroke_teams_list, model_type):
     table[:, stroke_team_col] = stroke_teams_list
 
     # Turn this array into a DataFrame with labelled columns.
-    df = pd.DataFrame(table, columns=headers)
+    # Make stroke team ID integers for later sorting -
+    # we want team_1, team_2, team_3, ...
+    # instead of team_1, team_10, team_100, ...
+    df = pd.DataFrame(table, columns=headers).astype(dtype={
+        'stroke_team_id': int,
+        'stroke_severity': int,
+        'prior_disability': int,
+        'age': float,
+        'infarction': bool,
+        'onset_to_arrival_time': float,
+        'precise_onset_known': int,
+        'onset_during_sleep': int,
+        'arrival_to_scan_time': float,
+        'afib_anticoagulant': bool
+        # 'thrombolysis'
+    })
+
     return df
 
 

@@ -226,49 +226,50 @@ def main():
         # Decide whether to use new or old model:
         st.markdown('-'*50)
         st.markdown('## Advanced options')
-        model_version = st.radio(
-            'Model version',
-            ['SAMueL-1: December 2022',
-             'SAMueL-2: April 2023'],
-            index=1  # Initial selection
-        )
+        # model_version = st.radio(
+        #     'Model version',
+        #     ['SAMueL-1: December 2022',
+        #      'SAMueL-2: April 2023'],
+        #     index=1  # Initial selection
+        # )
+        model_version = 'SAMueL-2: August 2023'
 
-    if 'SAMueL-1' in model_version:
-        stroke_teams_file = 'stroke_teams.csv'
-        ml_model_file = 'model.p'
-        explainer_file = 'shap_explainer_probability.p'
+    # if 'SAMueL-1' in model_version:
+    stroke_teams_file = 'stroke_teams.csv'
+    ml_model_file = 'model.p'
+    explainer_file = 'shap_explainer_probability.p'
 
-        # Stroke team column heading for the model
-        stroke_team_col = 'Stroke team'
+    # Stroke team column heading for the model
+    stroke_team_col = 'stroke_team_id'
 
-        # Benchmark teams:
-        benchmark_filename = 'hospital_10k_thrombolysis.csv'
-        benchmark_team_column = 'stroke_team'
+    # Benchmark teams:
+    benchmark_filename = 'benchmark_codes.csv'
+    benchmark_team_column = 'stroke_team_id'
 
-        # Default highlighted team:
-        default_highlighted_team = 'LECHF1024T'
-        display_name_of_default_highlighted_team = '"St Elsewhere"'
+    # Default highlighted team:
+    default_highlighted_team = '42' #'LECHF1024T'
+    display_name_of_default_highlighted_team = '"St Elsewhere"'
 
-        starting_probabilities = 0.2995
+    starting_probabilities = 0.4236 # 0.42355026099306586
 
-    else:
-        stroke_teams_file = 'stroke_teams_samuel2_anon.csv'
-        ml_model_file = 'thrombolysis_xgb_model_anonymised_2017_2019.pkl'
-        explainer_file = \
-            'thrombolysis_xgb_explainer_anonymised_probability_2017_2019.pkl'
+    # else:
+    #     stroke_teams_file = 'stroke_teams_samuel2_anon.csv'
+    #     ml_model_file = 'thrombolysis_xgb_model_anonymised_2017_2019.pkl'
+    #     explainer_file = \
+    #         'thrombolysis_xgb_explainer_anonymised_probability_2017_2019.pkl'
 
-        # Stroke team column heading for the model
-        stroke_team_col = 'stroke team'
+    #     # Stroke team column heading for the model
+    #     stroke_team_col = 'stroke team'
 
-        # Benchmark teams:
-        benchmark_filename = 'benchmark_codes.csv'
-        benchmark_team_column = 'Hospital code'
+    #     # Benchmark teams:
+    #     benchmark_filename = 'benchmark_codes.csv'
+    #     benchmark_team_column = 'Hospital code'
 
-        # Default highlighted team:
-        default_highlighted_team = 'team_100'
-        display_name_of_default_highlighted_team = 'team_100'
+    #     # Default highlighted team:
+    #     default_highlighted_team = 'team_100'
+    #     display_name_of_default_highlighted_team = 'team_100'
 
-        starting_probabilities = 0.3314
+    #     starting_probabilities = 0.3314
 
     # This is down here so that the starting probability is ok.
     with container_shap_explanation:

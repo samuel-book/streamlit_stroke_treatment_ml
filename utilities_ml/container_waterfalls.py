@@ -122,22 +122,29 @@ def plot_shap_waterfall(
     # Collect the input patient data:
     patient_data = shap_values.data
     # Adjust some values to add units for showing on the plot:
-    if 'SAMueL-1' in model_version:
-        extra_bits = {
-            'Onset-to-arrival time': ' minutes',
-            'Arrival-to-scan time': ' minutes',
-            # 'Stroke severity': ' (out of 42)',
-            # 'Prior disability level': ' (mRS)',
-            'Age': ' years',
-        }
-    else:
-        extra_bits = {
-            'onset-to-arrival time': ' minutes',
-            'arrival-to-scan time': ' minutes',
-            # 'Stroke severity': ' (out of 42)',
-            # 'Prior disability level': ' (mRS)',
-            'age': ' years',
-        }
+    # if 'SAMueL-1' in model_version:
+    #     extra_bits = {
+    #         'Onset-to-arrival time': ' minutes',
+    #         'Arrival-to-scan time': ' minutes',
+    #         # 'Stroke severity': ' (out of 42)',
+    #         # 'Prior disability level': ' (mRS)',
+    #         'Age': ' years',
+    #     }
+    # else:
+    #     extra_bits = {
+    #         'onset-to-arrival time': ' minutes',
+    #         'arrival-to-scan time': ' minutes',
+    #         # 'Stroke severity': ' (out of 42)',
+    #         # 'Prior disability level': ' (mRS)',
+    #         'age': ' years',
+    #     }
+    extra_bits = {
+        'onset_to_arrival_time': ' minutes',
+        'arrival_to_scan_time': ' minutes',
+        # 'Stroke severity': ' (out of 42)',
+        # 'Prior disability level': ' (mRS)',
+        'age': ' years',
+    }
     for feature in extra_bits.keys():
         i = np.where(feature_names == feature)[0][0]
         patient_data[i] = f'{patient_data[i]}' + extra_bits[feature]
