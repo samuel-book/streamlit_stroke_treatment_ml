@@ -1,17 +1,18 @@
-matplotlib==3.4.3
-numpy==1.22.3
-pandas==1.4.2
-#markdown==3.3.7
-pip==22.2.2
-shap==0.41.0
-importlib-metadata==4.11.3  
-importlib_resources==5.2.0
-pickleshare==0.7.5
-#scikit-learn==1.1.3
-xgboost==1.5.0
-scipy==1.8.1
-plotly==5.9.0
-streamlit-plotly-events==0.0.6
+matplotlib
+numpy
+pandas
+#markdown
+pip
+shap
+importlib-metadata
+importlib_resources
+pickleshare
+#scikit-learn
+xgboost
+scipy
+plotly
+streamlit-plotly-events
+numba>=0.57
 # Don't give a version for streamlit 
 # to ensure the app has the latest security updates. 
 streamlit
