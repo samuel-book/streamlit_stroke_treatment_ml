@@ -88,7 +88,7 @@ def main(sorted_results, hb_teams_input, use_plotly_events,
     fig.update_traces(
         hovertemplate=(
             # Stroke team:
-            '%{customdata[0]}' +
+            'Team %{customdata[0]}' +
             '<br>' +
             # Probability to two decimal places:
             '%{y:>.2f}%' +

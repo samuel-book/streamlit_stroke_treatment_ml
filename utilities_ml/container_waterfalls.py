@@ -52,7 +52,7 @@ def show_waterfalls_max_med_min(
 
         # title = '__' + titles[i_here] + ' of thrombolysis__'
         team_info = (
-            # 'Team ' +
+            'Team ' +
             sorted_results['Stroke team'].loc[i] +
             f' (Rank {sorted_rank} of {sorted_results.shape[0]})'
         )
@@ -91,7 +91,7 @@ def show_waterfalls_highlighted(
         # title = 'Team ' + sorted_results['Stroke team'].loc[i]
         sorted_rank = sorted_results['Sorted rank'].loc[i]
         team_info = (
-            # 'Team ' +
+            'Team ' +
             team_name +
             f' (Rank {sorted_rank} of {sorted_results.shape[0]})'
         )

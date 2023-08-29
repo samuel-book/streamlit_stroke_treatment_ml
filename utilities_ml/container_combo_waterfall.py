@@ -559,6 +559,7 @@ def box_plot_of_prob_shifts(
         hb_teams_input,
         default_highlighted_team,
         display_name_of_default_highlighted_team,
+        starting_probabilities,
         inds=[]
         ):
 
@@ -575,7 +576,19 @@ def box_plot_of_prob_shifts(
     #  9 This stroke team,
     # 10 Other stroke teams.
     # Put it into the same order as in the input sidebar:
-    inds = [9, 4, 2, 0, 6, 8, 1, 3, 5, 7] #, 10]
+    # inds = [9, 4, 2, 0, 6, 8, 1, 3, 5, 7] #, 10]
+    
+    # 0 stroke_severity
+    # 1 prior_disability
+    # 2 age
+    # 3 infarction
+    # 4 onset_to_arrival_time
+    # 5 precise_onset_known
+    # 6 onset_during_sleep
+    # 7 arrival_to_scan_time
+    # 8 afib_anticoagulant
+    # 9 Stroke team attended
+    inds = [9, 1, 0, 7, 4, 2, 3, 5, 8, 6]
 
     # Sort feature order:
     if len(inds) > 0:
@@ -589,7 +602,7 @@ def box_plot_of_prob_shifts(
     final_probs_bench = np.sum(grid_bench, axis=0)
     final_probs_non_bench = np.sum(grid_non_bench, axis=0)
     # Add base probabilities to these:
-    start_probs = 100.0 * 0.2995270168908044
+    start_probs = 100.0 * starting_probabilities  # 0.2995270168908044
     final_probs += start_probs
     final_probs_bench += start_probs
     final_probs_non_bench += start_probs

@@ -52,7 +52,7 @@ def write_markdown_in_colour(string, colour):
 
 
 # Starting probability in the model:
-starting_probabilities = 0.2995270168908044
+# starting_probabilities = # 0.2995270168908044
 
 # How to label non-highlighted teams:
 plain_str = 'Non-benchmark team'
