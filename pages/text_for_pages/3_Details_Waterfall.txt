@@ -1,0 +1,17 @@
+# To be printed as markdown on the "Details" page. 
+# ---------------------------------------------------------------------
+
+
+1. Feature "team_42" is "Yes". This patient attended stroke team 42. This reduces the probability of treatment by 8.7% because this team is less likely to give thrombolysis than many others. The probability of treatment so far is 34.82% - 8.70% = 26.12%.
+2. "Onset to arrival time" is 90 minutes. The patient arrived at hospital 90 minutes after their stroke began. This reduces the probability of treatment by 2.57% because of the time delay. The probability of treatment so far is 26.12% - 2.57% = 23.55%.
+3. All of the other 119 features have a combined effect of -0.04%. These features have smaller individual effects than any of the others shown individually on the graph. The probability of treatment so far is 23.55% - 0.04% = 23.51%.
+4. "Age" is "72.5 years". This increases the probability of treatment by 1.85% because the patient is relatively young. The probability of treatment so far is 23.51% + 1.85% = 25.36%.
+5. "afib_anticoagulant" is "No". This patient is not on blood-thinning medication. This increases the probability of treatment by 3.63% because thrombolysis is more risky when the patient is on blood thinners. The probability of treatment so far is 25.36% + 3.63% = 28.99%.
+5. "Arrival to scan time" is 15 minutes. The patient had a scan 15 minutes after arrival at the hospital. This increases the probability of treatment by 4.82% because the hospital pathway was quick. The probability of treatment so far is 28.99% + 4.82% = 33.81%.
+5. The onset time is known precisely. This increases the probability of treatment by 5% because there is a better estimate of how much benefit could be gained from treatment this soon after the stroke began. The probability of treatment so far is 33.81% + 5% = 38.81%.
+5. The pre-stroke modified Rankin scale score was 0. This increases the probability of treatment by 8.31% because the previous disability level was so low. The probability of treatment so far is 38.81% + 8.31% = 47.12%.
+5. "Infarction" is "yes" so this patient does have a blood clot. This increases the probability of treatment by 12.08% because thrombolysis is designed to break down blood clots. The probability of treatment so far is 47.12% + 12.08% = 59.20%.
+5. The stroke severity score is 15. This increases the probability of treatment by 19.33% because the stroke is moderately severe. The probability of treatment so far is 59.20% + 19.33% = 78.53%.
+This all adds up to the end probability of 78.55% which is written at the bottom of the plot.
+
+(Or does it?! The sums in the previous paragraph add up slightly differently from the written number. This is because the numbers written on the graph have been rounded and so some precision has been lost. The "end probability" as written is always the correct number.)

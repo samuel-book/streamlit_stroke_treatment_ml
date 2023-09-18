@@ -1,0 +1,11 @@
+flowchart TD
+    D[/Train data/]
+    D --> E[Make prediction model] 
+    E --> F[Make SHAP models]
+    
+    %% Orange fill and darker orange border
+    style D fill:#f80,stroke:#840
+
+    %% Pure green fill, darker green border
+    style E fill:#0f0,stroke:#080
+    style F fill:#0f0,stroke:#080

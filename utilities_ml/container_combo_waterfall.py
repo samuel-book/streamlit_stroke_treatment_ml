@@ -377,7 +377,7 @@ def plot_combo_waterfalls(df_waterfalls, sorted_results, final_probs, patient_da
         yanchor='top',
         y=1,
         xanchor='right',
-        x=1.04,
+        x=0.9,
         # itemwidth=50
     ))
     # Remove y=0 line:

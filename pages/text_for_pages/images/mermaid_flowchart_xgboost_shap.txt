@@ -1,0 +1,21 @@
+flowchart TD
+    A[(Full data)] --> B[/Subset with onset to scan <= 4hr/]
+    B --> D[/Train data/]
+    B --> C[/Test data/] 
+    D --> E[Make prediction model] 
+    E --> EX[\Save prediction model/]
+    F[Make SHAP models] --> FX[\Save SHAP model/]
+    EX --> F
+    FX --> G
+    %% Invisible links to shift EX and FX sideways:
+    E ~~~ F  
+    F ~~~ G
+    C ------>G[Calculate SHAP values<br> for test data]
+    G --> I[Find average SHAP value<br>for each stroke team]
+    I --> J[Define 25 benchmark teams<br>with the highest average SHAP]
+    J --> JX[\Save benchmark rankings/]
+
+    %% Pure green fill, darker green border
+    style EX fill:#0f0,stroke:#080
+    style FX fill:#0f0,stroke:#080
+    style JX fill:#0f0,stroke:#080

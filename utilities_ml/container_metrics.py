@@ -30,7 +30,7 @@ def main(sorted_results, n_benchmark_teams):
         100.0 * n_thrombolyse_non_benchmark / n_non_benchmark)
 
     cols = st.columns(4, gap='large')
-    with cols[1]:
+    with cols[0]:
         st.metric(
             f'All teams',
             f'{perc_thrombolyse_all:.0f}%'
@@ -70,7 +70,7 @@ def main(sorted_results, n_benchmark_teams):
 
     with cols[3]:
         st.metric(
-            f'Non-benchmark teams',
+            f'Other teams',
             f'{perc_thrombolyse_non_benchmark:.0f}%'
             )
         yes_str = (
@@ -87,7 +87,7 @@ def main(sorted_results, n_benchmark_teams):
         st.write(yes_str)
         st.write(no_str)
 
-    with cols[0]:
+    with cols[1]:
         # Write benchmark decision:
         extra_str = '' if perc_thrombolyse_benchmark >= 50.0 else ' do not'
         decision_emoji = ':heavy_check_mark:' if perc_thrombolyse_benchmark >= 50.0 else ':x:'

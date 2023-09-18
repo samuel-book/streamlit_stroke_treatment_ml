@@ -60,11 +60,11 @@ def user_inputs():
     # Float input in steps of 5 years from 2.5 years.
     age_input = st.number_input(
         'Age',
-        min_value=2.5,
-        max_value=127.5,
+        min_value=37.5,
+        max_value=97.5,
         value=72.5,
         step=5.0,
-        help='Ranges from 2.5 to 127.5.',
+        help='Ranges from 37.5 to 97.5.',
         key='age_input'
     )
     # It's possible to override this by typing your own entry.
@@ -80,7 +80,8 @@ def user_inputs():
         options=['Yes', 'No'],
         index=0,
         horizontal=True,
-        key='infarction_input_str'
+        key='infarction_input_str',
+        help='Whether the stroke is caused by a blood clot.'
     )
     infarction_input = 1 if infarction_input_str == 'Yes' else 0
 
@@ -92,7 +93,8 @@ def user_inputs():
         options=['Yes', 'No'],
         index=0,
         horizontal=True,
-        key='onset_time_precise_input_str'
+        key='onset_time_precise_input_str',
+        help='Whether the onset time is known precisely.'
     )
     onset_time_precise_input = 1 \
         if onset_time_precise_input_str == 'Yes' else 0
@@ -105,7 +107,8 @@ def user_inputs():
         options=['Yes', 'No'],
         index=1,
         horizontal=True,
-        key='anticoag_input_str'
+        key='anticoag_input_str',
+        help='Whether the patient takes blood-thinning medication.'
     )
     anticoag_input = 1 if anticoag_input_str == 'Yes' else 0
 
@@ -117,7 +120,8 @@ def user_inputs():
         options=['Yes', 'No'],
         index=1,
         horizontal=True,
-        key='onset_during_sleep_input_str'
+        key='onset_during_sleep_input_str',
+        help='Whether the stroke began during sleep.'
     )
     onset_during_sleep_input = 1 \
         if onset_during_sleep_input_str == 'Yes' else 0

@@ -1,0 +1,16 @@
+# To be printed as markdown on the "Details" page. 
+# ---------------------------------------------------------------------
+
+### What does this example show?
+
+The patient always starts with the same "base probability" at the top of the graph. There are already 119 different lines being plotted, one for each team, but when they are almost identical it is difficult to pick out the differences.
+
+For the first few rows of the graph, the 119 separate lines follow a similar route. The effect on probability of treatment is quite similar for all stroke teams for "onset during sleep", "infarction" (blood clot), and "afib anticoagulant" (blood-thinning medication). 
+
+The lines start to split apart a bit for the next few features, "age", "prior disability", and "precise onset known". This means that the stroke teams agree less precisely about how much those factors should affect the probability of treatment. Most if not all teams think that these factors should increase the probability of treatment, but they disagree on exactly how much it should increase.
+
+The largest differences are on the last row, "stroke team attended". Some of the lines leading to this row move right and others move left. This means that some stroke teams increase the probability of treatment and others decrease it, again all by different amounts.
+
+Where the lines end on the "stroke team attended" row is the final probability of treatment for this patient after all of the rows have been added up. The extra row below it, "Final probability", shows a violin plot of those values. The following section shows how to read a violin plot.
+
+__What about "119 other features"?__ This time, we show the 10 patient details in separate rows. Secretly we have combined the effects of all of the teams into one value, "stroke team attended". In the separate waterfall plots there is one row for each separate team. The separate row for each team is technically more correct for the way the prediction model works (the stroke teams are "one-hot encoded"). We have chosen to combine the 119 rows here because it's much easier to read on the plot.

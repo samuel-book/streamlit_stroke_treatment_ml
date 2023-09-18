@@ -69,31 +69,53 @@ def main():
         st.image('./streamlit_stroke_treatment_ml/' +
                  'utilities_ml/SAMueL2_model_wide.png')
 
+    path_to_details = './Details#'  #'http://localhost:8501/Details#'
+
     st.markdown('''
         We can use the model to give the same patient details
         to all stroke teams and decide how likely each team is
         to thrombolyse that patient.
+        ''',
+        help=f'''
+🧐 - [Which stroke teams are included?]({path_to_details}which-teams-are-included)
+''' )
 
+    st.markdown('''
         Stroke teams with a probability below 50% are unlikely to
         thrombolyse the patient, and other teams are
         likely to thrombolyse.
-        ''')
+        ''',
+        help=f'''
+🧐 - [What do the probabilities mean?]({path_to_details}what-do-the-probabilities-mean)
+''' )
 
     st.markdown('### How we categorise the results')
     cols_method = st.columns(3)
 
     with cols_method[1]:
-        st.error(
+        st.markdown('')  # To match offset of info/error boxes
+        st.markdown(
             '''
-            __Benchmark teams__
 
+            __Benchmark teams__
+            ''')
+        st.markdown(
+            '''
             These teams are consistently more likely than average to
             thrombolyse any given patient.
+            ''',
+            help=f'''
+🧐 - [What are benchmark teams?]({path_to_details}what-are-benchmark-teams)
 
+🧐 - [How are they picked?]({path_to_details}how-are-the-benchmark-teams-picked)
+'''
+            )
+
+        st.markdown(
+            '''
             They are used to compare the treatment decisions
             of stroke teams with highly-thrombolysing units.
-            '''
-            )
+            ''')
     with cols_method[0]:
         st.info(
             '''
@@ -138,7 +160,7 @@ def main():
     # They'll appear in this order, but we'll fill them in another order.
     container_metrics = st.container()
     with container_metrics:
-        st.markdown('## ')  # Breathing room
+        # st.markdown('## ')  # Breathing room
         st.markdown(''.join([
             '### ',  # :abacus: ',
             'How many teams would thrombolyse this patient?'
@@ -154,7 +176,7 @@ def main():
 
     container_bar_chart = st.container()
     with container_bar_chart:
-        st.markdown('## ')  # Breathing room
+        # st.markdown('## ')  # Breathing room
         st.markdown(''.join([
             '### ',  # :chart_with_upwards_trend: ',
             'What would each of the teams do?'
@@ -163,7 +185,7 @@ def main():
 
     container_shapley_probs = st.container()
     with container_shapley_probs:
-        st.markdown('## ')  # Breathing room
+        # st.markdown('## ')  # Breathing room
         st.markdown('-' * 50)
 
         container_shap_explanation = st.container()
@@ -201,7 +223,9 @@ def main():
                 'a series of scatter points connected by lines. ',
                 'The features are ordered with the most agreed on features ',
                 'at the top, and the ones with more variation lower down. '
-            ]))
+            ]), help=f'''
+🧐 - [How do I read this plot?]({path_to_details}how-do-you-read-a-wizard-s-hat-plot)
+''')
 
         with tabs_waterfall[2]:
             # Box plots explanation:
@@ -209,6 +233,8 @@ def main():
                 Here the range of shifts in probability caused by
                 each feature are shown as violin plots.
                 The highlighted teams are overlaid as scatter circles.
+                ''', help=f'''
+🧐 - [How do I read a violin plot?]({path_to_details}how-do-you-read-a-violin-plot)
                 ''')
 
     # ###########################
@@ -218,23 +244,20 @@ def main():
     # ----- Build the X array -----
     # All patient detail widgets go in the sidebar:
     with st.sidebar:
-        st.markdown('## Patient details')
+        st.markdown('## Patient details', help=f'''
+🧐 - [Which patient details are included?]({path_to_details}which-features-are-used)
+
+🧐 - [Why do we model only ten features?]({path_to_details}why-these-features)
+''' )
         user_inputs_dict = utilities_ml.container_inputs.user_inputs()
         # Write an empty header to give breathing room at the bottom:
         # st.markdown('# ')
 
-        # Decide whether to use new or old model:
         st.markdown('-'*50)
         st.markdown('## Advanced options')
-        # model_version = st.radio(
-        #     'Model version',
-        #     ['SAMueL-1: December 2022',
-        #      'SAMueL-2: April 2023'],
-        #     index=1  # Initial selection
-        # )
-        model_version = 'SAMueL-2: August 2023'
 
-    # if 'SAMueL-1' in model_version:
+    model_version = 'SAMueL-2: August 2023'
+
     stroke_teams_file = 'stroke_teams.csv'
     ml_model_file = 'model.p'
     explainer_file = 'shap_explainer_probability.p'
@@ -247,29 +270,11 @@ def main():
     benchmark_team_column = 'stroke_team_id'
 
     # Default highlighted team:
-    default_highlighted_team = '42' # 'LECHF1024T'
-    display_name_of_default_highlighted_team = str(default_highlighted_team) # '"St Elsewhere"'
+    default_highlighted_team = '42'
+    display_name_of_default_highlighted_team = (
+        str(default_highlighted_team))
 
-    starting_probabilities = 0.3481594278820853 # 0.42355026099306586
-
-    # else:
-    #     stroke_teams_file = 'stroke_teams_samuel2_anon.csv'
-    #     ml_model_file = 'thrombolysis_xgb_model_anonymised_2017_2019.pkl'
-    #     explainer_file = \
-    #         'thrombolysis_xgb_explainer_anonymised_probability_2017_2019.pkl'
-
-    #     # Stroke team column heading for the model
-    #     stroke_team_col = 'stroke team'
-
-    #     # Benchmark teams:
-    #     benchmark_filename = 'benchmark_codes.csv'
-    #     benchmark_team_column = 'Hospital code'
-
-    #     # Default highlighted team:
-    #     default_highlighted_team = 'team_100'
-    #     display_name_of_default_highlighted_team = 'team_100'
-
-    #     starting_probabilities = 0.3314
+    starting_probabilities = 0.3481594278820853
 
     # This is down here so that the starting probability is ok.
     with container_shap_explanation:
@@ -277,7 +282,12 @@ def main():
             '''
             + Before the model looks at any of the patient\'s details,
             the patient starts with a base probability''' +
-            f' of {100.0*starting_probabilities:.2f}%.' + '''
+            f' of {100.0*starting_probabilities:.2f}%.',
+            help=f'''
+🧐 - [Why this base probability?]({path_to_details}why-this-base-probability)
+''')
+        st.markdown(
+            '''
 
             + The model then looks at the value of each feature of
             the patient in turn, and adjusts this probability upwards
@@ -336,11 +346,18 @@ def main():
     # certain plots.
     # Receive the user inputs now and show this container now:
     with container_highlighted_summary:
+        help_str = f'''
+🧐 - [Why are the team names numbers?]({path_to_details}why-are-teams-given-numbers)
+
+🧐 - [What is my team called?]({path_to_details}what-is-my-team-called)
+
+🧐 - [How is the data anonymised?]({path_to_details}how-is-the-data-anonymised)
+'''
         st.caption(''.join([
             'To highlight stroke teams, ',
             'select them in this box ',
             'or click on them in the interactive charts.'
-        ]))
+        ]), help=help_str)
 
         cols_highlighted_summary = st.columns(4)
         with cols_highlighted_summary[0]:
@@ -557,7 +574,7 @@ def main():
                         extra_str = 'do not '
                     st.markdown(f'Probability: {prob_here:.2f}%')
                     st.markdown(emoji_here + extra_str + 'thrombolyse')
-                    st.markdown('-' * 50)
+                    st.markdown('-' * 10)
                     # HTML horizontal rule is <hr> but appears in grey.
 
     with container_bar_chart:
@@ -579,7 +596,9 @@ def main():
                 st.write('No teams are highlighted.')
             else:
                 # Individual waterfalls for the highlighted teams.
-                st.markdown(waterfall_explanation_str)
+                st.markdown(waterfall_explanation_str, help=f'''
+🧐 - [How do I read a waterfall plot?]({path_to_details}how-do-you-read-a-waterfall-plot)
+                ''')
                 draw_sneaky_bar()
                 utilities_ml.container_waterfalls.show_waterfalls_highlighted(
                     shap_values_probability_extended_highlighted,
@@ -625,7 +644,9 @@ def main():
         with tabs_waterfall[3]:
             # Individual waterfalls for the teams with the
             # max / median / min probabilities of thrombolysis.
-            st.markdown(waterfall_explanation_str)
+            st.markdown(waterfall_explanation_str, help=f'''
+🧐 - [How do I read a waterfall plot?]({path_to_details}how-do-you-read-a-waterfall-plot)
+                ''')
             draw_sneaky_bar()
             utilities_ml.container_waterfalls.show_waterfalls_max_med_min(
                 shap_values_probability_extended_high_mid_low,

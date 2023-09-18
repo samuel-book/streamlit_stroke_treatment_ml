@@ -1,0 +1,15 @@
+# To be printed as markdown on the "Details" page. 
+# ---------------------------------------------------------------------
+
+
+### How do we know it works?
+
+We use a set of testing data from the real-life patient data set. For this data we know whether each patient received thrombolysis in real life. We can pass that data to the decision model to predict whether each patient was thrombolysed, and then see how often the prediction matched reality.
+
+(To do - write about the more robust checks including ROC-AUC.)
+
+### What do the probabilities mean?
+
+The model gives a probability that a patient will receive thrombolysis. We've chosen a cut-off value of 50% for choosing whether or not the stroke team would choose to thrombolyse the patient. If the probability is at least 50%, then the patient is thrombolysed. 
+
+The app shows the actual probability scores where possible instead of just the "yes" or "no" decision to show how strong the decision is. For example, two patients with scores of 55% and 90% are both shown here as being thrombolysed. The 90% score is quite high and suggests that in real life that patient would probably receive thrombolysis _based only on the information given to the model_. However the 55% score is much closer to the cut-off score of 50%. For this patient, it is not as certain that they would receive thrombolysis in real life and might depend more on the real-life stroke team's discretion on the day.

@@ -1,0 +1,13 @@
+# To be printed as markdown on the "Details" page. 
+# ---------------------------------------------------------------------
+
+### Why this base probability?
+
+(To do - Anna doesn't know this. It's consistently around 30-40% though.)
+
+### What are the general effects?
+
+We can look calculate all of the SHAP values for all of the patients in the testing data and look for trends.
+
+(Include box plots)
+

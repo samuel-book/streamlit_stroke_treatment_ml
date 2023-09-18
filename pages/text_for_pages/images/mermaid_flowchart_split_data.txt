@@ -1,0 +1,11 @@
+flowchart TD
+    A[(Full data)] --> B[/Subset with onset to scan time<br>no more than 4 hours/]
+    B --> D[/Training data/]
+    B --> C[/Testing data/]
+    B --> E[/Other data/]
+
+    %% Orange fill and darker orange border
+    style A fill:#f80,stroke:#840
+    style D fill:#f80,stroke:#840
+    style C fill:#f80,stroke:#840
+    style E fill:#f80,stroke:#840

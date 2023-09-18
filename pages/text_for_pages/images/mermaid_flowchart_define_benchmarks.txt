@@ -1,0 +1,15 @@
+flowchart TD
+    C[/Test data/] 
+    D[/SHAP model/] --> G
+    C -->G[Calculate SHAP values<br> for test data]
+    G --> I[Find average SHAP value<br>for each stroke team]
+    I --> J[Define 25 benchmark teams<br>with the highest average SHAP]
+    J --> JX[\Save benchmark rankings/]
+
+
+    %% Orange fill and darker orange border
+    style C fill:#f80,stroke:#840
+    style D fill:#f80,stroke:#840
+
+    %% Pure green fill, darker green border
+    style JX fill:#0f0,stroke:#080

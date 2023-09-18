@@ -1,0 +1,28 @@
+# To be printed as markdown on the "Details" page. 
+# ---------------------------------------------------------------------
+
+# 🧐 Details
+
+Overview: create some patient details, pass them to the thrombolysis prediction model, and see which stroke teams would choose to thrombolyse the patient.
+
+Additional: see how the prediction model came to its decisions by using SHAP values.
+
+App setup:
+
+Sidebar is the inputs for the patient details.
+Top is some background.
+Middle is the results for the chosen patient details.
+Bottom is the method behind the thrombolysis predictor model.
+	
+	+---+--------------+
+	|   |              |
+	| I |  Background  |
+	| n |              |
+	| p +--------------+
+	| u |              |
+	| t |   Results    |
+	| s |              |
+	|   +--------------+
+	|   |    Method    |
+	+---+--------------+
+

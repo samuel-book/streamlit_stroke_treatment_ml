@@ -1,0 +1,23 @@
+# To be printed as markdown on the "Details" page. 
+# ---------------------------------------------------------------------
+
+### Which features are used? 
+
+We use the following features:
+
+| Feature | Definition |
+| --- | --- |
+| Prior disability (mRS score) | mRS score before this stroke began. |
+| Stroke severity | NIHSS from 0 (least severe) to 42 (most severe). |
+| Arrival to scan time (minutes) | Time between arrival at hospital and the brain scan. |
+| Onset to arrival time (minutes) | Time between the start of the stroke and arrival at hospital. |
+| Age | Age in years. This is placed in groups of five years (e.g. 60-65, 65-70) and the value used is the middle of the group (e.g. the 60-65 group uses a value of 62.5 years). The range of allowed values is the same as the range in our set of real patient data. |
+| Infarction | Whether the stroke is due to a blood clot. When infarction is "yes", there is a blood clot. |
+| Precise onset time | Whether the time that the stroke started is known exactly. |
+| AF Anticoagulants | Whether the patient is taking blood-thinning medication. |
+| Onset during sleep | Whether this stroke started while the patient was asleep. |
+
+### Why these features?
+
+We have previously found that these ten features are the most useful for the decision model when it is choosing whether or not a patient should be thrombolysed. Any extra data that we included would not make much difference to the model's answers.
+

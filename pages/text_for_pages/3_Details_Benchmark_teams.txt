@@ -1,0 +1,14 @@
+# To be printed as markdown on the "Details" page. 
+# ---------------------------------------------------------------------
+
+
+We use a set of testing data from the real-life patient data set. This includes only patients whose onset to scan time is four hours or less. There are 10,000 patients in this data set.
+
+This data is passed into the SHAP model to find the SHAP values, which are a means of interpreting how the decision model chooses whether a patient should receive thrombolysis. There is one SHAP value for each patient data feature, and the SHAP values are different for all patients in the data. 
+
+We put the SHAP value data into separate groups for each stroke team. Then we look at the SHAP values associated with the stroke team that the patient went to. These values are averaged within the groups, giving one average SHAP value per stroke team.
+
+The higher stroke team SHAP values mean that that stroke team is more likely to choose thromboylsis.
+
+We pick the teams with the 25 highest stroke team SHAP values and set these to be the benchmark teams.
+
