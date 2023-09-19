@@ -1,28 +1,20 @@
 # To be printed as markdown on the "Details" page. 
 # ---------------------------------------------------------------------
 
-# 🧐 Details
+## Summary
 
-Overview: create some patient details, pass them to the thrombolysis prediction model, and see which stroke teams would choose to thrombolyse the patient.
+This app works by:
+1. Creating some patient details
+2. Creating 119 copies of those details, one copy for each stroke team
+2. Passing those details to a decision model 
+3. Using the decision model to predict the probability of each stroke team treating the patient with thrombolysis.
+4. Using the probabilities to decide which of the stroke teams would have given thrombolysis.
+5. As an extra, passing the same patient details to a SHAP explainer model to see how the decision model made its decisions.
 
-Additional: see how the prediction model came to its decisions by using SHAP values.
 
-App setup:
+### What models are in this app?
 
-Sidebar is the inputs for the patient details.
-Top is some background.
-Middle is the results for the chosen patient details.
-Bottom is the method behind the thrombolysis predictor model.
-	
-	+---+--------------+
-	|   |              |
-	| I |  Background  |
-	| n |              |
-	| p +--------------+
-	| u |              |
-	| t |   Results    |
-	| s |              |
-	|   +--------------+
-	|   |    Method    |
-	+---+--------------+
++ 🔮 A decision model to predict how likely it is that a stroke team would choose to thrombolyse the patient
++ ⚖️ A SHAP explainer model to describe how the decision model made its decisions.
 
+The decision model creates all of the information under the heading "Predictions for this patient". The SHAP explainer model creates all of the information under the heading "How does the model work?".

@@ -2,11 +2,6 @@
 # ---------------------------------------------------------------------
 
 
-### How do we know it works?
-
-We use a set of testing data from the real-life patient data set. For this data we know whether each patient received thrombolysis in real life. We can pass that data to the decision model to predict whether each patient was thrombolysed, and then see how often the prediction matched reality.
-
-(To do - write about the more robust checks including ROC-AUC.)
 
 ### What do the probabilities mean?
 

@@ -21,3 +21,6 @@ We use the following features:
 
 We have previously found that these ten features are the most useful for the decision model when it is choosing whether or not a patient should be thrombolysed. Any extra data that we included would not make much difference to the model's answers.
 
+💫 _More detail:_
++ Technical notes on the data set: [here](https://samuel-book.github.io/samuel-1/introduction/data.html).
++ How and why we chose the top ten features to model: [here](https://samuel-book.github.io/samuel-2/samuel_shap_paper_1/xgb_with_feature_selection/01_xgb_combined_fit_feature_selection.html).

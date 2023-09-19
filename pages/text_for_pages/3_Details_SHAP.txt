@@ -1,13 +1,25 @@
 # To be printed as markdown on the "Details" page. 
 # ---------------------------------------------------------------------
 
+A warning: the SHAP values are extremely useful for describing how the prediction model works. However, they are only a very good estimate! It is impossible to show all of the prediction model's workings in a way that makes sense to human readers. Luckily the SHAP values are more than good enough for the effects that we are aiming to show in the thrombolysis prediction model.
+
+💫 _More detail:_
++ An introduction to probability, odds and SHAP values: [here](https://samuel-book.github.io/samuel-2/samuel_shap_paper_1/introduction/odds_prob.html)
+
 ### Why this base probability?
 
-(To do - Anna doesn't know this. It's consistently around 30-40% though.)
+The base probability is the probability of thrombolysis that the decision model uses before it sees any of the patient details. 
+
+This value of 34.82% is chosen for base probability because during training, the model predicted that 34.82% of the patients in the training data would receive thrombolysis. The value is close to the real-life thrombolysis rate across the training data set (33.6%), but it isn't identical.
 
 ### What are the general effects?
 
 We can look calculate all of the SHAP values for all of the patients in the testing data and look for trends.
 
-(Include box plots)
+Select a feature in the following menu to see how the feature value affects the SHAP score. 
+The SHAP scores are shown along the y-axis so that higher SHAP values appear higher up on the image. 
+The scores are given in units of log-odds rather than probability.
+Generally speaking, an increase of 1 in the SHAP score means a three-fold increase in the probability of treatment.
+(To do - check the numbers!)
 
+__How do you read a box-and-whisker plot?__ All of the patients' data is shown in every box plot, just grouped in different ways. The labels at the bottom of the plot tells you how the data is grouped. Each group has its own box and whisker drawing. In a drawing, the short lines at the top and the bottom show the biggest and the smallest values in the group. In the middle of the line there is a box. This box splits the data into four equal chunks. Everything above the box is in the top quarter of values. Everything below the box is in the bottom quarter of values. Everything in the box and above the coloured line is in the second quarter of values, and everything in the box and below the coloured line is in the third quarter of values. The coloured line marks the _median_, or the average value across the drawing. The box contains the half of the data that is nearest the average value.

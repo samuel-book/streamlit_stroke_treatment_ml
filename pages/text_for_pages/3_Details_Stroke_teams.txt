@@ -3,9 +3,7 @@
 
 ### Which teams are included?
 
-Most acute stroke teams that submitted data to the SSNAP audit between the years of 2016 and 2021. In total, 119 teams are in the final decision model.
-
-### How are they picked?
+Most acute stroke teams that submitted data to the SSNAP audit between the years of 2016 and 2021 are included. In total, 119 teams are in the final decision model.
 
 Some teams are excluded when there is not enough data available for the model to be reliable. 
 
@@ -15,8 +13,8 @@ Currently the team names are anonymised. We know how stroke team is labelled in 
 
 ### What is my team called?
 
-dunno lol
+Currently we are only revealing team identities in specific cases where we are engaging with the teams in question. Eventually the plan is for the data to be presented here with the real-life team names. 
 
 ### How is the data anonymised?
 
-ye
+The teams are re-named at random. The re-naming happens before the models are created so that the real names do not exist in any way in any of the files accessed by this app. 

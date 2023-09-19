@@ -7,7 +7,7 @@
 
 This app uses pre-trained machine learning models 
 that can be fed imaginary patient data.
-The models output the predict the probability of each of 132 hospitals providing thrombolysis to the generated patient.
+The models output the predict the probability of each of 119 hospitals providing thrombolysis to the generated patient.
 
 + __Inputs:__ Patient details
 + __Outputs:__ Thrombolysis probability from each hospital.

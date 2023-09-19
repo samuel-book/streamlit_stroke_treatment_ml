@@ -77,7 +77,7 @@ def main():
         to thrombolyse that patient.
         ''',
         help=f'''
-🧐 - [Which stroke teams are included?]({path_to_details}which-teams-are-included)
+🔎 - [Which stroke teams are included?]({path_to_details}which-teams-are-included)
 ''' )
 
     st.markdown('''
@@ -86,7 +86,7 @@ def main():
         likely to thrombolyse.
         ''',
         help=f'''
-🧐 - [What do the probabilities mean?]({path_to_details}what-do-the-probabilities-mean)
+🔎 - [What do the probabilities mean?]({path_to_details}what-do-the-probabilities-mean)
 ''' )
 
     st.markdown('### How we categorise the results')
@@ -105,9 +105,9 @@ def main():
             thrombolyse any given patient.
             ''',
             help=f'''
-🧐 - [What are benchmark teams?]({path_to_details}what-are-benchmark-teams)
+🔎 - [What are benchmark teams?]({path_to_details}what-are-benchmark-teams)
 
-🧐 - [How are they picked?]({path_to_details}how-are-the-benchmark-teams-picked)
+🔎 - [How are they picked?]({path_to_details}how-are-the-benchmark-teams-picked)
 '''
             )
 
@@ -224,7 +224,7 @@ def main():
                 'The features are ordered with the most agreed on features ',
                 'at the top, and the ones with more variation lower down. '
             ]), help=f'''
-🧐 - [How do I read this plot?]({path_to_details}how-do-you-read-a-wizard-s-hat-plot)
+🔎 - [How do I read this plot?]({path_to_details}how-do-you-read-a-wizard-s-hat-plot)
 ''')
 
         with tabs_waterfall[2]:
@@ -234,7 +234,7 @@ def main():
                 each feature are shown as violin plots.
                 The highlighted teams are overlaid as scatter circles.
                 ''', help=f'''
-🧐 - [How do I read a violin plot?]({path_to_details}how-do-you-read-a-violin-plot)
+🔎 - [How do I read a violin plot?]({path_to_details}how-do-you-read-a-violin-plot)
                 ''')
 
     # ###########################
@@ -245,9 +245,9 @@ def main():
     # All patient detail widgets go in the sidebar:
     with st.sidebar:
         st.markdown('## Patient details', help=f'''
-🧐 - [Which patient details are included?]({path_to_details}which-features-are-used)
+🔎 - [Which patient details are included?]({path_to_details}which-features-are-used)
 
-🧐 - [Why do we model only ten features?]({path_to_details}why-these-features)
+🔎 - [Why do we model only ten features?]({path_to_details}why-these-features)
 ''' )
         user_inputs_dict = utilities_ml.container_inputs.user_inputs()
         # Write an empty header to give breathing room at the bottom:
@@ -284,7 +284,7 @@ def main():
             the patient starts with a base probability''' +
             f' of {100.0*starting_probabilities:.2f}%.',
             help=f'''
-🧐 - [Why this base probability?]({path_to_details}why-this-base-probability)
+🔎 - [Why this base probability?]({path_to_details}why-this-base-probability)
 ''')
         st.markdown(
             '''
@@ -347,11 +347,11 @@ def main():
     # Receive the user inputs now and show this container now:
     with container_highlighted_summary:
         help_str = f'''
-🧐 - [Why are the team names numbers?]({path_to_details}why-are-teams-given-numbers)
+🔎 - [Why are the team names numbers?]({path_to_details}why-are-teams-given-numbers)
 
-🧐 - [What is my team called?]({path_to_details}what-is-my-team-called)
+🔎 - [What is my team called?]({path_to_details}what-is-my-team-called)
 
-🧐 - [How is the data anonymised?]({path_to_details}how-is-the-data-anonymised)
+🔎 - [How is the data anonymised?]({path_to_details}how-is-the-data-anonymised)
 '''
         st.caption(''.join([
             'To highlight stroke teams, ',
@@ -597,7 +597,7 @@ def main():
             else:
                 # Individual waterfalls for the highlighted teams.
                 st.markdown(waterfall_explanation_str, help=f'''
-🧐 - [How do I read a waterfall plot?]({path_to_details}how-do-you-read-a-waterfall-plot)
+🔎 - [How do I read a waterfall plot?]({path_to_details}how-do-you-read-a-waterfall-plot)
                 ''')
                 draw_sneaky_bar()
                 utilities_ml.container_waterfalls.show_waterfalls_highlighted(
@@ -645,7 +645,7 @@ def main():
             # Individual waterfalls for the teams with the
             # max / median / min probabilities of thrombolysis.
             st.markdown(waterfall_explanation_str, help=f'''
-🧐 - [How do I read a waterfall plot?]({path_to_details}how-do-you-read-a-waterfall-plot)
+🔎 - [How do I read a waterfall plot?]({path_to_details}how-do-you-read-a-waterfall-plot)
                 ''')
             draw_sneaky_bar()
             utilities_ml.container_waterfalls.show_waterfalls_max_med_min(
