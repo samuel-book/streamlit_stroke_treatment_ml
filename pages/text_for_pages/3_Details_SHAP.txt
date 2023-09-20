@@ -1,7 +1,7 @@
 # To be printed as markdown on the "Details" page. 
 # ---------------------------------------------------------------------
 
-A warning: the SHAP values are extremely useful for describing how the prediction model works. However, they are only a very good estimate! It is impossible to show all of the prediction model's workings in a way that makes sense to human readers. Luckily the SHAP values are more than good enough for the effects that we are aiming to show in the thrombolysis prediction model.
+The SHAP values are extremely useful for describing how the prediction model works. However, they are only a very good estimate! It is impossible to show all of the prediction model's workings in a way that makes sense to human readers. Luckily the SHAP values are more than good enough for the effects that we are aiming to show in the thrombolysis prediction model.
 
 💫 _More detail:_
 + An introduction to probability, odds and SHAP values: [here](https://samuel-book.github.io/samuel-2/samuel_shap_paper_1/introduction/odds_prob.html)
