@@ -1,11 +1,29 @@
 import streamlit as st
 
-from utilities_ml.fixed_params import page_setup
+
+# For compatibility with combo app,
+# add an extra bit to the path if we need to.
+try:
+    # Try importing something as though we're running this from the
+    # same directory as the landing page, Introduction.py.
+    from utilities_ml.fixed_params import page_setup
+    p = 'pages/text_for_pages/'
+
+except ModuleNotFoundError:
+    # If the import fails, add the landing page directory to path.
+    # Assume that the script is being run from the directory above
+    # the landing page directory, which is called
+    # streamlit_lifetime_stroke.
+    import sys
+    sys.path.append('./streamlit_stroke_treatment_ml/')
+    # Now the following import will work:
+    from utilities_ml.fixed_params import page_setup
+    p = 'streamlit_stroke_treatment_ml/pages/text_for_pages/'
+
 from utilities_ml.inputs import write_text_from_file
 
 page_setup()
 
-p = 'pages/text_for_pages/'
 
 st.warning('Work in progress', icon='⚠️')
 
