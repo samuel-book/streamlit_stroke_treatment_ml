@@ -41,6 +41,35 @@ def write_text_from_file(filename, head_lines_to_skip=0):
     st.markdown(f"""{text_to_print}""")
 
 
+def read_text_from_file(filename, head_lines_to_skip=0):
+    """
+    Write text from 'filename' into streamlit.
+    Skip a few lines at the top of the file using head_lines_to_skip.
+    """
+    # Open the file and read in the contents,
+    # skipping a few lines at the top if required.
+    with open(filename, 'r', encoding="utf-8") as f:
+        all_lines = f.readlines()[head_lines_to_skip:]
+
+    # Split by subsubsection:
+    list_of_bits = []
+    str_here = ''
+    for line in all_lines:
+        if line.strip()[:3] == '###':
+            # If this is a new subsection, save the old string
+            # to the list of bits and create a new string.
+            if len(str_here.strip()) > 0:
+                list_of_bits.append(str_here)
+            str_here = line
+        else:
+            str_here += line
+    # Catch the final subsubsection:
+    if len(str_here.strip()) > 0:
+        list_of_bits.append(str_here)
+
+    return list_of_bits
+
+
 # @st.cache
 # def import_patient_data():
 #     synthetic = pd.read_csv(dir + 'data_ml/synthetic_10_features.csv')
@@ -57,7 +86,12 @@ def import_benchmark_data(filename='hospital_10k_thrombolysis.csv',
     return all_teams_and_probs
 
 
-def build_X(user_inputs_dict, stroke_teams_list, stroke_team_col='Stroke team', model_version='SAMueL-1'):
+def build_X(
+        user_inputs_dict,
+        stroke_teams_list,
+        stroke_team_col='Stroke team',
+        model_version='SAMueL-1'
+        ):
     """
     """
     # Banished this call to build_dataframe_from_inputs() to this
@@ -366,7 +400,6 @@ def setup_for_app(
             benchmark_team_column,
             n_benchmark_teams
             ))
-
 
     # Columns for highlighted teams and highlighted+benchmark (HB),
     # and a shorter list hb_teams_input with just the unique values

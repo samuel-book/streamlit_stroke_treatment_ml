@@ -1,0 +1,13 @@
+# To be printed as markdown on the "Details" page. 
+# ---------------------------------------------------------------------
+
+## ⚖️ SHAP model  
+
+### Creating the SHAP explainer model
+
+The SHAP explainer model is created directly from the decision model. 
+
+We actually create two SHAP explainers. 
++ One uses only the decision model and works in units of log-odds. These units are technically more useful than simple probabilities, but they are also more difficult to understand intuitively. This model is used to define the benchmark teams.
++ The second SHAP explainer works in units of probability, and also uses the testing data set to calibrate the probabilities. This model is used to show the decision model's workings in this app.
+

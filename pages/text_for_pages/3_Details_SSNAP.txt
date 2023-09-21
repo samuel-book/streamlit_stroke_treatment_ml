@@ -1,0 +1,21 @@
+# To be printed as markdown on the "Details" page. 
+# ---------------------------------------------------------------------
+
+## 🧮 The data
+
+### What data do we use?
+
+The original data set comes from the Sentinel Stroke National Audit Programme (SSNAP). The data has the details of emergency hospital admissions for several hundreds of thousands of patients with stroke between the years 2016 and 2021. The data contains information such as the time between the start of the stroke and the arrival at hospital, what type of stroke it was, and which treatments were given.
+
+The models only use the ten features that are shown here in the app.
+
+💫 _More detail:_
++ Technical notes on the data set: [here](https://samuel-book.github.io/samuel-1/introduction/data.html).
+
+### What data goes into the models?
+
+We use a subset of the full data set to create the models.
+
+The decision model is created using a set of training data with around 100,000 patients.
+This includes only patients whose onset to scan time is four hours or less.
+We then use a testing data set of 10,000 patients to test the accuracy of the model.

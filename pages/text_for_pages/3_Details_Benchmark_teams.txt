@@ -1,6 +1,13 @@
 # To be printed as markdown on the "Details" page. 
 # ---------------------------------------------------------------------
 
+## 🎯 Benchmark teams
+
+### What are benchmark teams?
+
+The benchmark teams are consistently more likely than average to choose to thrombolyse any patient. 
+    
+### How are the benchmark teams picked?
 
 We use a set of testing data from the real-life patient data set. This includes only patients whose onset to scan time is four hours or less. There are 10,000 patients in this data set.
 

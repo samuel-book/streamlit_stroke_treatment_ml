@@ -1,4 +1,27 @@
 # To be printed as markdown on the "Details" page. 
 # ---------------------------------------------------------------------
 
+## 🎻 Violin plots
+
+The violin plot shows the distribution of values across all stroke teams. These values are usually the probabilities of receiving thrombolysis.
+
+### How do you read a violin plot?
+
+The range of possible values is shown from left to right. The violin is fatter where there are more stroke teams with that value. Usually there are one or two values that most of the teams are close to and so the violin will appear fattest there. 
+
+The black lines show the smallest, average (median) and largest probabilities out of all of the teams.
+
+### What does this example show?
+
+The top row shows that most of the teams have a probability above 80%. The violin is fattest around 85% to 95% and so most of the values lie in that range. 
+
+We also have separate rows for only the benchmark and only the non-benchmark teams. There are 25 benchmark teams and 94 non-benchmark teams. Since most of the "all teams" row is made up of non-benchmark teams, the non-benchmark teams violin is usually similar in shape to the all team violin.
+
+The middle row shows only the benchmark teams. The probabilities here are more squashed up towards the right-hand-side, with most lying between 90% to 100%. This means that generally the benchmark teams result in higher probabilities than you generally see in all of the teams or in only the non-benchmark teams.
+
+### What do the circle markers mean?
+
+For the plots like in this example, the circle markers on top of the violins mark the values for any teams that have been highlighted. 
+
+There is no meaning behind how high up or low down the circle markers appear. They are moved up or down to reduce the overlap between circles with a similar place on the graph.
 

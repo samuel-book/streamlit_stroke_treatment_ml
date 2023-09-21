@@ -4,8 +4,6 @@ import streamlit as st
 import base64
 
 
-
-
 def page_setup():
     # ----- Page setup -----
     # The following options set up the display in the tab in your browser.
@@ -31,7 +29,8 @@ def draw_sneaky_bar():
         # stroke_outcome_app.
         import sys
         sys.path.append('./streamlit_stroke_treatment_ml/')
-        file_ = open('./streamlit_stroke_treatment_ml/utilities_ml/sneaky_bar.png', "rb")
+        file_ = open('./streamlit_stroke_treatment_ml/' +
+                     'utilities_ml/sneaky_bar.png', "rb")
     # Add an invisible bar that's wider than the column:
     contents = file_.read()
     data_url = base64.b64encode(contents).decode("utf-8")
@@ -49,7 +48,6 @@ def write_markdown_in_colour(string, colour):
         '">' + string + '</p>'
     )
     st.markdown(write_str, unsafe_allow_html=True)
-
 
 
 model_version = 'SAMueL-2: August 2023'
@@ -73,7 +71,7 @@ display_name_of_default_highlighted_team = (
 
 # SHAP:
 starting_probabilities = 0.3481594278820853
-    
+
 # How to label non-highlighted teams:
 plain_str = 'Non-benchmark team'
 bench_str = 'Benchmark team: \U00002605'

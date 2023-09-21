@@ -1,6 +1,8 @@
 # To be printed as markdown on the "Details" page. 
 # ---------------------------------------------------------------------
 
+## 🏥 Stroke teams
+        
 ### Which teams are included?
 
 Most acute stroke teams that submitted data to the SSNAP audit between the years of 2016 and 2021 are included. In total, 119 teams are in the final decision model.

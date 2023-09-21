@@ -1,6 +1,22 @@
 # To be printed as markdown on the "Details" page. 
 # ---------------------------------------------------------------------
 
+## 🧙‍♀️ Wizard hat plots
+                
+The wizard hat plot is so named because the resulting lines look like the shape of a wonky crooked cartoon wizard's hat.
+        
+The plot combines the data in all of the separate stroke teams' SHAP waterfall plots.
+        
+### How do you read a wizard's hat plot?
+
+This plot should be read in the same way as a waterfall plot. Start at the top and work downwards row by row, shifting the "probability so far" in each row left or right a bit depending on the patient details.
+        
+Instead of drawing coloured blocks to show the shifts in probability, this graph simply connects the points with a straight line. Each stroke team gets one coloured line that runs from the top row to the bottom row.
+        
+There are so many lines that it is difficult to follow the progress of individual teams unless they are highlighted in a different colour. This means that the graph is best used to get an idea of how the patient details affect the probability of treatment for the different stroke teams.
+        
+The features are ordered with the most agreed on features at the top, and the ones with more variation lower down.
+
 ### What does this example show?
 
 The patient always starts with the same "base probability" at the top of the graph. There are already 119 different lines being plotted, one for each team, but when they are almost identical it is difficult to pick out the differences.

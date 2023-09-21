@@ -1,0 +1,19 @@
+# To be printed as markdown on the "Details" page. 
+# ---------------------------------------------------------------------
+
+## Table of contents:
+What the app shows:
++ Stroke teams
++ Patient data
++ Prediction model
++ SHAP values
++ Waterfall
++ Wizard hat
++ Violin
+
+How the app works:
++ SSNAP
++ Prediction model
++ SHAP model
++ SHAP values
++ Benchmark teams

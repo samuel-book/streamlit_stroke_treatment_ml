@@ -1,6 +1,8 @@
 # To be printed as markdown on the "Details" page. 
 # ---------------------------------------------------------------------
 
+## 📈 Patient data
+
 ### Which features are used? 
 
 We use the following features:

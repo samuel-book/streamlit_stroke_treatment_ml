@@ -1,0 +1,31 @@
+# To be printed as markdown on the "Details" page. 
+# ---------------------------------------------------------------------
+
+## 🔮 Prediction model
+
+For the simplest explanation of what the app does:
+1. The input patient details are converted into a table that the model knows how to read.
+2. The details are passed to the decision model.
+3. The decision model calculates the probability of thrombolysis for each patient in the table.
+4. The probabilities are also converted to a simple "yes" or "no" for whether a patient would have received thrombolysis. We set any patient with at least 50% probability as "yes".
+
+### Creating the decision model
+        
+💫 _More detail:_
++ A plain English summary of machine learning models: [here](https://samuel-book.github.io/samuel-2/samuel_shap_paper_1/introduction/intro.html)
+
+The decision model is a type of machine learning model called an XGBoost Classifier.
+We start off with a base model that has never been shown any data but is ready to learn.
+Then we give this model the training data set.
+The model goes through each patient in turn and decides whether or not they should receive thrombolysis.
+
+At first the model does an awful job because it doesn't have much experience.
+As the model sees more and more patients, it learns more about the general patterns that affect how likely patients are to be treated.
+When the model has seen all of the patients in the training data set, it has become quite accurate.
+Whether it says the patient would receive thrombolysis usually matches the actual case in real life.
+
+### How do we know it works?
+
+We use a set of testing data from the real-life patient data set. For this data we know whether each patient received thrombolysis in real life. We can pass that data to the decision model to predict whether each patient was thrombolysed, and then see how often the prediction matched reality.
+
+(To do - write about the more robust checks including ROC-AUC.)

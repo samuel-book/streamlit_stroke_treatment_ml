@@ -1,7 +1,21 @@
 # To be printed as markdown on the "Details" page. 
 # ---------------------------------------------------------------------
 
+## ⛲ Waterfall plots
 
+### How do you read a waterfall plot?
+
+The waterfall plot has a number of rows. Each row is labelled with a patient detail name, and each row contains a coloured block. The blocks show the effect of that patient detail on the overall probability of receiving thrombolysis. Larger blocks mean a larger effect. The size of the effect is also written next to each block.
+
+Always start at the top at the place marked "start probability". Then move downwards row by row, adding or removing probability, until you reach the bottom of the plot. The "end probability" that you are left with after adding on the effect of all of the coloured blocks is the overall probability of thrombolysis for this patient.
+
+The features are ordered from largest negative effect on probability to largest positive effect. The 9 largest features are shown individually and the rest are condensed into the "other features" bar. This bar mostly contains the effect of the patient _not_ attending the other stroke teams.
+
+### What does this example show?
+
+The patient starts with a probability of treatment of 34.82%. Then working downwards, the following changes happen:
+
+### 
 1. Feature "team_42" is "Yes". This patient attended stroke team 42. This reduces the probability of treatment by 8.7% because this team is less likely to give thrombolysis than many others. The probability of treatment so far is 34.82% - 8.70% = 26.12%.
 2. "Onset to arrival time" is 90 minutes. The patient arrived at hospital 90 minutes after their stroke began. This reduces the probability of treatment by 2.57% because of the time delay. The probability of treatment so far is 26.12% - 2.57% = 23.55%.
 3. All of the other 119 features have a combined effect of -0.04%. These features have smaller individual effects than any of the others shown individually on the graph. The probability of treatment so far is 23.55% - 0.04% = 23.51%.
