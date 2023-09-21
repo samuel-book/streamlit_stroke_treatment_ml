@@ -430,3 +430,34 @@ def setup_for_app(
         hb_teams_list,
         hb_teams_input
     )
+
+
+def set_up_sidebar(path_to_details):
+    st.markdown(
+        '## Patient details',
+        help=''.join([
+            '🔍 - [Which patient details are included?]',
+            f'({path_to_details}which-features-are-used)',
+            '\n\n',
+            '🔍 - [Why do we model only ten features?]',
+            f'({path_to_details}why-these-features)'
+            ])
+        )
+    # Put all of the user input widgets in here later:
+    container_input_patient_details = st.container()
+
+    # Add an option for removing plotly_events()
+    # which doesn't play well on skinny screens / touch devices.
+
+    st.markdown('-'*50)
+    st.markdown('## Advanced options')
+    if st.checkbox('Disable interactive plots'):
+        use_plotly_events = False
+    else:
+        use_plotly_events = True
+    st.caption(''.join([
+        'The clickable plots sometimes appear strange ',
+        'on small screens and touch devices, ',
+        'so select this option to convert them to normal plots.'
+    ]))
+    return use_plotly_events, container_input_patient_details

@@ -29,6 +29,7 @@ except ModuleNotFoundError:
 
 # Custom functions:
 from utilities_ml.fixed_params import write_markdown_in_colour
+from utilities_ml.inputs import set_up_sidebar
 import utilities_ml.inputs
 import utilities_ml.main_calculations
 # Containers:
@@ -149,34 +150,8 @@ def main():
 
     # User inputs
     with st.sidebar:
-        st.markdown(
-            '## Patient details',
-            help=''.join([
-                '🔍 - [Which patient details are included?]',
-                f'({path_to_details}which-features-are-used)',
-                '\n\n',
-                '🔍 - [Why do we model only ten features?]',
-                f'({path_to_details}why-these-features)\n'
-                ])
-            )
-
-        # Put all of the user input widgets in here later:
-        container_input_patient_details = st.container()
-
-        # Add an option for removing plotly_events()
-        # which doesn't play well on skinny screens / touch devices.
-
-        st.markdown('-'*50)
-        st.markdown('## Advanced options')
-        if st.checkbox('Disable interactive plots'):
-            use_plotly_events = False
-        else:
-            use_plotly_events = True
-        st.caption(''.join([
-            'The clickable plots sometimes appear strange ',
-            'on small screens and touch devices, ',
-            'so select this option to convert them to normal plots.'
-        ]))
+        use_plotly_events, container_input_patient_details = (
+            set_up_sidebar(path_to_details))
 
     st.markdown('-' * 50)
     st.markdown('## :abacus: Predictions for this patient')

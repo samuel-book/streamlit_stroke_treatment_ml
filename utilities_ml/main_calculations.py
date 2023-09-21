@@ -7,6 +7,9 @@ import pandas as pd
 import shap
 import streamlit as st
 
+import utilities_ml.main_calculations
+from utilities_ml.fixed_params import plain_str, bench_str, model_version, n_benchmark_teams
+
 
 def predict_treatment(
         X, model, stroke_teams_list, highlighted_teams_list,
@@ -249,3 +252,136 @@ def make_waterfall_df(
     df_waterfalls['Highlighted team'] = column_highlighted_teams
     df_waterfalls['HB team'] = column_hb_teams
     return df_waterfalls, final_probs_list, patient_data_waterfall
+
+
+def calculations_for_shap_values(
+        sorted_results,
+        explainer_probability,
+        X,
+        hb_teams_input,
+        headers_X,
+        starting_probabilities
+        ):
+
+    # ----- Shapley probabilities -----
+    # Make Shapley values for all teams:
+    shap_values_probability_extended_all, shap_values_probability_all = \
+        utilities_ml.main_calculations.find_shapley_values(
+            explainer_probability, X)
+
+    # Make separate arrays of the Shapley values for certain teams.
+    # Get indices of highest, most average, and lowest probability teams.
+    index_high = sorted_results.iloc[0]['Index']
+    index_mid = sorted_results.iloc[int(len(sorted_results)/2)]['Index']
+    index_low = sorted_results.iloc[-1]['Index']
+    indices_high_mid_low = [index_high, index_mid, index_low]
+    # Get indices of highlighted teams:
+    indices_highlighted = []
+    for team in hb_teams_input:
+        if plain_str not in team and bench_str not in team:
+            # If it's not the default benchmark or non-benchmark
+            # team label, then add this index to the list:
+            ind_team = sorted_results['Index'][
+                sorted_results['HB team'] == team].values[0]
+            indices_highlighted.append(ind_team)
+
+    # Shapley values for the high/mid/low indices:
+    shap_values_probability_extended_high_mid_low = \
+        shap_values_probability_extended_all[indices_high_mid_low]
+    # Shapley values for the highlighted indices:
+    shap_values_probability_extended_highlighted = \
+        shap_values_probability_extended_all[indices_highlighted]
+
+    # ----- Other grids and dataframes for Shap probabilities:
+    # Get big SHAP probability grid:
+    grid, grid_cat_sorted, stroke_team_2d, headers = \
+        utilities_ml.main_calculations.make_heat_grids(
+            headers_X,
+            sorted_results['Stroke team'],
+            sorted_results['Index'],
+            shap_values_probability_all
+            )
+    # These grids have teams in the same order as sorted_results.
+
+    # Pick out the subset of benchmark teams:
+    inds_bench = np.where(
+        sorted_results['Benchmark rank'].to_numpy() <= n_benchmark_teams)[0]
+    inds_nonbench = np.where(
+        sorted_results['Benchmark rank'].to_numpy() > n_benchmark_teams)[0]
+    # Make separate grids of just the benchmark or non-benchmark teams:
+    grid_cat_bench = grid_cat_sorted[:, inds_bench]
+    grid_cat_nonbench = grid_cat_sorted[:, inds_nonbench]
+
+    # Make a list of the input patient data for labelling
+    # features+values on e.g. the combined waterfall plot.
+    # Pull out the feature values:
+    patient_data_waterfall = X.iloc[0][:9].to_numpy()
+    # Add empty value for stroke team attended:
+    patient_data_waterfall = np.append(patient_data_waterfall, '')
+    # Find which values are 0/1 choice and can be changed to no/yes:
+    if 'SAMueL-1' in model_version:
+        features_yn = [
+            'Infarction',
+            'Precise onset time',
+            'Use of AF anticoagulants',
+            'Onset during sleep',
+        ]
+    else:
+        features_yn = [
+            'infarction',
+            'precise onset known',
+            'use of AF anticoagulants',
+            'onset during sleep'
+        ]
+    for feature in features_yn:
+        i = np.where(np.array(headers_X) == feature)[0]
+        # Annoying nested list to pacify DeprecationWarning for
+        # checking for element of empty array.
+        if patient_data_waterfall[i].size > 0:
+            if patient_data_waterfall[i] > 0:
+                patient_data_waterfall[i] = 'Yes'
+            else:
+                patient_data_waterfall[i] = 'No'
+        else:
+            patient_data_waterfall[i] = 'No'
+    # Resulting list format e.g.:
+    #     [15, 'Yes', 15, 'Yes', 0, 'No', 90, 'No', 72.5, '']
+    # where headers_X provides the feature names to match the values.
+
+    # Make dataframe for combo waterfalls:
+    # patient_data_waterfall is returned here with the order of the
+    # values switched to match the order the features are plotted in
+    # in the combo waterfall.
+    df_waterfalls, final_probs, patient_data_waterfall = \
+        utilities_ml.main_calculations.make_waterfall_df(
+            grid_cat_sorted,
+            headers,
+            sorted_results['Stroke team'],
+            sorted_results['Highlighted team'],
+            sorted_results['HB team'],
+            patient_data_waterfall,
+            base_values=starting_probabilities
+            )
+    # Columns of df_waterfalls:
+    #     Sorted rank
+    #     Stroke team
+    #     Probabilities
+    #     Prob shift
+    #     Prob final
+    #     Features
+    #     Highlighted team
+    #     HB team
+    return (
+        indices_highlighted,
+        shap_values_probability_extended_highlighted,
+        indices_highlighted,
+        df_waterfalls,
+        final_probs,
+        patient_data_waterfall,
+        grid_cat_sorted,
+        grid_cat_bench,
+        grid_cat_nonbench,
+        headers,                    
+        shap_values_probability_extended_high_mid_low,
+        indices_high_mid_low
+        )

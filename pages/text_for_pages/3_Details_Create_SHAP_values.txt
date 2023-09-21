@@ -1,7 +1,6 @@
 # To be printed as markdown on the "Details" page. 
 # ---------------------------------------------------------------------
 
-
 ## ⚖️ SHAP values  
 
 For the simplest explanation of what the app does:
