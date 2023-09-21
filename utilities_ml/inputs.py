@@ -6,14 +6,21 @@ import numpy as np
 import pandas as pd
 import pickle
 
+import utilities_ml.container_inputs
+
+from utilities_ml.plot_utils import remove_old_colours_for_highlights, \
+                                    choose_colours_for_highlights
+
 try:
     stroke_teams_test = pd.read_csv('./data_ml/stroke_teams.csv')
     dir = './'
 except FileNotFoundError:
     dir = 'streamlit_stroke_treatment_ml/'
 
-from utilities_ml.fixed_params import plain_str, bench_str#, \
-    # display_name_of_default_highlighted_team, default_highlighted_team
+from utilities_ml.fixed_params import plain_str, bench_str, \
+    model_version, stroke_teams_file, stroke_team_col, \
+    benchmark_filename, benchmark_team_column, n_benchmark_teams, \
+    default_highlighted_team, display_name_of_default_highlighted_team
 
 
 def write_text_from_file(filename, head_lines_to_skip=0):
@@ -277,3 +284,116 @@ def find_highlighted_hb_teams(
         # ... and add it to the shorter unique values list.
         hb_teams_input.append(team)
     return highlighted_teams_list, hb_teams_list, hb_teams_input
+
+
+def locate_benchmarks(
+        benchmark_filename,
+        benchmark_team_column,
+        n_benchmark_teams=25
+        ):
+    # Find which teams are "benchmark teams" by using the imported
+    # data:
+    benchmark_df = utilities_ml.inputs.import_benchmark_data(
+        benchmark_filename,
+        benchmark_team_column
+    )
+    # Make list of benchmark rank:
+    # Currently benchmark_df is sorted from highest to lowest
+    # probability of thrombolysis, where the first 30 highest
+    # are the benchmark teams.
+    # X array is sorted alphabetically by stroke team,
+    # so first sort the benchmark dataframe alphabetically to match
+    # and then keep a copy of the resulting "Rank" column.
+    # This list will be used in the sorted_results array:
+    benchmark_rank_list = \
+        benchmark_df.sort_values(benchmark_team_column)['Rank'].to_numpy()
+    # Find indices of benchmark data at the moment
+    # for making a combined benchmark-highlighted team list.
+    n_benchmark_teams = 25
+    inds_benchmark = np.where(benchmark_rank_list <= n_benchmark_teams)[0]
+    return benchmark_df, benchmark_rank_list, inds_benchmark
+
+
+def setup_for_app(
+        container_input_highlighted_teams,
+        container_input_patient_details,
+        ):
+
+    # ----- Load data from file -----
+    # List of stroke teams that this patient will be sent to:
+    stroke_teams_list = read_stroke_teams_from_file(
+        stroke_teams_file
+    )
+
+    # ----- User inputs -----
+    # ----- Highlighted teams -----
+    # The user can select teams to highlight on various plots.
+    # The teams are selected using either a streamlit input widget
+    # in the following container, or by clicking directly on
+    # certain plots.
+    with container_input_highlighted_teams:
+        # Pick teams to highlight on the bar chart:
+        highlighted_teams_input = utilities_ml.container_inputs.\
+            highlighted_teams(
+                stroke_teams_list,
+                default_highlighted_team,
+                display_name_of_default_highlighted_team
+                )
+    # All patient detail widgets go in the sidebar:
+    with container_input_patient_details:
+        user_inputs_dict = utilities_ml.container_inputs.user_inputs()
+
+    # ----- Build the X array -----
+    # Build the patient details and stroke teams
+    # into a 2D DataFrame:
+    X, headers_X = build_X(
+            user_inputs_dict,
+            stroke_teams_list,
+            stroke_team_col,
+            model_version
+            )
+    # This array X is now ready to be run through the model.
+    # After the model is run, we'll create an array sorted_results
+    # that contains all of the useful information for plotting and
+    # the metrics.
+    # Before that, we'll create a few arrays that will be added to
+    # sorted_results.
+
+    # ----- Benchmark teams -----
+    benchmark_df, benchmark_rank_list, inds_benchmark = (
+        locate_benchmarks(
+            benchmark_filename,
+            benchmark_team_column,
+            n_benchmark_teams
+            ))
+
+
+    # Columns for highlighted teams and highlighted+benchmark (HB),
+    # and a shorter list hb_teams_input with just the unique values
+    # from hb_teams_list in the order that the highlighted teams
+    # were added to the highlighted input list.
+    highlighted_teams_list, hb_teams_list, hb_teams_input = \
+        find_highlighted_hb_teams(
+            stroke_teams_list,
+            inds_benchmark,
+            highlighted_teams_input,
+            default_highlighted_team,
+            display_name_of_default_highlighted_team
+            )
+
+    # Find colour lists for plotting (saved to session state):
+    remove_old_colours_for_highlights(hb_teams_input)
+    choose_colours_for_highlights(hb_teams_input)
+
+    return (
+        stroke_teams_list,
+        highlighted_teams_input,
+        X,
+        headers_X,
+        benchmark_df,
+        benchmark_rank_list,
+        inds_benchmark,
+        highlighted_teams_list,
+        hb_teams_list,
+        hb_teams_input
+    )
