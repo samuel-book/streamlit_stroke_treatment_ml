@@ -46,8 +46,12 @@ def main(sorted_results, n_benchmark_teams):
             ('s' if n_all - n_thrombolyse_all != 1
              else '')
         )
-        st.write(yes_str)
-        st.write(no_str)
+        st.markdown(
+            f'''
+            {yes_str}  
+            {no_str}
+            '''
+        )
 
     with cols[2]:
         st.metric(
@@ -65,8 +69,12 @@ def main(sorted_results, n_benchmark_teams):
             ('s' if n_benchmark - n_thrombolyse_benchmark != 1
              else '')
             )
-        st.write(yes_str)
-        st.write(no_str)
+        st.markdown(
+            f'''
+            {yes_str}  
+            {no_str}
+            '''
+        )
 
     with cols[3]:
         st.metric(
@@ -84,21 +92,22 @@ def main(sorted_results, n_benchmark_teams):
             ('s' if n_non_benchmark - n_thrombolyse_non_benchmark != 1
              else '')
         )
-        st.write(yes_str)
-        st.write(no_str)
+        st.markdown(
+            f'''
+            {yes_str}  
+            {no_str}
+            '''
+        )
 
     with cols[1]:
         # Write benchmark decision:
-        extra_str = '' if perc_thrombolyse_benchmark >= 50.0 else ' do not'
-        decision_emoji = ':heavy_check_mark:' if perc_thrombolyse_benchmark >= 50.0 else ':x:'
-        st.error(''.join([
-            '''__Benchmark decision:__
+        extra_str = '' if perc_thrombolyse_benchmark >= 50.0 else ' would not'
+        decision_emoji = (':heavy_check_mark:'
+                          if perc_thrombolyse_benchmark >= 50.0 else ':x:')
+        st.error(
+            f'''
+            __Benchmark decision:__
 
-''',
-            decision_emoji,
-            extra_str,
-            ' thrombolyse'  # this patient.'
-            ]))
-        # Don't move the quote marks!!!
-        # It looks stupid here but is required to get a new line
-        # in the markdown.
+            {decision_emoji}{extra_str} thrombolyse
+            '''  # this patient.'
+        )
