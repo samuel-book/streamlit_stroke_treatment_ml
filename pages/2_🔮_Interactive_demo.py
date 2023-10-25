@@ -168,12 +168,12 @@ def main():
 
     container_highlighted_summary = st.container()
     with container_highlighted_summary:
-        st.markdown('## ')  # Breathing room
+        # st.markdown('## ')  # Breathing room
         st.markdown('### What would your team do?')
         st.caption(
             '''
             To highlight stroke teams, select them in this box
-            or click on them in the interactive charts.
+            or click on them in the interactive bar chart.
             ''',
             help=''.join([
                 '🔍 - [Why are the team names numbers?]'
@@ -195,7 +195,7 @@ def main():
 
     container_bar_chart = st.container()
     with container_bar_chart:
-        st.markdown('### What would each of the teams do?')
+        st.markdown('### How likely is thrombolysis for each team?')
         st.caption('To see the team names, hover or click on a bar.')
 
     # ###########################
@@ -245,7 +245,7 @@ def main():
         # How treatable is this patient:
         st.markdown(
             f'''
-            The mean probability of treatment across all teams is
+            The mean probability of thrombolysis across all teams is
             __{sorted_results["Probability_perc"].mean():.0f}%__.
             '''
             )

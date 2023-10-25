@@ -60,8 +60,7 @@ def main(sorted_results, n_benchmark_teams):
         )
         st.markdown(
             f'''
-            All teams
-
+            All teams  
             {yes_str}  
             {no_str}
             '''
@@ -80,8 +79,7 @@ def main(sorted_results, n_benchmark_teams):
             )
         st.markdown(
             f'''
-            Benchmark teams
-
+            Benchmark teams  
             {yes_str}  
             {no_str}
             '''
@@ -100,15 +98,15 @@ def main(sorted_results, n_benchmark_teams):
         )
         st.markdown(
             f'''
-            Non-benchmark teams
-
+            Non-benchmark teams  
             {yes_str}  
             {no_str}
             '''
         )
 
     # Write benchmark decision:
-    extra_str = '' if perc_thrombolyse_benchmark >= 50.0 else ' would not'
+    extra_str = (' would' if perc_thrombolyse_benchmark >= 50.0
+                 else ' would not')
     decision_emoji = (':heavy_check_mark:'
                         if perc_thrombolyse_benchmark >= 50.0 else ':x:')
     st.error(
