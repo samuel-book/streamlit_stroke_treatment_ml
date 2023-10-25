@@ -162,6 +162,10 @@ def main():
     with container_metrics:
         st.markdown('### How many teams would thrombolyse this patient?')
 
+    container_propensity = st.container()
+    with container_propensity:
+        st.markdown('### How treatable is this patient?')
+
     container_highlighted_summary = st.container()
     with container_highlighted_summary:
         st.markdown('## ')  # Breathing room
@@ -236,6 +240,15 @@ def main():
     with container_metrics:
         # Print metrics for how many teams would thrombolyse:
         utilities_ml.container_metrics.main(sorted_results, n_benchmark_teams)
+
+    with container_propensity:
+        # How treatable is this patient:
+        st.markdown(
+            f'''
+            The mean probability of treatment across all teams is
+            __{sorted_results["Probability_perc"].mean():.0f}%__.
+            '''
+            )
 
     line_str = ''
     with container_highlighted_summary:
