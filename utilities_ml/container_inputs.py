@@ -8,6 +8,8 @@ import streamlit as st
 #     display_name_of_default_highlighted_team, default_highlighted_team
 
 def user_inputs():
+    st.markdown('### ')  # Breathing room
+    st.markdown('### Clinical data')
     # Prior disability level
     # Integer input, 0 to 5 inclusive.
     prior_disability_input = st.slider(
@@ -30,30 +32,6 @@ def user_inputs():
         step=1,
         help='Ranges from 0 (least severe) to 42 (most severe).',
         key='stroke_severity_input'
-    )
-
-    # Arrival-to-scan time
-    # Number (integer?) input in minutes
-    arrival_to_scan_time_input = st.number_input(
-        'Arrival-to-scan time (minutes)',
-        min_value=0,
-        max_value=90,
-        value=15,
-        step=15,
-        help='Ranges from 0 to 90.',
-        key='arrival_to_scan_time_input'
-    )
-
-    # Onset-to-arrival time
-    # Number (integer?) input in minutes.
-    onset_to_arrival_time_input = st.number_input(
-        'Onset-to-arrival time (minutes)',
-        min_value=0,
-        max_value=300,
-        value=90,
-        step=15,
-        help='Ranges from 0 to 300.',
-        key='onset_to_arrival_time_input'
     )
 
     # Age
@@ -85,6 +63,45 @@ def user_inputs():
     )
     infarction_input = 1 if infarction_input_str == 'Yes' else 0
 
+    # Use of AF anticoagulants
+    # String input for user friendliness.
+    # We convert to integer for use with the model.
+    anticoag_input_str = st.radio(
+        'AF Anticoagulants',
+        options=['Yes', 'No'],
+        index=1,
+        horizontal=True,
+        key='anticoag_input_str',
+        help='Whether the patient takes blood-thinning medication.'
+    )
+    anticoag_input = 1 if anticoag_input_str == 'Yes' else 0
+
+    st.markdown('### ')  # Breathing room
+    st.markdown('### Pathway data')
+    # Onset-to-arrival time
+    # Number (integer?) input in minutes.
+    onset_to_arrival_time_input = st.number_input(
+        'Onset-to-arrival time (minutes)',
+        min_value=0,
+        max_value=300,
+        value=90,
+        step=15,
+        help='Ranges from 0 to 300.',
+        key='onset_to_arrival_time_input'
+    )
+
+    # Arrival-to-scan time
+    # Number (integer?) input in minutes
+    arrival_to_scan_time_input = st.number_input(
+        'Arrival-to-scan time (minutes)',
+        min_value=0,
+        max_value=90,
+        value=15,
+        step=15,
+        help='Ranges from 0 to 90.',
+        key='arrival_to_scan_time_input'
+    )
+
     # Precise onset time
     # String input for user friendliness.
     # We convert to integer for use with the model.
@@ -98,19 +115,6 @@ def user_inputs():
     )
     onset_time_precise_input = 1 \
         if onset_time_precise_input_str == 'Yes' else 0
-
-    # Use of AF anticoagulants
-    # String input for user friendliness.
-    # We convert to integer for use with the model.
-    anticoag_input_str = st.radio(
-        'AF Anticoagulants',
-        options=['Yes', 'No'],
-        index=1,
-        horizontal=True,
-        key='anticoag_input_str',
-        help='Whether the patient takes blood-thinning medication.'
-    )
-    anticoag_input = 1 if anticoag_input_str == 'Yes' else 0
 
     # Onset during sleep
     # String input for user friendliness.
