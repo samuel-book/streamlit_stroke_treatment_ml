@@ -74,26 +74,40 @@ def main():
                  'utilities_ml/SAMueL2_model_wide.png')
     st.markdown(
         '''
-        We can use the model to give the same patient details
-        to all stroke teams and decide how likely each team is
-        to thrombolyse that patient.
+        We can use the same patient details
+        for all stroke teams to compare the decisions of different teams.
         ''',
         help=''.join([
             '🔍 - [Which stroke teams are included?]',
-            f'({path_to_details}which-teams-are-included)'
-            ])
-        )
-    st.markdown(
-        '''
-        Stroke teams with a probability below 50% are unlikely to
-        thrombolyse the patient, and other teams are
-        likely to thrombolyse.
-        ''',
-        help=''.join([
+            f'({path_to_details}which-teams-are-included)',
+            '\n\n',
             '🔍 - [What do the probabilities mean?]',
             f'({path_to_details}what-do-the-probabilities-mean)'
         ])
         )
+    st.markdown('### Data used to make the model')
+    st.markdown(
+        '''
+        We use data sets called __🔮 Training data__ (110,000 patients)
+        and __🔮 Testing data__ (10,000 patients)
+        which have these properties:
+        ''',
+        help=''.join([
+            '🔍 - [What data is used?]',
+            f'({path_to_details}what-data-is-used)',
+        ])
+    )
+    st.markdown(
+        '''
+        | | |
+        | --- | --- |
+        | ✨ Cleaned | ⏰ Onset time known |
+        | 🚑 Ambulance arrivals | ⏳🩻 Onset to scan under 4 hours |
+        | 👥 Teams with over 250 admissions | 🪚 Only 10 features |
+        | 💉 Teams with at least 10 thrombolysis |  |
+
+        '''
+    )
 
     st.markdown('### How we categorise the results')
     cols_method = st.columns(3)
@@ -114,8 +128,8 @@ def main():
         st.markdown('__Benchmark teams__')
         st.markdown(
             '''
-            These teams are consistently more likely than average to
-            thrombolyse any given patient.
+            These teams are more likely than average to give
+            thrombolysis to most patients.
             ''',
             help=''.join([
                 '🔍 - [What are benchmark teams?]',
@@ -124,12 +138,6 @@ def main():
                 '🔍 - [How are they picked?]',
                 f'({path_to_details}how-are-the-benchmark-teams-picked)'
                 ])
-            )
-        st.markdown(
-            '''
-            They are used to compare the treatment decisions
-            of stroke teams with highly-thrombolysing units.
-            '''
             )
     with cols_method[2]:
         st.error(

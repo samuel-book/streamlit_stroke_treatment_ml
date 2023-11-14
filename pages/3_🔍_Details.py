@@ -635,7 +635,7 @@ def main():
             )
         st.markdown(ssnap_text[0])
         st.markdown(ssnap_text[1])
-        st.image(f'{p}images/process_data_split.png')
+        # st.image(f'{p}images/process_data_split.png')
         st.markdown(ssnap_text[2])
     # st.markdown('# 🗃️ 🗂️ 📁 ')
 

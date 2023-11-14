@@ -3,7 +3,7 @@
 
 ## 🧮 The data
 
-### What data do we use?
+### What data is used?
 
 The original data set comes from the Sentinel Stroke National Audit Programme (SSNAP). The data has the details of emergency hospital admissions for several hundreds of thousands of patients with stroke between the years 2016 and 2021. The data contains information such as the time between the start of the stroke and the arrival at hospital, what type of stroke it was, and which treatments were given.
 
@@ -17,5 +17,38 @@ The models only use the ten features that are shown here in the app.
 We use a subset of the full data set to create the models.
 
 The decision model is created using a set of training data with around 100,000 patients.
-This includes only patients whose onset to scan time is four hours or less.
+The teams are restricted to those who have over 250 admissions and give thrombolysis to at least 10 patients.
+This includes only patients who arrived by ambulance and whose onset to scan time is known to be four hours or less.
 We then use a testing data set of 10,000 patients to test the accuracy of the model.
+
+
++ __SSNAP Subset 🔮 Training data__ - ~110,000 patients
+
+| | |
+| --- | --- |
+| ✨ Cleaned | ⏰ Onset time known |
+| 🚑 Ambulance arrivals | ⏳🩻 Onset to scan under 4 hours |
+| 👥 Teams with over 250 admissions | 🪚 Only 10 features |
+| 💉 Teams with at least 10 thrombolysis |  |
+
+
++ __SSNAP Subset 🔮 Testing data__ - 10,000 patients
+
+| | |
+| --- | --- |
+| ✨ Cleaned | ⏰ Onset time known |
+| 🚑 Ambulance arrivals | ⏳🩻 Onset to scan under 4 hours |
+| 👥 Teams with over 250 admissions | 🪚 Only 10 features |
+| 💉 Teams with at least 10 thrombolysis |  |
+
+1. The 🔮 Training data is used to create the 🔮 ML model.
+1. The 🔮 ML model is used to create the ⚖️ SHAP model (log-odds).
+2. The 🔮 ML model and the 🔮 Testing data are used to create the ⚖️ SHAP model (probability).
+
+| Output | Uses |
+| --- | --- |
+| 🔮 ML model | App page _🔮 Thrombolysis decisions_; creation of 🎯 Benchmark scenario. |
+| ⚖️ SHAP model (log-odds) | Creation of 🎯 Benchmark rankings. |
+| ⚖️ SHAP model (probability) | App page _🔎 Details: 🔮 Thrombolysis decisions_ |
+
+
