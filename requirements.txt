@@ -8,7 +8,7 @@ importlib-metadata
 importlib_resources
 pickleshare
 #scikit-learn
-xgboost==1.7.5
+xgboost
 scipy
 plotly
 streamlit-plotly-events
