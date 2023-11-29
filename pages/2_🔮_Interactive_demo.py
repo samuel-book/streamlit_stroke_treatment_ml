@@ -116,10 +116,13 @@ def main():
             '''
             __Thrombolysis: yes or no?__
 
-            If probability is at least 50%:  
+            If probability is at least 66.6%:  
             ✔️ would thrombolyse
 
-            If probability is below 50%:  
+            If probability is between 33.3% and 66.6%:  
+            ❓ might thrombolyse
+
+            If probability is below 33.3%:  
             ❌ would not thrombolyse
             '''
             )
@@ -144,11 +147,13 @@ def main():
             '''
             __Benchmark decision__
 
-            If at least half of the benchmark teams would thrombolyse:  
-            ✔️ would thrombolyse
-
-            Otherwise:  
+            Each benchmark team can pick one of:  
+            ✔️ would thrombolyse  
+            ❓ might thrombolyse  
             ❌ would not thrombolyse
+
+            The overall benchmark decision is the
+            option picked by the biggest number of benchmark teams.
             '''
             )
 
@@ -295,12 +300,15 @@ def main():
                         colour=colour_here)
                     prob_here = df_here['Probability_perc'].values[0]
                     thromb_here = df_here['Thrombolyse_str'].values[0]
-                    if thromb_here == 'Yes':
+                    if 'Yes' in thromb_here:
                         emoji_here = '✔️ '
                         extra_str = ''
-                    else:
+                    elif 'No' in thromb_here:
                         emoji_here = '❌ '
                         extra_str = 'would not '
+                    else:
+                        emoji_here = '❓ '
+                        extra_str = 'might '
                     st.markdown(
                         f'''
                         Probability: {prob_here:.2f}%  

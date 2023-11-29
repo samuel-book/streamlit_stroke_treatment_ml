@@ -63,9 +63,9 @@ def main(sorted_results, hb_teams_input, use_plotly_events,
 
     # Figure title:
     # Change axis:
-    fig.update_yaxes(range=[0.0, 100.0])
+    fig.update_yaxes(range=[0.0, 120.0])
     xmax = sorted_results.shape[0]
-    fig.update_xaxes(range=[0.0, xmax+1])
+    fig.update_xaxes(range=[0.0, (xmax+1)*1.2])
     fig.update_layout(xaxis=dict(
         tickmode='array',
         tickvals=np.arange(0, sorted_results.shape[0], 10),
@@ -103,12 +103,110 @@ def main(sorted_results, hb_teams_input, use_plotly_events,
         )
 
     # Add horizontal line at prob=0.5, the decision to thrombolyse:
-    fig.add_hline(y=50.0, line=dict(color='black'))
-    # Update y ticks to match this 50% line:
+    fig.add_hline(y=33.3, line=dict(color='black'), layer='below')
+    fig.add_hline(y=66.6, line=dict(color='black'), layer='below')
+    # # Update y ticks:
     fig.update_layout(yaxis=dict(
         tickmode='array',
-        tickvals=[0, 20, 40, 50, 60, 80, 100],
+        tickvals=[0, 20, 40, 60, 80, 100],
         ))
+
+    # How many teams have thrombolysis yes/maybe/no?
+    n_teams = len(sorted_results)
+    n_yes = len(sorted_results[sorted_results['Thrombolyse'] == 2])
+    n_maybe = len(sorted_results[sorted_results['Thrombolyse'] == 1])
+    n_no = len(sorted_results[sorted_results['Thrombolyse'] == 0])
+    # Add vertical lines to split yes/maybe/no teams:
+    y_arrows = 110
+
+    # for x in [0.5, n_yes+0.5, n_yes+n_maybe+0.5, n_teams+0.5]:
+    #     fig.add_annotation(
+    #         x=x, y=y_arrows-10, ax=x, ay=y_arrows+10, text='',
+    #         showarrow=True, axref='x', ayref='y', arrowside='none', arrowcolor='black'
+    #     )
+
+    # Annotate the yes/maybe/no numbers:
+    x_yes = (0.5 * n_yes) + 0.5
+    x_maybe = (0.5 * n_maybe) + n_yes + 0.5
+    x_no = (0.5 * n_no) + n_yes + n_maybe + 0.5
+    y_labels = 140
+
+
+    # Right-hand-side label:
+    fig.add_annotation(
+        x=n_teams*1.1, y=np.mean([66.6, 100.0]),
+        text=f'{n_yes} team' + ('s' if n_yes != 1 else '') + '<br>✔️ would<br>thrombolyse',
+        showarrow=False,
+        yshift=0,
+        align='center',
+        xref='x', yref='y'
+        )
+    if n_yes > 0:
+        # Arrow:
+        fig.add_annotation(
+            x=0.5, y=y_arrows, ax=n_yes+0.5, ay=y_arrows, text='',
+            showarrow=True, axref='x', ayref='y', arrowside='end+start'
+        )
+        # Arrow label:
+        fig.add_annotation(
+            x=x_yes, y=y_arrows+10,
+            text='✔️',
+            showarrow=False,
+            yshift=0,
+            align='center',
+            xref='x', yref='y'
+            )
+    
+    # Right-hand-side label:
+    fig.add_annotation(
+        x=n_teams*1.1, y=np.mean([33.3, 66.6]),
+        text=f'{n_maybe} team' + ('s' if n_maybe != 1 else '') + '<br>❓ might<br>thrombolyse',
+        showarrow=False,
+        yshift=0,
+        align='center',
+        xref='x', yref='y'
+        )
+    if n_maybe > 0:
+        # Arrow:
+        fig.add_annotation(
+            x=n_yes+0.5, y=y_arrows, ax=n_yes+n_maybe+0.5, ay=y_arrows, text='',
+            showarrow=True, axref='x', ayref='y', arrowside='end+start'
+        )
+        # Arrow label:
+        fig.add_annotation(
+            x=x_maybe, y=y_arrows+10,
+            text='❓',
+            showarrow=False,
+            yshift=0,
+            align='center',
+            xref='x', yref='y'
+            )
+    
+    # Right-hand-side label:
+    fig.add_annotation(
+        x=n_teams*1.1, y=np.mean([0.0, 33.3]),
+        text=f'{n_no} team' + ('s' if n_no != 1 else '') + '<br>❌ would not<br>thrombolyse',
+        showarrow=False,
+        yshift=0,
+        align='center',
+        xref='x', yref='y'
+        )
+    if n_no > 0:
+        fig.add_annotation(
+            x=n_yes+n_maybe+0.5, y=y_arrows, ax=n_yes+n_maybe+n_no+0.5, ay=y_arrows, text='',
+            showarrow=True, axref='x', ayref='y', arrowside='end+start'
+        )
+        # Arrow label:
+        fig.add_annotation(
+            x=x_no, y=y_arrows+10,
+            text='❌',
+            showarrow=False,
+            yshift=0,
+            align='center',
+            xref='x', yref='y'
+            )
+    
+
 
     # Move legend to bottom
     fig.update_layout(legend=dict(
@@ -119,17 +217,18 @@ def main(sorted_results, hb_teams_input, use_plotly_events,
         # x=1.03,
         # itemwidth=50
     ))
-        
+
     # Reduce size of figure by adjusting margins:
+    fig_height = 300 + 20 * ((len(highlighted_teams_list) -2)//3)
     fig.update_layout(
-        margin=dict(    
+        margin=dict(
             # l=50,
-            r=0,
+            r=5,
             b=80,
             t=20,
             # pad=4
         ),
-        height=250,
+        height=fig_height,
         width=690
         )
     # fig.update_xaxes(automargin=True)
@@ -174,7 +273,7 @@ def main(sorted_results, hb_teams_input, use_plotly_events,
         # Write the plot to streamlit, and store the details of the last
         # bar that was clicked:
         selected_bar = plotly_events(
-            fig, click_event=True, key='bars', override_height=250, override_width='900%')
+            fig, click_event=True, key='bars', override_height=fig_height, override_width='900%')
 
         callback_bar(selected_bar, sorted_results,
             default_highlighted_team, display_name_of_default_highlighted_team)

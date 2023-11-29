@@ -25,11 +25,23 @@ def predict_treatment(
     results['HB team'] = hb_teams_list
     results['Probability'] = probs_list
     results['Probability_perc'] = probs_list*100.0
-    results['Thrombolyse'] = probs_list >= 0.5
+
+    thromb_decision = np.full(probs_list.shape, 0)
+    thromb_decision[probs_list >= (2.0/3.0)] = 2       # Yes
+    thromb_decision[((probs_list < (2.0/3.0)) &
+                     (probs_list > (1.0/3.0)))] = 1    # Maybe
+    thromb_decision[probs_list <= (1.0/3.0)] = 0       # No
+
+    results['Thrombolyse'] = thromb_decision
     results['Index'] = np.arange(len(results))
 
-    sorted_results = results.\
-        sort_values('Probability', ascending=False)
+    # Add column of str to print when thrombolysed or not
+    thrombolyse_str = np.full(len(results), 'Maybe')
+    thrombolyse_str[np.where(results['Thrombolyse'] == 2)] = 'Yes  '
+    thrombolyse_str[np.where(results['Thrombolyse'] == 0)] = 'No   '
+    results['Thrombolyse_str'] = thrombolyse_str
+
+    sorted_results = results.sort_values('Probability', ascending=False)
 
     # Add column of sorted index:
     sorted_results['Sorted rank'] = np.arange(1, len(results) + 1)
@@ -40,11 +52,6 @@ def predict_treatment(
     #     val = '\U00002605' if i <= 30 else ''
     #     benchmark_bool.append(val)
     # sorted_results['Benchmark'] = benchmark_bool
-
-    # Add column of str to print when thrombolysed or not
-    thrombolyse_str = np.full(len(sorted_results), 'No ')
-    thrombolyse_str[np.where(sorted_results['Thrombolyse'])] = 'Yes'
-    sorted_results['Thrombolyse_str'] = thrombolyse_str
 
     return sorted_results
 
