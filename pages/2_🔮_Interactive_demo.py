@@ -227,7 +227,9 @@ def main():
         inds_benchmark,
         highlighted_teams_list,
         hb_teams_list,
-        hb_teams_input
+        hb_teams_input,
+        test_probs,
+        test_reals
     ) = setup_for_app(
         container_input_highlighted_teams,
         container_input_patient_details,
@@ -245,6 +247,7 @@ def main():
         predict_treatment(X, model, stroke_teams_list,
                           highlighted_teams_list, benchmark_rank_list,
                           hb_teams_list)
+
 
     # ###########################
     # ######### RESULTS #########
@@ -326,6 +329,56 @@ def main():
             default_highlighted_team,
             display_name_of_default_highlighted_team
             )
+
+
+    # Model accuracy
+    import numpy as np
+    # WARNING - thresholds are hard-coded at the moment! 02/DEC/23
+    test_probs_emoji = np.full(test_probs.shape, '')
+    test_probs_emoji[test_probs > 0.66] = '✔️'
+    test_probs_emoji[(test_probs <= 0.66) & (test_probs >= 0.33)] = '❓'
+    test_probs_emoji[test_probs < 0.33] = '❌'
+
+    test_reals_emoji = np.full(test_reals.shape, '')
+    test_reals_emoji[test_reals == 1] = '✔️'
+    test_reals_emoji[test_reals != 1] = '❌'
+
+    pr_yy = len(np.where((test_probs > 0.66) & (test_reals == 1))[0])
+    pr_yn = len(np.where((test_probs > 0.66) & (test_reals == 0))[0])
+    pr_myy = len(np.where((test_probs <= 0.66) & (test_probs > 0.50) & (test_reals == 1))[0])
+    pr_myn = len(np.where((test_probs <= 0.66) & (test_probs > 0.50) & (test_reals == 0))[0])
+    pr_mny = len(np.where((test_probs <= 0.50) & (test_probs >= 0.33) & (test_reals == 1))[0])
+    pr_mnn = len(np.where((test_probs <= 0.50) & (test_probs >= 0.33) & (test_reals == 0))[0])
+    pr_ny = len(np.where((test_probs < 0.33) & (test_reals == 1))[0])
+    pr_nn = len(np.where((test_probs < 0.33) & (test_reals == 0))[0])
+
+    st.write('### How accurate is the model for patients like this?')
+    n_total = len(test_probs)
+    st.write(f'There are {n_total} patients like this in the test data.')
+
+    if n_total > 0:
+        st.write(f'✔️ | ✔️  | {pr_yy}')
+        st.write(f'❌ | ❌  | {pr_nn}')
+        st.write(f'❓✔️ | ✔️  | {pr_myy}')
+        st.write(f'❓❌ | ❌  | {pr_mnn}')
+
+        st.write(f'✔️ | ❌  | {pr_yn}')
+        st.write(f'❌✔️  | {pr_ny}')
+        st.write(f'❓✔️ | ❌ |  {pr_myn}')
+        st.write(f'❓❌ | ✔️  | {pr_mny}')
+
+        st.write(f'Confidently correct: {(pr_yy + pr_nn)} patients: {(pr_yy + pr_nn) / n_total:.0%}')
+        st.write(f'Confidently wrong: {(pr_yn + pr_ny)} patients: {(pr_yn + pr_ny) / n_total:.0%}')
+        st.write(f'Unsure and correct: {(pr_myy + pr_mnn)} patients: {(pr_myy + pr_mnn) / n_total:.0%}')
+        st.write(f'Unsure and wrong: {(pr_myn + pr_mny)} patients: {(pr_myn + pr_mny) / n_total:.0%}')
+
+    # import pandas as pd
+    # df = pd.DataFrame(
+    #     np.stack((test_probs_emoji, test_reals_emoji), axis=-1),
+    #     columns=['Predicted', 'Real']
+    # )
+    # st.write(df)
+
 
     # ----- The end! -----
 

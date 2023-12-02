@@ -377,6 +377,88 @@ def setup_for_app(
     with container_input_patient_details:
         user_inputs_dict = utilities_ml.container_inputs.user_inputs()
 
+    # What are the inds to look up similar test patients?
+    masks_severity = [
+        (user_inputs_dict['stroke_severity'] < 8),
+        ((user_inputs_dict['stroke_severity'] >= 8) & (user_inputs_dict['stroke_severity'] <= 32)),
+        (user_inputs_dict['stroke_severity'] > 32)
+        ]
+    masks_mrs = [
+        ((user_inputs_dict['prior_disability'] == 0) | (user_inputs_dict['prior_disability'] == 1)),
+        ((user_inputs_dict['prior_disability'] == 2) | (user_inputs_dict['prior_disability'] == 3)),
+        ((user_inputs_dict['prior_disability'] == 4) | (user_inputs_dict['prior_disability'] == 5)),
+        ]
+    masks_age = [
+        (user_inputs_dict['age'] < 80),
+        (user_inputs_dict['age'] >= 80)
+        ]
+    masks_infarction = [
+        (user_inputs_dict['infarction'] == 0),
+        (user_inputs_dict['infarction'] != 0)
+        ]
+    masks_onset_scan = [
+        (user_inputs_dict['onset_to_arrival_time'] + user_inputs_dict['arrival_to_scan_time'] <= 4*60),
+        (user_inputs_dict['onset_to_arrival_time'] + user_inputs_dict['arrival_to_scan_time'] > 4*60)
+        ]
+    masks_precise = [
+        (user_inputs_dict['onset_time_precise'] == 0),
+        (user_inputs_dict['onset_time_precise'] != 0)
+        ]
+    masks_sleep = [
+        (user_inputs_dict['onset_during_sleep'] == 0),
+        (user_inputs_dict['onset_during_sleep'] != 0)
+        ]
+    masks_anticoag = [
+        (user_inputs_dict['anticoag'] == 0),
+        (user_inputs_dict['anticoag'] != 0)
+        ]
+
+    masks = {
+        'onset_scan':masks_onset_scan,
+        'severity':masks_severity,
+        'mrs':masks_mrs,
+        'age':masks_age,
+        'infarction':masks_infarction,
+        'precise':masks_precise,
+        'sleep':masks_sleep,
+        'anticoag':masks_anticoag
+    }
+
+    # masks_names = list(masks.keys())
+    # masks_lists = list(masks.values())
+
+    inds = {}
+    for key, val in zip(masks.keys(), masks.values()):
+        for i, m in enumerate(val):
+            if m == 1:
+                inds[key] = i
+
+    df = pd.read_csv(f'{dir}data_ml/mask_groups_probabilities.csv')
+    df_mask = df[
+        (df['onset_scan_mask_number'] == inds['onset_scan']) &
+        (df['severity_mask_number'] == inds['severity']) &
+        (df['mrs_mask_number'] == inds['mrs']) &
+        (df['age_mask_number'] == inds['age']) &
+        (df['infarction_mask_number'] == inds['infarction']) &
+        (df['precise_mask_number'] == inds['precise']) &
+        (df['sleep_mask_number'] == inds['sleep']) &
+        (df['anticoag_mask_number'] == inds['anticoag'])
+    ]
+    test_probs = df_mask['Probabilities'].to_numpy()[0]
+    test_reals = df_mask['Thrombolysis_real'].to_numpy()[0]
+
+    test_probs = test_probs.strip('[')
+    test_probs = test_probs.strip(']')
+    test_probs = test_probs.replace('\n', '')
+    test_probs = test_probs.split()
+    test_probs = np.array(test_probs, dtype=float)
+
+    test_reals = test_reals.strip('[')
+    test_reals = test_reals.strip(']')
+    test_reals = test_reals.replace('\n', '')
+    test_reals = test_reals.split()
+    test_reals = np.array(test_reals, dtype=float)
+
     # ----- Build the X array -----
     # Build the patient details and stroke teams
     # into a 2D DataFrame:
@@ -428,7 +510,9 @@ def setup_for_app(
         inds_benchmark,
         highlighted_teams_list,
         hb_teams_list,
-        hb_teams_input
+        hb_teams_input,
+        test_probs,
+        test_reals
     )
 
 
