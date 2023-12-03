@@ -332,45 +332,85 @@ def main():
 
 
     # Model accuracy
+    import pandas as pd
     import numpy as np
-    # WARNING - thresholds are hard-coded at the moment! 02/DEC/23
-    test_probs_emoji = np.full(test_probs.shape, '')
-    test_probs_emoji[test_probs > 0.66] = '✔️'
-    test_probs_emoji[(test_probs <= 0.66) & (test_probs >= 0.33)] = '❓'
-    test_probs_emoji[test_probs < 0.33] = '❌'
 
-    test_reals_emoji = np.full(test_reals.shape, '')
-    test_reals_emoji[test_reals == 1] = '✔️'
-    test_reals_emoji[test_reals != 1] = '❌'
+    def make_emoji_lists(test_probs, test_reals):
+        # WARNING - thresholds are hard-coded at the moment! 02/DEC/23
+        test_probs_emoji = np.full(test_probs.shape, '')
+        test_probs_emoji[test_probs > 0.66] = '✔️'
+        test_probs_emoji[(test_probs <= 0.66) & (test_probs >= 0.33)] = '❓'
+        test_probs_emoji[test_probs < 0.33] = '❌'
 
-    pr_yy = len(np.where((test_probs > 0.66) & (test_reals == 1))[0])
-    pr_yn = len(np.where((test_probs > 0.66) & (test_reals == 0))[0])
-    pr_myy = len(np.where((test_probs <= 0.66) & (test_probs > 0.50) & (test_reals == 1))[0])
-    pr_myn = len(np.where((test_probs <= 0.66) & (test_probs > 0.50) & (test_reals == 0))[0])
-    pr_mny = len(np.where((test_probs <= 0.50) & (test_probs >= 0.33) & (test_reals == 1))[0])
-    pr_mnn = len(np.where((test_probs <= 0.50) & (test_probs >= 0.33) & (test_reals == 0))[0])
-    pr_ny = len(np.where((test_probs < 0.33) & (test_reals == 1))[0])
-    pr_nn = len(np.where((test_probs < 0.33) & (test_reals == 0))[0])
+        test_reals_emoji = np.full(test_reals.shape, '')
+        test_reals_emoji[test_reals == 1] = '✔️'
+        test_reals_emoji[test_reals != 1] = '❌'
+        return test_probs_emoji, test_reals_emoji
+    
+    def get_numbers_each_accuracy_band(test_probs, test_reals):
+        pr_yy = len(np.where((test_probs > 0.66) & (test_reals == 1))[0])
+        pr_yn = len(np.where((test_probs > 0.66) & (test_reals == 0))[0])
+        pr_myy = len(np.where((test_probs <= 0.66) & (test_probs > 0.50) & (test_reals == 1))[0])
+        pr_myn = len(np.where((test_probs <= 0.66) & (test_probs > 0.50) & (test_reals == 0))[0])
+        pr_mny = len(np.where((test_probs <= 0.50) & (test_probs >= 0.33) & (test_reals == 1))[0])
+        pr_mnn = len(np.where((test_probs <= 0.50) & (test_probs >= 0.33) & (test_reals == 0))[0])
+        pr_ny = len(np.where((test_probs < 0.33) & (test_reals == 1))[0])
+        pr_nn = len(np.where((test_probs < 0.33) & (test_reals == 0))[0])
 
-    st.write('### How accurate is the model for patients like this?')
-    n_total = len(test_probs)
-    st.write(f'There are {n_total} patients like this in the test data.')
+        pr_dict = {
+            'yy':pr_yy,
+            'yn':pr_yn,
+            'myy':pr_myy,
+            'myn':pr_myn,
+            'mny':pr_mny,
+            'mnn':pr_mnn,
+            'ny':pr_ny,
+            'nn':pr_nn,
+        }
+        return pr_dict
 
-    if n_total > 0:
-        st.write(f'✔️ | ✔️  | {pr_yy}')
-        st.write(f'❌ | ❌  | {pr_nn}')
-        st.write(f'❓✔️ | ✔️  | {pr_myy}')
-        st.write(f'❓❌ | ❌  | {pr_mnn}')
+    def write_accuracy(pr_dict, n_total):
+            st.write(f'✔️ | ✔️  | {pr_dict["yy"]}')
+            st.write(f'❌ | ❌  | {pr_dict["nn"]}')
+            st.write(f'❓✔️ | ✔️  | {pr_dict["myy"]}')
+            st.write(f'❓❌ | ❌  | {pr_dict["mnn"]}')
 
-        st.write(f'✔️ | ❌  | {pr_yn}')
-        st.write(f'❌✔️  | {pr_ny}')
-        st.write(f'❓✔️ | ❌ |  {pr_myn}')
-        st.write(f'❓❌ | ✔️  | {pr_mny}')
+            st.write(f'✔️ | ❌  | {pr_dict["yn"]}')
+            st.write(f'❌✔️  | {pr_dict["ny"]}')
+            st.write(f'❓✔️ | ❌ |  {pr_dict["myn"]}')
+            st.write(f'❓❌ | ✔️  | {pr_dict["mny"]}')
 
-        st.write(f'Confidently correct: {(pr_yy + pr_nn)} patients: {(pr_yy + pr_nn) / n_total:.0%}')
-        st.write(f'Confidently wrong: {(pr_yn + pr_ny)} patients: {(pr_yn + pr_ny) / n_total:.0%}')
-        st.write(f'Unsure and correct: {(pr_myy + pr_mnn)} patients: {(pr_myy + pr_mnn) / n_total:.0%}')
-        st.write(f'Unsure and wrong: {(pr_myn + pr_mny)} patients: {(pr_myn + pr_mny) / n_total:.0%}')
+            st.write(f'Confidently correct: {(pr_dict["yy"] + pr_dict["nn"])} patients: {(pr_dict["yy"] + pr_dict["nn"]) / n_total:.0%}')
+            st.write(f'Unsure and correct: {(pr_dict["myy"] + pr_dict["mnn"])} patients: {(pr_dict["myy"] + pr_dict["mnn"]) / n_total:.0%}')
+            st.write(f'Unsure and wrong: {(pr_dict["myn"] + pr_dict["mny"])} patients: {(pr_dict["myn"] + pr_dict["mny"]) / n_total:.0%}')
+            st.write(f'Confidently wrong: {(pr_dict["yn"] + pr_dict["ny"])} patients: {(pr_dict["yn"] + pr_dict["ny"]) / n_total:.0%}')
+
+    try:
+        df_all_accuracy = pd.read_csv(f'./data_ml/all_probabilities.csv')
+    except (FileNotFoundError,
+            st.runtime.media_file_storage.MediaFileStorageError):
+        df_all_accuracy = pd.read_csv(f'./streamlit_stroke_treatment_ml/data_ml/all_probabilities.csv')
+    all_probs = df_all_accuracy['Probabilities'].to_numpy()
+    all_reals = df_all_accuracy['Thrombolysis_real'].to_numpy()
+    all_probs_emoji, all_reals_emoji = make_emoji_lists(all_probs, all_reals)
+    all_pr_dict = get_numbers_each_accuracy_band(all_probs, all_reals)
+
+    test_probs_emoji, test_reals_emoji = make_emoji_lists(test_probs, test_reals)
+    test_pr_dict = get_numbers_each_accuracy_band(test_probs, test_reals)
+
+
+    st.write('### How accurate is the model?')
+
+    all_n_total = len(all_probs)
+    st.write(f'There are {all_n_total} patients in total in the test data.')
+    if all_n_total > 0:
+        write_accuracy(all_pr_dict, all_n_total)
+
+    st.write('--------')
+    test_n_total = len(test_probs)
+    st.write(f'There are {test_n_total} patients like this in the test data.')
+    if test_n_total > 0:
+        write_accuracy(test_pr_dict, test_n_total)
 
     # import pandas as pd
     # df = pd.DataFrame(
