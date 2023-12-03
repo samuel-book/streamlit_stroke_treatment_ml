@@ -228,11 +228,7 @@ def main():
         highlighted_teams_list,
         hb_teams_list,
         hb_teams_input,
-        user_inputs_dict,
-        all_probs,
-        all_reals,
-        test_probs,
-        test_reals
+        user_inputs_dict
     ) = setup_for_app(
         container_input_highlighted_teams,
         container_input_patient_details,
@@ -334,274 +330,75 @@ def main():
             )
 
 
+    # ############################
+    # ######### ACCURACY #########
+    # ############################
+
     # Model accuracy
     import pandas as pd
     import numpy as np
 
-    def make_emoji_lists(test_probs, test_reals):
-        # WARNING - thresholds are hard-coded at the moment! 02/DEC/23
-        test_probs_emoji = np.full(test_probs.shape, '')
-        test_probs_emoji[test_probs > 0.66] = '✔️'
-        test_probs_emoji[(test_probs <= 0.66) & (test_probs >= 0.33)] = '❓'
-        test_probs_emoji[test_probs < 0.33] = '❌'
+    # Test data accuracy.
+    from utilities_ml.container_uncertainty import find_similar_test_patients, get_numbers_each_accuracy_band, write_accuracy
 
-        test_reals_emoji = np.full(test_reals.shape, '')
-        test_reals_emoji[test_reals == 1] = '✔️'
-        test_reals_emoji[test_reals != 1] = '❌'
-        return test_probs_emoji, test_reals_emoji
+    st.markdown('--------')
+    st.markdown('## ❓ Accuracy and uncertainty')
+    st.markdown('### How accurate is the model?')
+    # Predicted probabilities and the true thrombolysis yes/no results
+    # for "test data" patients. Two lists - one contains all test
+    # patients, the other only patients who are similar to the selected
+    # patient details.
+    # TO DO - detail what "similar" means.
+    all_probs, all_reals, similar_probs, similar_reals = (
+        find_similar_test_patients(user_inputs_dict))
 
-    def get_numbers_each_accuracy_band(test_probs, test_reals):
-        pr_yy = len(np.where((test_probs > 0.66) & (test_reals == 1))[0])
-        pr_yn = len(np.where((test_probs > 0.66) & (test_reals == 0))[0])
-        pr_myy = len(np.where((test_probs <= 0.66) & (test_probs > 0.50) & (test_reals == 1))[0])
-        pr_myn = len(np.where((test_probs <= 0.66) & (test_probs > 0.50) & (test_reals == 0))[0])
-        pr_mny = len(np.where((test_probs <= 0.50) & (test_probs >= 0.33) & (test_reals == 1))[0])
-        pr_mnn = len(np.where((test_probs <= 0.50) & (test_probs >= 0.33) & (test_reals == 0))[0])
-        pr_ny = len(np.where((test_probs < 0.33) & (test_reals == 1))[0])
-        pr_nn = len(np.where((test_probs < 0.33) & (test_reals == 0))[0])
-
-        pr_dict = {
-            'yy':pr_yy,
-            'yn':pr_yn,
-            'myy':pr_myy,
-            'myn':pr_myn,
-            'mny':pr_mny,
-            'mnn':pr_mnn,
-            'ny':pr_ny,
-            'nn':pr_nn,
-        }
-        return pr_dict
-
-    def write_accuracy(pr_dict, n_total):
-        df = pd.DataFrame(
-            np.array([
-                ['✔️', ' ✔️', 'Correct', f'{pr_dict["yy"]}'],
-                ['❌', ' ❌', 'Correct',  f'{pr_dict["nn"]}'],
-                ['❓✔️', ' ✔️', 'Correct',  f'{pr_dict["myy"]}'],
-                ['❓❌', ' ❌', 'Correct',  f'{pr_dict["mnn"]}'],
-                ['✔️', ' ❌', 'Wrong',  f'{pr_dict["yn"]}'],
-                ['❌', ' ✔️', 'Wrong',  f'{pr_dict["ny"]}'],
-                ['❓✔️', ' ❌', 'Wrong',  f'{pr_dict["myn"]}'],
-                ['❓❌', ' ✔️', 'Wrong',  f'{pr_dict["mny"]}']
-                ]),
-            columns=['Predicted', 'Actual', 'Match?', 'Number'],
-        )
-        st.table(df)
-
-
-        st.write(f'Confidently correct: {(pr_dict["yy"] + pr_dict["nn"])} patients: {(pr_dict["yy"] + pr_dict["nn"]) / n_total:.0%}')
-        st.write(f'Unsure and correct: {(pr_dict["myy"] + pr_dict["mnn"])} patients: {(pr_dict["myy"] + pr_dict["mnn"]) / n_total:.0%}')
-        st.write(f'Unsure and wrong: {(pr_dict["myn"] + pr_dict["mny"])} patients: {(pr_dict["myn"] + pr_dict["mny"]) / n_total:.0%}')
-        st.write(f'Confidently wrong: {(pr_dict["yn"] + pr_dict["ny"])} patients: {(pr_dict["yn"] + pr_dict["ny"]) / n_total:.0%}')
-
-
-    all_probs_emoji, all_reals_emoji = make_emoji_lists(all_probs, all_reals)
+    # All test patients:
+    # Calculations:
     all_pr_dict = get_numbers_each_accuracy_band(all_probs, all_reals)
-
-    test_probs_emoji, test_reals_emoji = make_emoji_lists(test_probs, test_reals)
-    test_pr_dict = get_numbers_each_accuracy_band(test_probs, test_reals)
-
-
-    st.write('### How accurate is the model?')
-
     all_n_total = len(all_probs)
-    st.write(f'There are {all_n_total} patients in total in the test data.')
+    # Display results:
+    st.markdown(
+        f'There are {all_n_total} patients in total in the test data.')
     if all_n_total > 0:
         write_accuracy(all_pr_dict, all_n_total)
 
+    # Similar test patients:
     st.write('--------')
-    test_n_total = len(test_probs)
-    st.write(f'There are {test_n_total} patients like this in the test data.')
-    if test_n_total > 0:
-        write_accuracy(test_pr_dict, test_n_total)
+    # Calculations:
+    similar_pr_dict = get_numbers_each_accuracy_band(
+        similar_probs, similar_reals)
+    similar_n_total = len(similar_probs)
 
-    # import pandas as pd
-    # df = pd.DataFrame(
-    #     np.stack((test_probs_emoji, test_reals_emoji), axis=-1),
-    #     columns=['Predicted', 'Real']
-    # )
-    # st.write(df)
+    # Display results:
+    st.markdown(
+        f'There are {similar_n_total} patients like this in the test data.')
+    if similar_n_total > 0:
+        write_accuracy(similar_pr_dict, similar_n_total)
 
-    st.write('### Uncertainty')    
+
+    # ###############################
+    # ######### UNCERTAINTY #########
+    # ###############################
+
+    st.markdown('### Uncertainty')
     # Uncertainty:
     df_std = pd.read_csv(f'./data_ml/shap_std.csv')
     # Pick out just the teams:
     df_std_teams = df_std[df_std['feature'].str.contains('team')]
-    
+
     # What are +/- values for each of the features?
-    def get_std_from_df(df, col, value):
-        # Filter this feature only:
-        df_col = df[df['feature'] == col]
-        try:
-            df_col['feature_value'] = df_col['feature_value'].astype(float)
-        except:
-            pass
-        # Find where the feature value matches input:
-        if value in list(df_col['feature_value'].values):
-            df_row = df_col[df_col['feature_value'] == value]
-        else:
-            # The exact value doesn't exist when the feature
-            # is age, onset-to-arrival time, or arrival-to-scan time.
-            # Temporarily? The exact value doesn't exist for
-            # anticoagulant value missing.
-            if 'anticoag' in col:
-                df_row = df_col[
-                    (df_col['feature_value'] != 0) &
-                    (df_col['feature_value'] != 1)
-                    ]
-            elif 'age' in col:
-                # Need nearest multiple of 5 plus 2.5,
-                # so options are 37.5, 42.5, 47.5, ... 92.5.
-                if value < 37.5:
-                    value = 37.5
-                elif value > 92.5:
-                    value = 92.5
-                else:
-                    # Round to the nearest 5 and then subtract 2.5.
-                    # This means that age 40 goes to 37.5
-                    # and age 41 goes to 42.5.
-                    value = np.ceil(value / 5.0) * 5.0 - 2.5
-                df_row = df_col[df_col['feature_value'] == value]
-            elif 'time' in col:
-                # Categories are string "0-29", "120-149", "150+".
-                categories = np.unique(df_col['feature_value'])
-                category_bounds = [float(t.replace('+','-').split('-')[0]) for t in categories]
-                category_bounds = sorted(category_bounds)
-                # Find which category the value falls into:
-                bin = np.digitize(value, category_bounds) - 1
-                category_here = categories[bin]
-                df_row = df_col[df_col['feature_value'] == category_here]
-            else:
-                st.write('error: ', col, value)
+    from utilities_ml.container_uncertainty import get_std_from_df, get_this_patient_std_df, make_shap_uncert, convert_shap_logodds_to_prob, calculate_uncertainties_for_all_teams
 
-        mean_shap = df_row['mean_shap'].values[0]
-        std_shap = df_row['std_shap'].values[0]
-        return mean_shap, std_shap
-
-    std_col_dict = dict(
-        arrival_to_scan_time='arrival_to_scan_time',
-        infarction='infarction',
-        stroke_severity='stroke_severity',
-        onset_time_precise='precise_onset_known',
-        prior_disability='prior_disability',
-        anticoag='afib_anticoagulant',
-        onset_to_arrival_time='onset_to_arrival_time',
-        onset_during_sleep='onset_during_sleep',
-        age='age'
-    )
-    arr = []
-    for key, val in zip(user_inputs_dict.keys(), user_inputs_dict.values()):
-        if key in list(std_col_dict.keys()):
-            mean, std = get_std_from_df(df_std, std_col_dict[key], val)
-            arr.append([std_col_dict[key], val, mean, std])
-    df_std_this_patient = pd.DataFrame(
-        arr,
-        columns=['feature', 'feature_value', 'mean_shap', 'std_shap']
-        )
-
-    def make_shap_uncert(team, df_std_teams, df_std_this_patient, X):
-
-        df_this_team = df_std_teams[
-            (df_std_teams['feature'] == f'team_{team}') &
-            (df_std_teams['feature_value'].astype(float) == 1)
-            ]
-        df_not_this_team = df_std_teams[
-            (df_std_teams['feature'] != f'team_{team}') &
-            (df_std_teams['feature_value'].astype(float) == 0)
-            ]
-
-        # Estimated SHAP value:
-        # (THIS DOESN'T GIVE THE RIGHT ANSWER)
-        mean_shap_this_team = df_this_team['mean_shap'].values[0]
-        mean_shap_not_this_team = df_not_this_team['mean_shap'].sum()
-        mean_shap_teams  = mean_shap_this_team + mean_shap_not_this_team
-        # What is the total shap sum so far?
-        # using mean values, not actual patient values for now... (why?)
-        # (change this to the actual values)
-        mean_shap_without_team = df_std_this_patient['mean_shap'].sum()
-        # Combine:
-        mean_shap = mean_shap_teams + mean_shap_without_team
-
-        # Get actual SHAP values:
-        # Data for this team:
-        X_here = X[X[f'team_{team}'] == 1]
-        # Get SHAP:
-        from utilities_ml.inputs import load_explainer
-        explainer = load_explainer()
-        shap_values = explainer.shap_values(X_here)
-        mean_real_shap = np.sum(shap_values)
-
-        # Estimated uncertainties:
-        uncert_shap_without_team = np.sqrt(np.sum([v**2.0 for v in df_std_this_patient['std_shap'].values]))
-        all_std_teams = np.append(df_not_this_team['std_shap'].values, df_this_team['std_shap'].values[0])
-        uncert_teams  = np.sqrt(np.sum([a**2.0 for a in all_std_teams ]))
-        uncert_shap = np.sqrt(uncert_shap_without_team**2.0 + uncert_teams**2.0)
-        return mean_real_shap, uncert_shap, mean_shap
+    df_std_this_patient = get_this_patient_std_df(user_inputs_dict, df_std)
 
     # Convert values to probability:
     # y_offset = 0.3926216513057263
-    x_offset = -0.85
-    def convert_shap_logodds_to_prob(prob, x_offset):
-        from scipy.special import expit
-        return expit(prob + x_offset)
-    
+    x_offset = -0.85  # eyeballed - see notebook where expit defined
+
     # Calculate uncertainties for all teams:
-    arr = []
-    for t, team in enumerate(stroke_teams_list):
-        mean_real_shap, uncert_shap, mean_shap = make_shap_uncert(team, df_std_teams, df_std_this_patient, X)
+    df_uncert = calculate_uncertainties_for_all_teams(stroke_teams_list, df_std_teams, df_std_this_patient, X, x_offset)
 
-        upper_limit_real_shap = mean_real_shap + uncert_shap
-        lower_limit_real_shap = mean_real_shap - uncert_shap
-        mean_real_shap_prob = convert_shap_logodds_to_prob(mean_real_shap, x_offset)
-        upper_limit_real_shap_prob = convert_shap_logodds_to_prob(upper_limit_real_shap, x_offset)
-        lower_limit_real_shap_prob = convert_shap_logodds_to_prob(lower_limit_real_shap, x_offset)
-
-        upper_limit_shap = mean_shap + uncert_shap
-        lower_limit_shap = mean_shap - uncert_shap
-        mean_shap_prob = convert_shap_logodds_to_prob(mean_shap, x_offset)
-        upper_limit_shap_prob = convert_shap_logodds_to_prob(upper_limit_shap, x_offset)
-        lower_limit_shap_prob = convert_shap_logodds_to_prob(lower_limit_shap, x_offset)
-
-        
-        row = [
-            mean_real_shap,
-            uncert_shap,
-            upper_limit_real_shap,
-            lower_limit_real_shap,
-            mean_real_shap_prob,
-            upper_limit_real_shap_prob,
-            lower_limit_real_shap_prob,
-            mean_shap,
-            upper_limit_shap,
-            lower_limit_shap,
-            mean_shap_prob,
-            upper_limit_shap_prob,
-            lower_limit_shap_prob,
-        ]
-        arr.append(row)
-
-    df_uncert = pd.DataFrame(
-        arr,
-        columns=[
-            'mean_real_shap',
-            'uncert_shap',
-            'upper_limit_real_shap',
-            'lower_limit_real_shap',
-            'mean_real_shap_prob',
-            'upper_limit_real_shap_prob',
-            'lower_limit_real_shap_prob',
-            'mean_shap',
-            'upper_limit_shap',
-            'lower_limit_shap',
-            'mean_shap_prob',
-            'upper_limit_shap_prob',
-            'lower_limit_shap_prob',
-        ]
-        )
-    
-    df_uncert = df_uncert.sort_values('mean_real_shap_prob', ascending=False)
-    df_uncert['rank'] = np.arange(len(df_uncert))
-
+    # Plot these errorbars:
     import plotly.graph_objects as go
     fig = go.Figure()
     fig.add_trace(go.Scatter(
@@ -617,9 +414,7 @@ def main():
     fig.update_yaxes(range=[0.0, 1.0])
     st.plotly_chart(fig)
 
-
     st.write(df_uncert)
-    
 
 
     # ----- The end! -----
