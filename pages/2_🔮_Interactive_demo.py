@@ -387,7 +387,7 @@ def main():
     df_std_teams = df_std[df_std['feature'].str.contains('team')]
 
     # What are +/- values for each of the features?
-    from utilities_ml.container_uncertainty import get_std_from_df, get_this_patient_std_df, make_shap_uncert, convert_shap_logodds_to_prob, calculate_uncertainties_for_all_teams
+    from utilities_ml.container_uncertainty import get_std_from_df, get_this_patient_std_df, make_shap_uncert, convert_shap_logodds_to_prob, calculate_uncertainties_for_all_teams, calculate_uncertainties_for_all_teams_from_test_data
 
     df_std_this_patient = get_this_patient_std_df(user_inputs_dict, df_std)
 
@@ -396,7 +396,8 @@ def main():
     x_offset = -0.85  # eyeballed - see notebook where expit defined
 
     # Calculate uncertainties for all teams:
-    df_uncert = calculate_uncertainties_for_all_teams(stroke_teams_list, df_std_teams, df_std_this_patient, X, x_offset)
+    # df_uncert = calculate_uncertainties_for_all_teams_from_test_data(stroke_teams_list, df_std_teams, df_std_this_patient, X, x_offset)
+    df_uncert = calculate_uncertainties_for_all_teams(stroke_teams_list, df_std_teams, X, x_offset)
 
     # Plot these errorbars:
     import plotly.graph_objects as go
@@ -415,6 +416,27 @@ def main():
     st.plotly_chart(fig)
 
     st.write(df_uncert)
+
+    st.write('### Testing - variation in SHAP across teams')
+    # Get SHAP:
+    from utilities_ml.inputs import load_explainer
+    explainer = load_explainer()
+    shap_values_all_teams = explainer.shap_values(X)
+
+    # Get all SHAP values for this feature:
+    std_list = []
+    for i, feature in enumerate(headers_X[:9]):
+        vals = shap_values_all_teams[:, i]
+        std = np.std(vals)
+        std_list.append(std)
+        fig = go.Figure()
+        fig.add_trace(go.Violin(
+            y=vals
+        ))
+        fig.update_layout(title_text=feature)
+        st.plotly_chart(fig)
+
+    st.write(pd.DataFrame(np.array(std_list).reshape(1, 9), columns=headers_X[:9]))
 
 
     # ----- The end! -----
