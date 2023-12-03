@@ -228,6 +228,8 @@ def main():
         highlighted_teams_list,
         hb_teams_list,
         hb_teams_input,
+        all_probs,
+        all_reals,
         test_probs,
         test_reals
     ) = setup_for_app(
@@ -385,13 +387,7 @@ def main():
             st.write(f'Unsure and wrong: {(pr_dict["myn"] + pr_dict["mny"])} patients: {(pr_dict["myn"] + pr_dict["mny"]) / n_total:.0%}')
             st.write(f'Confidently wrong: {(pr_dict["yn"] + pr_dict["ny"])} patients: {(pr_dict["yn"] + pr_dict["ny"]) / n_total:.0%}')
 
-    try:
-        df_all_accuracy = pd.read_csv(f'./data_ml/all_probabilities.csv')
-    except (FileNotFoundError,
-            st.runtime.media_file_storage.MediaFileStorageError):
-        df_all_accuracy = pd.read_csv(f'./streamlit_stroke_treatment_ml/data_ml/all_probabilities.csv')
-    all_probs = df_all_accuracy['Probabilities'].to_numpy()
-    all_reals = df_all_accuracy['Thrombolysis_real'].to_numpy()
+
     all_probs_emoji, all_reals_emoji = make_emoji_lists(all_probs, all_reals)
     all_pr_dict = get_numbers_each_accuracy_band(all_probs, all_reals)
 

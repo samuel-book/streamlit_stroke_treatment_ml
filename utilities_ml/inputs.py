@@ -433,7 +433,8 @@ def setup_for_app(
             if m == 1:
                 inds[key] = i
 
-    df = pd.read_csv(f'{dir}data_ml/mask_groups_probabilities.csv')
+    # Which mask number is this?
+    df = pd.read_csv(f'{dir}data_ml/mask_numbers.csv')
     df_mask = df[
         (df['onset_scan_mask_number'] == inds['onset_scan']) &
         (df['severity_mask_number'] == inds['severity']) &
@@ -444,20 +445,17 @@ def setup_for_app(
         (df['sleep_mask_number'] == inds['sleep']) &
         (df['anticoag_mask_number'] == inds['anticoag'])
     ]
-    test_probs = df_mask['Probabilities'].to_numpy()[0]
-    test_reals = df_mask['Thrombolysis_real'].to_numpy()[0]
+    mask_number = df_mask['mask_number'].values[0]
 
-    test_probs = test_probs.strip('[')
-    test_probs = test_probs.strip(']')
-    test_probs = test_probs.replace('\n', '')
-    test_probs = test_probs.split()
-    test_probs = np.array(test_probs, dtype=float)
+    # Import all probabilities and thrombolysis:
+    df_all_accuracy = pd.read_csv(f'{dir}data_ml/masks_probabilities.csv')
+    all_probs = df_all_accuracy['predicted_probs']
+    all_reals = df_all_accuracy['thrombolysis']
 
-    test_reals = test_reals.strip('[')
-    test_reals = test_reals.strip(']')
-    test_reals = test_reals.replace('\n', '')
-    test_reals = test_reals.split()
-    test_reals = np.array(test_reals, dtype=float)
+    # Mask for just this mask number:
+    mask = (df_all_accuracy['mask_number'] == mask_number)
+    test_probs = all_probs[mask]
+    test_reals = all_reals[mask]
 
     # ----- Build the X array -----
     # Build the patient details and stroke teams
@@ -511,6 +509,8 @@ def setup_for_app(
         highlighted_teams_list,
         hb_teams_list,
         hb_teams_input,
+        all_probs,
+        all_reals,
         test_probs,
         test_reals
     )
