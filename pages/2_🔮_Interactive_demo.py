@@ -372,20 +372,26 @@ def main():
         return pr_dict
 
     def write_accuracy(pr_dict, n_total):
-            st.write(f'✔️ | ✔️  | {pr_dict["yy"]}')
-            st.write(f'❌ | ❌  | {pr_dict["nn"]}')
-            st.write(f'❓✔️ | ✔️  | {pr_dict["myy"]}')
-            st.write(f'❓❌ | ❌  | {pr_dict["mnn"]}')
+        df = pd.DataFrame(
+            np.array([
+                ['✔️', ' ✔️', 'Correct', f'{pr_dict["yy"]}'],
+                ['❌', ' ❌', 'Correct',  f'{pr_dict["nn"]}'],
+                ['❓✔️', ' ✔️', 'Correct',  f'{pr_dict["myy"]}'],
+                ['❓❌', ' ❌', 'Correct',  f'{pr_dict["mnn"]}'],
+                ['✔️', ' ❌', 'Wrong',  f'{pr_dict["yn"]}'],
+                ['❌', ' ✔️', 'Wrong',  f'{pr_dict["ny"]}'],
+                ['❓✔️', ' ❌', 'Wrong',  f'{pr_dict["myn"]}'],
+                ['❓❌', ' ✔️', 'Wrong',  f'{pr_dict["mny"]}']
+                ]),
+            columns=['Predicted', 'Actual', 'Match?', 'Number'],
+        )
+        st.table(df)
 
-            st.write(f'✔️ | ❌  | {pr_dict["yn"]}')
-            st.write(f'❌✔️  | {pr_dict["ny"]}')
-            st.write(f'❓✔️ | ❌ |  {pr_dict["myn"]}')
-            st.write(f'❓❌ | ✔️  | {pr_dict["mny"]}')
 
-            st.write(f'Confidently correct: {(pr_dict["yy"] + pr_dict["nn"])} patients: {(pr_dict["yy"] + pr_dict["nn"]) / n_total:.0%}')
-            st.write(f'Unsure and correct: {(pr_dict["myy"] + pr_dict["mnn"])} patients: {(pr_dict["myy"] + pr_dict["mnn"]) / n_total:.0%}')
-            st.write(f'Unsure and wrong: {(pr_dict["myn"] + pr_dict["mny"])} patients: {(pr_dict["myn"] + pr_dict["mny"]) / n_total:.0%}')
-            st.write(f'Confidently wrong: {(pr_dict["yn"] + pr_dict["ny"])} patients: {(pr_dict["yn"] + pr_dict["ny"]) / n_total:.0%}')
+        st.write(f'Confidently correct: {(pr_dict["yy"] + pr_dict["nn"])} patients: {(pr_dict["yy"] + pr_dict["nn"]) / n_total:.0%}')
+        st.write(f'Unsure and correct: {(pr_dict["myy"] + pr_dict["mnn"])} patients: {(pr_dict["myy"] + pr_dict["mnn"]) / n_total:.0%}')
+        st.write(f'Unsure and wrong: {(pr_dict["myn"] + pr_dict["mny"])} patients: {(pr_dict["myn"] + pr_dict["mny"]) / n_total:.0%}')
+        st.write(f'Confidently wrong: {(pr_dict["yn"] + pr_dict["ny"])} patients: {(pr_dict["yn"] + pr_dict["ny"]) / n_total:.0%}')
 
 
     all_probs_emoji, all_reals_emoji = make_emoji_lists(all_probs, all_reals)
