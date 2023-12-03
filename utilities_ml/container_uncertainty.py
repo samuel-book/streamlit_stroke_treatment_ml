@@ -238,7 +238,7 @@ def get_this_patient_std_df(user_inputs_dict, df_std):
     return df_std_this_patient
 
 
-def make_shap_uncert(team, df_std_teams, df_std_this_patient, X):
+def make_shap_uncert(team, df_std_teams, uncert_shap_without_team):#, mean_shap_without_team):
 
     df_this_team = df_std_teams[
         (df_std_teams['feature'] == f'team_{team}') &
@@ -249,33 +249,20 @@ def make_shap_uncert(team, df_std_teams, df_std_this_patient, X):
         (df_std_teams['feature_value'].astype(float) == 0)
         ]
 
-    # Estimated SHAP value:
-    # (THIS DOESN'T GIVE THE RIGHT ANSWER)
-    mean_shap_this_team = df_this_team['mean_shap'].values[0]
-    mean_shap_not_this_team = df_not_this_team['mean_shap'].sum()
-    mean_shap_teams  = mean_shap_this_team + mean_shap_not_this_team
-    # What is the total shap sum so far?
-    # using mean values, not actual patient values for now... (why?)
-    # (change this to the actual values)
-    mean_shap_without_team = df_std_this_patient['mean_shap'].sum()
-    # Combine:
-    mean_shap = mean_shap_teams + mean_shap_without_team
+    # # Estimated SHAP value:
+    # # (THIS DOESN'T GIVE THE RIGHT ANSWER)
+    # mean_shap_this_team = df_this_team['mean_shap'].values[0]
+    # mean_shap_not_this_team = df_not_this_team['mean_shap'].sum()
+    # mean_shap_teams  = mean_shap_this_team + mean_shap_not_this_team
+    # # Combine:
+    # mean_shap = mean_shap_teams + mean_shap_without_team
 
-    # Get actual SHAP values:
-    # Data for this team:
-    X_here = X[X[f'team_{team}'] == 1]
-    # Get SHAP:
-    from utilities_ml.inputs import load_explainer
-    explainer = load_explainer()
-    shap_values = explainer.shap_values(X_here)
-    mean_real_shap = np.sum(shap_values)
 
     # Estimated uncertainties:
-    uncert_shap_without_team = np.sqrt(np.sum([v**2.0 for v in df_std_this_patient['std_shap'].values]))
     all_std_teams = np.append(df_not_this_team['std_shap'].values, df_this_team['std_shap'].values[0])
     uncert_teams  = np.sqrt(np.sum([a**2.0 for a in all_std_teams ]))
     uncert_shap = np.sqrt(uncert_shap_without_team**2.0 + uncert_teams**2.0)
-    return mean_real_shap, uncert_shap, mean_shap
+    return uncert_shap#, mean_shap
 
 
 def convert_shap_logodds_to_prob(prob, x_offset):
@@ -285,8 +272,32 @@ def convert_shap_logodds_to_prob(prob, x_offset):
 
 def calculate_uncertainties_for_all_teams(stroke_teams_list, df_std_teams, df_std_this_patient, X, x_offset):
     arr = []
+
+    # Calculate bits that are the same for all teams:
+    # What is the total shap sum so far?
+    # using mean values, not actual patient values for now... (why?)
+    # (change this to the actual values)
+    # mean_shap_without_team = df_std_this_patient['mean_shap'].sum()
+    # Uncertainty:
+    uncert_shap_without_team = np.sqrt(np.sum([v**2.0 for v in df_std_this_patient['std_shap'].values]))
+
+    # All SHAP values:
+
+    # Get actual SHAP values:
+    # Get SHAP:
+    from utilities_ml.inputs import load_explainer
+    explainer = load_explainer()
+    shap_values_all_teams = explainer.shap_values(X)
+
     for t, team in enumerate(stroke_teams_list):
-        mean_real_shap, uncert_shap, mean_shap = make_shap_uncert(team, df_std_teams, df_std_this_patient, X)
+        # Pull out SHAP values for this team from the big list:
+        # Data for this team:
+        ind = (X[f'team_{team}'] == 1)
+        # X_here = X[ind]
+        shap_values = shap_values_all_teams[ind, :]
+        mean_real_shap = np.sum(shap_values)
+
+        uncert_shap = make_shap_uncert(team, df_std_teams, uncert_shap_without_team)
 
         upper_limit_real_shap = mean_real_shap + uncert_shap
         lower_limit_real_shap = mean_real_shap - uncert_shap
@@ -294,11 +305,11 @@ def calculate_uncertainties_for_all_teams(stroke_teams_list, df_std_teams, df_st
         upper_limit_real_shap_prob = convert_shap_logodds_to_prob(upper_limit_real_shap, x_offset)
         lower_limit_real_shap_prob = convert_shap_logodds_to_prob(lower_limit_real_shap, x_offset)
 
-        upper_limit_shap = mean_shap + uncert_shap
-        lower_limit_shap = mean_shap - uncert_shap
-        mean_shap_prob = convert_shap_logodds_to_prob(mean_shap, x_offset)
-        upper_limit_shap_prob = convert_shap_logodds_to_prob(upper_limit_shap, x_offset)
-        lower_limit_shap_prob = convert_shap_logodds_to_prob(lower_limit_shap, x_offset)
+        # upper_limit_shap = mean_shap + uncert_shap
+        # lower_limit_shap = mean_shap - uncert_shap
+        # mean_shap_prob = convert_shap_logodds_to_prob(mean_shap, x_offset)
+        # upper_limit_shap_prob = convert_shap_logodds_to_prob(upper_limit_shap, x_offset)
+        # lower_limit_shap_prob = convert_shap_logodds_to_prob(lower_limit_shap, x_offset)
 
         row = [
             mean_real_shap,
@@ -308,16 +319,15 @@ def calculate_uncertainties_for_all_teams(stroke_teams_list, df_std_teams, df_st
             mean_real_shap_prob,
             upper_limit_real_shap_prob,
             lower_limit_real_shap_prob,
-            mean_shap,
-            upper_limit_shap,
-            lower_limit_shap,
-            mean_shap_prob,
-            upper_limit_shap_prob,
-            lower_limit_shap_prob,
+            # mean_shap,
+            # upper_limit_shap,
+            # lower_limit_shap,
+            # mean_shap_prob,
+            # upper_limit_shap_prob,
+            # lower_limit_shap_prob,
         ]
         arr.append(row)
 
-    
     df_uncert = pd.DataFrame(
         arr,
         columns=[
@@ -328,12 +338,12 @@ def calculate_uncertainties_for_all_teams(stroke_teams_list, df_std_teams, df_st
             'mean_real_shap_prob',
             'upper_limit_real_shap_prob',
             'lower_limit_real_shap_prob',
-            'mean_shap',
-            'upper_limit_shap',
-            'lower_limit_shap',
-            'mean_shap_prob',
-            'upper_limit_shap_prob',
-            'lower_limit_shap_prob',
+            # 'mean_shap',
+            # 'upper_limit_shap',
+            # 'lower_limit_shap',
+            # 'mean_shap_prob',
+            # 'upper_limit_shap_prob',
+            # 'lower_limit_shap_prob',
         ]
         )
     df_uncert = df_uncert.sort_values('mean_real_shap_prob', ascending=False)
