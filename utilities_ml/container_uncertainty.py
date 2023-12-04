@@ -94,8 +94,8 @@ def write_confusion_matrix(pr_dict):
     # Change the background colour "background-color" of the box
     # and the colour of the text "color".
     # Use these colours...
-    colour_true = 'rgba(0, 256, 0, 0.3)'
-    colour_false = 'rgba(256, 0, 0, 0.3)'
+    colour_true = 'rgba(127, 255, 127, 0.2)'
+    colour_false = 'rgba(255, 127, 127, 0.2)'
     # ... in this pattern:
     colour_grid = [
         [colour_true, colour_true, colour_false, colour_false],
@@ -112,8 +112,8 @@ def write_confusion_matrix(pr_dict):
             # (Working this out has displeased me greatly.)
             styles.append({
                 'selector': f"tr:nth-child({r+1}) td:nth-child({c+2})",
-                'props': [("background-color", f"{colour}"),
-                        ("color", "black")]
+                'props': [("background-color", f"{colour}")],
+                        # ("color", "black")]
                 })
     # Apply these styles to the pandas DataFrame:
     df_to_show = df.style.set_table_styles(styles)
