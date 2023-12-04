@@ -428,6 +428,7 @@ def main():
 
     # Get all SHAP values for this feature:
     std_list = []
+    import plotly.graph_objects as go
     fig = go.Figure()
     fig.update_layout(
         height=800,
