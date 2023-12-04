@@ -142,7 +142,7 @@ def write_accuracy(pr_dict):
 
     acc = 100.0 * (n_true_pos + n_true_neg) / n_total
 
-    st.markdown(f'__Accuracy: {acc:.1f}%__')
+    st.markdown(f'The model predicts correctly __{acc:.1f}%__ of the time for these patients.')
 
 
 def write_confusion_matrix(pr_dict):

@@ -121,7 +121,8 @@ def main(sorted_results, hb_teams_input, use_plotly_events,
             symmetric=False,
             array=100.0*(df_uncert['upper_limit_real_shap_prob'] - df_uncert['real_shap_prob']),
             arrayminus=100.0*(df_uncert['real_shap_prob'] - df_uncert['lower_limit_real_shap_prob']),
-        )
+        ),
+        showlegend=False
     ))
 
     # How many teams have thrombolysis yes/maybe/no?

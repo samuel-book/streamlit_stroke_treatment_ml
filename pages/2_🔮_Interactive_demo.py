@@ -322,7 +322,7 @@ def main():
                     thromb_here = df_here['Thrombolyse_str'].values[0]
                     if 'Yes' in thromb_here:
                         emoji_here = '✔️ '
-                        extra_str = ''
+                        extra_str = 'would '
                     elif 'No' in thromb_here:
                         emoji_here = '❌ '
                         extra_str = 'would not '
@@ -371,7 +371,7 @@ def main():
     all_probs, all_reals, similar_probs, similar_reals = (
         find_similar_test_patients(user_inputs_dict))
 
-    cols_acc = st.columns(2)
+    cols_acc = st.columns(2, gap='large')
     # All test patients:
     # Calculations:
     all_pr_dict = get_numbers_each_accuracy_band(all_probs, all_reals)
@@ -388,13 +388,6 @@ def main():
         if all_n_total > 0:
             all_pr_dict_100 = fudge_100_test_patients(all_pr_dict)
             write_accuracy(all_pr_dict)
-            tabs_all = st.tabs(['100 patients', 'All patients'])
-            with tabs_all[0]:
-                st.markdown('For every 100 patients, the results are:')
-                write_confusion_matrix(all_pr_dict_100)
-            with tabs_all[1]:
-                st.markdown(f'For all {all_n_total} patients, the results are:')
-                write_confusion_matrix(all_pr_dict)
 
     # Similar test patients:
     # st.write('--------')
@@ -415,13 +408,32 @@ def main():
         if similar_n_total > 0:
             similar_pr_dict_100 = fudge_100_test_patients(similar_pr_dict)
             write_accuracy(similar_pr_dict)
-            tabs_similar = st.tabs(['100 patients', 'All patients'])
-            with tabs_similar[0]:
-                st.markdown('For every 100 patients, the results are:')
+
+    tabs_matrix = st.tabs(['Scaled to 100 patients', 'True numbers of patients'])
+    with tabs_matrix[0]:
+        cols_100 = st.columns(2, gap='large')
+        with cols_100[0]:
+            # All test patients, scaled to 100:
+            st.markdown('For every 100 out of all test patients, the results are:')
+            write_confusion_matrix(all_pr_dict_100)
+        with cols_100[1]:
+            if similar_n_total > 0:
+                # Similar test patients, scaled to 100:
+                st.markdown('For every 100 similar test patients, the results are:')
                 write_confusion_matrix(similar_pr_dict_100)
-            with tabs_similar[1]:
-                st.markdown(f'For all {similar_n_total} patients, the results are:')
+    with tabs_matrix[1]:
+        cols_all = st.columns(2, gap='large')
+        with cols_all[0]:
+            # All test patients:
+            st.markdown(f'For all {all_n_total} test patients, the results are:')
+            write_confusion_matrix(all_pr_dict)
+        with cols_all[1]:
+            if similar_n_total > 0:
+                # Similar test patients:
+                st.markdown(f'For the {similar_n_total} similar test patients, the results are:')
                 write_confusion_matrix(similar_pr_dict)
+
+
 
 
     # ###############################
