@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
+import pandas as pd
 
 # For clickable plotly events:
 from streamlit_plotly_events import plotly_events
@@ -10,7 +11,7 @@ from streamlit_plotly_events import plotly_events
 
 
 def main(sorted_results, hb_teams_input, use_plotly_events, 
-    default_highlighted_team, display_name_of_default_highlighted_team):
+    default_highlighted_team, display_name_of_default_highlighted_team, df_uncert):
     """
     Plot sorted probability bar chart
     """
@@ -110,6 +111,18 @@ def main(sorted_results, hb_teams_input, use_plotly_events,
         tickmode='array',
         tickvals=[0, 20, 40, 60, 80, 100],
         ))
+
+    # Uncertainty
+    fig.add_trace(go.Scatter(
+        x=1+df_uncert['rank'],
+        y=100.0*df_uncert['mean_real_shap_prob'],
+        error_y=dict(
+            type='data',
+            symmetric=False,
+            array=100.0*(df_uncert['upper_limit_real_shap_prob'] - df_uncert['mean_real_shap_prob']),
+            arrayminus=100.0*(df_uncert['mean_real_shap_prob'] - df_uncert['lower_limit_real_shap_prob']),
+        )
+    ))
 
     # How many teams have thrombolysis yes/maybe/no?
     n_teams = len(sorted_results)

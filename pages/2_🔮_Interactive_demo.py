@@ -10,6 +10,7 @@ done in functions stored in files named container_(something).py
 """
 # ----- Imports -----
 import streamlit as st
+import pandas as pd
 
 # For compatibility with combo app,
 # add an extra bit to the path if we need to.
@@ -247,6 +248,24 @@ def main():
                           highlighted_teams_list, benchmark_rank_list,
                           hb_teams_list)
 
+    # Uncertainty:
+    import pandas as pd
+    df_std = pd.read_csv(f'./data_ml/shap_std.csv')
+    # Pick out just the teams:
+    df_std_teams = df_std[df_std['feature'].str.contains('team')]
+
+    # What are +/- values for each of the features?
+    from utilities_ml.container_uncertainty import calculate_uncertainties_for_all_teams
+
+    # df_std_this_patient = get_this_patient_std_df(user_inputs_dict, df_std)
+
+    # Convert values to probability:
+    # y_offset = 0.3926216513057263
+    x_offset = -0.85  # eyeballed - see notebook where expit defined
+
+    # Calculate uncertainties for all teams:
+    # df_uncert = calculate_uncertainties_for_all_teams_from_test_data(stroke_teams_list, df_std_teams, df_std_this_patient, X, x_offset)
+    df_uncert = calculate_uncertainties_for_all_teams(stroke_teams_list, df_std_teams, X, x_offset)
 
     # ###########################
     # ######### RESULTS #########
@@ -326,7 +345,8 @@ def main():
             hb_teams_input,
             use_plotly_events,
             default_highlighted_team,
-            display_name_of_default_highlighted_team
+            display_name_of_default_highlighted_team,
+            df_uncert
             )
 
 
@@ -381,39 +401,22 @@ def main():
     # ###############################
 
     st.markdown('### Uncertainty')
-    # Uncertainty:
-    df_std = pd.read_csv(f'./data_ml/shap_std.csv')
-    # Pick out just the teams:
-    df_std_teams = df_std[df_std['feature'].str.contains('team')]
-
-    # What are +/- values for each of the features?
-    from utilities_ml.container_uncertainty import get_std_from_df, get_this_patient_std_df, make_shap_uncert, convert_shap_logodds_to_prob, calculate_uncertainties_for_all_teams, calculate_uncertainties_for_all_teams_from_test_data
-
-    df_std_this_patient = get_this_patient_std_df(user_inputs_dict, df_std)
-
-    # Convert values to probability:
-    # y_offset = 0.3926216513057263
-    x_offset = -0.85  # eyeballed - see notebook where expit defined
-
-    # Calculate uncertainties for all teams:
-    # df_uncert = calculate_uncertainties_for_all_teams_from_test_data(stroke_teams_list, df_std_teams, df_std_this_patient, X, x_offset)
-    df_uncert = calculate_uncertainties_for_all_teams(stroke_teams_list, df_std_teams, X, x_offset)
-
-    # Plot these errorbars:
-    import plotly.graph_objects as go
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=df_uncert['rank'],
-        y=df_uncert['mean_real_shap_prob'],
-        error_y=dict(
-            type='data',
-            symmetric=False,
-            array=df_uncert['upper_limit_real_shap_prob'] - df_uncert['mean_real_shap_prob'],
-            arrayminus=df_uncert['mean_real_shap_prob'] - df_uncert['lower_limit_real_shap_prob'],
-        )
-    ))
-    fig.update_yaxes(range=[0.0, 1.0])
-    st.plotly_chart(fig)
+    
+    # # Plot these errorbars:
+    # import plotly.graph_objects as go
+    # fig = go.Figure()
+    # fig.add_trace(go.Scatter(
+    #     x=df_uncert['rank'],
+    #     y=df_uncert['mean_real_shap_prob'],
+    #     error_y=dict(
+    #         type='data',
+    #         symmetric=False,
+    #         array=df_uncert['upper_limit_real_shap_prob'] - df_uncert['mean_real_shap_prob'],
+    #         arrayminus=df_uncert['mean_real_shap_prob'] - df_uncert['lower_limit_real_shap_prob'],
+    #     )
+    # ))
+    # fig.update_yaxes(range=[0.0, 1.0])
+    # st.plotly_chart(fig)
 
     st.write(df_uncert)
 
@@ -425,16 +428,36 @@ def main():
 
     # Get all SHAP values for this feature:
     std_list = []
+    fig = go.Figure()
+    fig.update_layout(
+        height=800,
+        # width=690
+        )
     for i, feature in enumerate(headers_X[:9]):
         vals = shap_values_all_teams[:, i]
         std = np.std(vals)
         std_list.append(std)
-        fig = go.Figure()
         fig.add_trace(go.Violin(
-            y=vals
+            y=vals,
+            x=[feature for v in vals],
+            showlegend=False,
+            line=dict(color='grey'),
         ))
-        fig.update_layout(title_text=feature)
-        st.plotly_chart(fig)
+        fig.add_trace(go.Scatter(
+            y=[np.mean(vals)],
+            x=[feature],
+            error_y=dict(
+                type='data',
+                array=[std],
+                visible=True
+            ),
+            marker_color='black',
+            showlegend=False
+        ))
+        # fig.update_layout(title_text=feature)
+        
+    fig.update_yaxes(range=[-2.5, 2.5])
+    st.plotly_chart(fig)
 
     st.write(pd.DataFrame(np.array(std_list).reshape(1, 9), columns=headers_X[:9]))
 
