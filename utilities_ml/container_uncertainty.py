@@ -59,7 +59,7 @@ def fudge_100_test_patients(pr_dict):
     for key, val in zip(pr_dict.keys(), pr_dict.values()):
         # The double rounding looks stupid but is more likely to result in
         # exactly 100 patients. Rounding directly to 0d.p. sometimes gives
-        # 99 patients. 
+        # 99 patients or 101 patients.
         # Add 1e-5 to make 0.5 round up to 1.0 instead of down to 0.0.
         copy_dict[key] = np.round(1e-5 + np.round(100.0 * val / n_total, 1), 0).astype(int)
     # Check if this adds up to 100:
@@ -70,8 +70,13 @@ def fudge_100_test_patients(pr_dict):
         # Have to do the longer way.
         pass
 
-
     # Fudge 100 patients exactly.
+    # Initially take just the integer parts of the numbers once
+    # they've been scaled from n_total to 100.
+    # Then add or subtract from the integers until the sum is 100.
+    # Start by adding to numbers with large fractional parts
+    # or subtracting from numbers with small fractional parts.
+
     arr = []
     for key, val in zip(pr_dict.keys(), pr_dict.values()):
         # Get a proportion out of 100:
@@ -131,7 +136,7 @@ def fudge_100_test_patients(pr_dict):
 
 def write_accuracy(pr_dict):
     n_total = np.sum(list(pr_dict.values()))
-    
+
     n_true_pos = pr_dict['yy'] + pr_dict['myy']
     n_true_neg = pr_dict['nn'] + pr_dict['mnn']
 
@@ -167,8 +172,10 @@ def write_confusion_matrix(pr_dict):
     # Change the background colour "background-color" of the box
     # and the colour of the text "color".
     # Use these colours...
-    colour_true = 'rgba(127, 255, 127, 0.2)'
-    colour_false = 'rgba(255, 127, 127, 0.2)'
+    # colour_true = 'rgba(127, 255, 127, 0.2)'
+    # colour_false = 'rgba(255, 127, 127, 0.2)'
+    colour_true = 'rgba(0, 209, 152, 0.2)'
+    colour_false = 'rgba(255, 116, 0, 0.2)'
     # ... in this pattern:
     colour_grid = [
         [colour_true, colour_true, colour_false, colour_false],
