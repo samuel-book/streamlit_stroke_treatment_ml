@@ -48,30 +48,96 @@ def get_numbers_each_accuracy_band(test_probs, test_reals):
         'ny':pr_ny,
         'nn':pr_nn,
     }
+
     return pr_dict
 
+def fudge_100_test_patients(pr_dict):
+    n_total = np.sum(list(pr_dict.values()))
 
-def write_accuracy(pr_dict, n_total):
-    df = pd.DataFrame(
-        np.array([
-            ['✔️', ' ✔️', 'Correct', f'{pr_dict["yy"]}'],
-            ['❌', ' ❌', 'Correct',  f'{pr_dict["nn"]}'],
-            ['❓✔️', ' ✔️', 'Correct',  f'{pr_dict["myy"]}'],
-            ['❓❌', ' ❌', 'Correct',  f'{pr_dict["mnn"]}'],
-            ['✔️', ' ❌', 'Wrong',  f'{pr_dict["yn"]}'],
-            ['❌', ' ✔️', 'Wrong',  f'{pr_dict["ny"]}'],
-            ['❓✔️', ' ❌', 'Wrong',  f'{pr_dict["myn"]}'],
-            ['❓❌', ' ✔️', 'Wrong',  f'{pr_dict["mny"]}']
-            ]),
-        columns=['Predicted', 'Actual', 'Match?', 'Number'],
-    )
-    st.table(df)
+    # First try the easy way.
+    copy_dict = {}
+    for key, val in zip(pr_dict.keys(), pr_dict.values()):
+        # The double rounding looks stupid but is more likely to result in
+        # exactly 100 patients. Rounding directly to 0d.p. sometimes gives
+        # 99 patients. 
+        # Add 1e-5 to make 0.5 round up to 1.0 instead of down to 0.0.
+        copy_dict[key] = np.round(1e-5 + np.round(100.0 * val / n_total, 1), 0).astype(int)
+    # Check if this adds up to 100:
+    sum_int = np.sum(list(copy_dict.values()))
+    if sum_int == 100:
+        return copy_dict
+    else:
+        # Have to do the longer way.
+        pass
 
 
-    st.write(f'Confidently correct: {(pr_dict["yy"] + pr_dict["nn"])} patients: {(pr_dict["yy"] + pr_dict["nn"]) / n_total:.0%}')
-    st.write(f'Unsure and correct: {(pr_dict["myy"] + pr_dict["mnn"])} patients: {(pr_dict["myy"] + pr_dict["mnn"]) / n_total:.0%}')
-    st.write(f'Unsure and wrong: {(pr_dict["myn"] + pr_dict["mny"])} patients: {(pr_dict["myn"] + pr_dict["mny"]) / n_total:.0%}')
-    st.write(f'Confidently wrong: {(pr_dict["yn"] + pr_dict["ny"])} patients: {(pr_dict["yn"] + pr_dict["ny"]) / n_total:.0%}')
+    # Fudge 100 patients exactly.
+    arr = []
+    for key, val in zip(pr_dict.keys(), pr_dict.values()):
+        # Get a proportion out of 100:
+        v = 100.0 * val / n_total
+        # Store the integer part of v (int(v)),
+        # the bit after the decimal point (v%1),
+        # and values to track how many times the integer part
+        # has been fudged upwards and downwards.
+        row = [key, int(v), v % 1, 0, 0]
+        arr.append(row)
+    arr = np.array(arr, dtype=object)
+
+    # Cut off this process after 20 loops.
+    loops = 0
+    sum_int = np.sum(arr[:, 1])
+
+    while loops < 20:
+        if sum_int < 100:
+            # Pick out the values that have been added to
+            # the fewest times.
+            min_change = np.min(arr[:, 3])
+            inds_min_change = np.where(arr[:, 3] == min_change)
+            # Of these, pick out the value with the largest
+            # fractional part.
+            largest_frac = np.max(arr[inds_min_change, 2])
+            ind_largest_frac = np.where(arr[:, 2] == largest_frac)
+            # Add one to the integer part of this value
+            # and record the change in column 3.
+            arr[ind_largest_frac, 1] += 1
+            arr[ind_largest_frac, 3] += 1
+        elif sum_int > 100:
+            # Pick out the values that have been subtracted from
+            # the fewest times.
+            min_change = np.min(arr[:, 4])
+            inds_min_change = np.where(arr[:, 4] == min_change)
+            # Of these, pick out the value with the smallest
+            # fractional part.
+            smallest_frac = np.min(arr[inds_min_change, 2])
+            ind_smallest_frac = np.where(arr[:, 2] == smallest_frac)
+            # Subtract one from the integer part of this value
+            # and record the change in column 3.
+            arr[ind_smallest_frac, 1] -= 1
+            arr[ind_smallest_frac, 4] += 1
+        sum_int = np.sum(arr[:, 1])
+        if sum_int == 100:
+            loops = 20
+        else:
+            loops += 1
+
+    copy_dict = {}
+    for i in range(arr.shape[0]):
+        key = arr[i, 0]
+        copy_dict[key] = arr[i, 1]
+
+    return copy_dict
+
+
+def write_accuracy(pr_dict):
+    n_total = np.sum(list(pr_dict.values()))
+    
+    n_true_pos = pr_dict['yy'] + pr_dict['myy']
+    n_true_neg = pr_dict['nn'] + pr_dict['mnn']
+
+    acc = 100.0 * (n_true_pos + n_true_neg) / n_total
+
+    st.markdown(f'__Accuracy: {acc:.1f}%__')
 
 
 def write_confusion_matrix(pr_dict):
@@ -79,8 +145,15 @@ def write_confusion_matrix(pr_dict):
         [pr_dict['yy'], pr_dict['myy'], pr_dict['mny'], pr_dict['ny']],
         [pr_dict['yn'], pr_dict['myn'], pr_dict['mnn'], pr_dict['nn']]
     ])
-    # Scale values to match 100 patients.
-    table = np.round(100.0 * table / np.sum(table), 0).astype(int)
+    n_total = np.sum(table)
+
+    # # Scale values to match 100 patients.
+    # table = np.round(1e-5 + np.round(100.0 * table / n_total, 1), 0)
+    # table = np.round(table, 0)
+    # n_total = np.sum(table)
+    # st.write(n_total)
+    # st.write(table)
+
 
     df = pd.DataFrame(
         table,
@@ -119,6 +192,7 @@ def write_confusion_matrix(pr_dict):
     df_to_show = df.style.set_table_styles(styles)
 
     st.table(df_to_show)
+
 
 
 def find_similar_test_patients(user_inputs_dict):

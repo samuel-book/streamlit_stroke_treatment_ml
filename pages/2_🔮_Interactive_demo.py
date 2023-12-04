@@ -358,7 +358,7 @@ def main():
     import numpy as np
 
     # Test data accuracy.
-    from utilities_ml.container_uncertainty import find_similar_test_patients, get_numbers_each_accuracy_band, write_accuracy, write_confusion_matrix
+    from utilities_ml.container_uncertainty import find_similar_test_patients, get_numbers_each_accuracy_band, write_accuracy, write_confusion_matrix, fudge_100_test_patients
 
     st.markdown('--------')
     st.markdown('## ❓ Accuracy and uncertainty')
@@ -379,10 +379,22 @@ def main():
     # Display results:
     with cols_acc[0]:
         st.markdown(
-            f'There are {all_n_total} patients in total in the test data.')
+            f'''
+            __All patients__
+
+            There are {all_n_total} patients in total in the test data.
+            '''
+            )
         if all_n_total > 0:
-            st.markdown('For every 100 patients, the model predictions and actual thrombolysis use are:')
-            write_confusion_matrix(all_pr_dict)
+            all_pr_dict_100 = fudge_100_test_patients(all_pr_dict)
+            write_accuracy(all_pr_dict)
+            tabs_all = st.tabs(['100 patients', 'All patients'])
+            with tabs_all[0]:
+                st.markdown('For every 100 patients, the results are:')
+                write_confusion_matrix(all_pr_dict_100)
+            with tabs_all[1]:
+                st.markdown(f'For all {all_n_total} patients, the results are:')
+                write_confusion_matrix(all_pr_dict)
 
     # Similar test patients:
     # st.write('--------')
@@ -394,10 +406,22 @@ def main():
     with cols_acc[1]:
         # Display results:
         st.markdown(
-            f'There are {similar_n_total} patients like this in the test data.')
+            f'''
+            __Similar patients__
+
+            There are {similar_n_total} patients like this in the test data.
+            '''
+            )
         if similar_n_total > 0:
-            st.markdown('For every 100 patients, the model predictions and actual thrombolysis use are:')
-            write_confusion_matrix(similar_pr_dict)
+            similar_pr_dict_100 = fudge_100_test_patients(similar_pr_dict)
+            write_accuracy(similar_pr_dict)
+            tabs_similar = st.tabs(['100 patients', 'All patients'])
+            with tabs_similar[0]:
+                st.markdown('For every 100 patients, the results are:')
+                write_confusion_matrix(similar_pr_dict_100)
+            with tabs_similar[1]:
+                st.markdown(f'For all {similar_n_total} patients, the results are:')
+                write_confusion_matrix(similar_pr_dict)
 
 
     # ###############################
