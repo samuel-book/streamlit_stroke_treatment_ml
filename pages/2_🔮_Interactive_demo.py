@@ -257,7 +257,6 @@ def main():
     # What are +/- values for each of the features?
     from utilities_ml.container_uncertainty import calculate_uncertainties_for_all_teams
 
-    # df_std_this_patient = get_this_patient_std_df(user_inputs_dict, df_std)
 
     # Convert values to probability:
     # y_offset = 0.3926216513057263
@@ -359,7 +358,7 @@ def main():
     import numpy as np
 
     # Test data accuracy.
-    from utilities_ml.container_uncertainty import find_similar_test_patients, get_numbers_each_accuracy_band, write_accuracy
+    from utilities_ml.container_uncertainty import find_similar_test_patients, get_numbers_each_accuracy_band, write_accuracy, write_confusion_matrix
 
     st.markdown('--------')
     st.markdown('## ❓ Accuracy and uncertainty')
@@ -372,28 +371,33 @@ def main():
     all_probs, all_reals, similar_probs, similar_reals = (
         find_similar_test_patients(user_inputs_dict))
 
+    cols_acc = st.columns(2)
     # All test patients:
     # Calculations:
     all_pr_dict = get_numbers_each_accuracy_band(all_probs, all_reals)
     all_n_total = len(all_probs)
     # Display results:
-    st.markdown(
-        f'There are {all_n_total} patients in total in the test data.')
-    if all_n_total > 0:
-        write_accuracy(all_pr_dict, all_n_total)
+    with cols_acc[0]:
+        st.markdown(
+            f'There are {all_n_total} patients in total in the test data.')
+        if all_n_total > 0:
+            st.markdown('For every 100 patients, the model predictions and actual thrombolysis use are:')
+            write_confusion_matrix(all_pr_dict)
 
     # Similar test patients:
-    st.write('--------')
+    # st.write('--------')
     # Calculations:
     similar_pr_dict = get_numbers_each_accuracy_band(
         similar_probs, similar_reals)
     similar_n_total = len(similar_probs)
 
-    # Display results:
-    st.markdown(
-        f'There are {similar_n_total} patients like this in the test data.')
-    if similar_n_total > 0:
-        write_accuracy(similar_pr_dict, similar_n_total)
+    with cols_acc[1]:
+        # Display results:
+        st.markdown(
+            f'There are {similar_n_total} patients like this in the test data.')
+        if similar_n_total > 0:
+            st.markdown('For every 100 patients, the model predictions and actual thrombolysis use are:')
+            write_confusion_matrix(similar_pr_dict)
 
 
     # ###############################
@@ -407,12 +411,12 @@ def main():
     # fig = go.Figure()
     # fig.add_trace(go.Scatter(
     #     x=df_uncert['rank'],
-    #     y=df_uncert['mean_real_shap_prob'],
+    #     y=df_uncert['real_shap_prob'],
     #     error_y=dict(
     #         type='data',
     #         symmetric=False,
-    #         array=df_uncert['upper_limit_real_shap_prob'] - df_uncert['mean_real_shap_prob'],
-    #         arrayminus=df_uncert['mean_real_shap_prob'] - df_uncert['lower_limit_real_shap_prob'],
+    #         array=df_uncert['upper_limit_real_shap_prob'] - df_uncert['real_shap_prob'],
+    #         arrayminus=df_uncert['real_shap_prob'] - df_uncert['lower_limit_real_shap_prob'],
     #     )
     # ))
     # fig.update_yaxes(range=[0.0, 1.0])
@@ -426,8 +430,13 @@ def main():
     explainer = load_explainer()
     shap_values_all_teams = explainer.shap_values(X)
 
+    from utilities_ml.container_uncertainty import get_this_patient_std_df
+    df_std_this_patient = get_this_patient_std_df(user_inputs_dict, df_std)
+    st.write(df_std_this_patient)
+
     # Get all SHAP values for this feature:
     std_list = []
+
     import plotly.graph_objects as go
     fig = go.Figure()
     fig.update_layout(
@@ -455,6 +464,23 @@ def main():
             marker_color='black',
             showlegend=False
         ))
+
+        # Get reference value:
+        df_here = df_std_this_patient[df_std_this_patient['feature'] == feature]
+        mean_ref = df_here['mean_shap'].values[0]
+        std_ref = df_here['std_shap'].values[0]
+        fig.add_trace(go.Scatter(
+            y=[mean_ref],
+            x=[feature],
+            error_y=dict(
+                type='data',
+                array=[std_ref],
+                visible=True
+            ),
+            marker_color='red',
+            showlegend=False
+        ))
+
         # fig.update_layout(title_text=feature)
         
     fig.update_yaxes(range=[-2.5, 2.5])

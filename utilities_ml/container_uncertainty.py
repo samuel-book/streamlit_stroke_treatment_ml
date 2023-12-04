@@ -74,6 +74,53 @@ def write_accuracy(pr_dict, n_total):
     st.write(f'Confidently wrong: {(pr_dict["yn"] + pr_dict["ny"])} patients: {(pr_dict["yn"] + pr_dict["ny"]) / n_total:.0%}')
 
 
+def write_confusion_matrix(pr_dict):
+    table = np.array([
+        [pr_dict['yy'], pr_dict['myy'], pr_dict['mny'], pr_dict['ny']],
+        [pr_dict['yn'], pr_dict['myn'], pr_dict['mnn'], pr_dict['nn']]
+    ])
+    # Scale values to match 100 patients.
+    table = np.round(100.0 * table / np.sum(table), 0).astype(int)
+
+    df = pd.DataFrame(
+        table,
+        columns=['Predict ✔️', 'Predict ❓✔️', 'Predict ❓❌', 'Predict ❌']
+    )
+    df['Actual'] = ['Real ✔️', 'Real ❌']
+    df = df.set_index('Actual')
+
+    # Apply styles to colour the backgrounds:
+    styles=[]
+    # Change the background colour "background-color" of the box
+    # and the colour of the text "color".
+    # Use these colours...
+    colour_true = 'rgba(0, 256, 0, 0.3)'
+    colour_false = 'rgba(256, 0, 0, 0.3)'
+    # ... in this pattern:
+    colour_grid = [
+        [colour_true, colour_true, colour_false, colour_false],
+        [colour_false, colour_false, colour_true, colour_true]
+    ]
+    # Update each cell individually:
+    for r, row in enumerate(colour_grid):
+        for c, col in enumerate(row):
+            colour = colour_grid[r][c]
+            # c+2 because HTML has one-indexing,
+            # and the "first" header is the one above the index.
+            # nth-child(2) is the header for the first proper column,
+            # the one that's 0th in the list according to pandas.
+            # (Working this out has displeased me greatly.)
+            styles.append({
+                'selector': f"tr:nth-child({r+1}) td:nth-child({c+2})",
+                'props': [("background-color", f"{colour}"),
+                        ("color", "black")]
+                })
+    # Apply these styles to the pandas DataFrame:
+    df_to_show = df.style.set_table_styles(styles)
+
+    st.table(df_to_show)
+
+
 def find_similar_test_patients(user_inputs_dict):
     # What are the inds to look up similar test patients?
     masks_severity = [
@@ -298,13 +345,13 @@ def calculate_uncertainties_for_all_teams_from_test_data(stroke_teams_list, df_s
         ind = (X[f'team_{team}'] == 1)
         # X_here = X[ind]
         shap_values = shap_values_all_teams[ind, :]
-        mean_real_shap = np.sum(shap_values)
+        real_shap = np.sum(shap_values)
 
         uncert_shap = make_shap_uncert(team, df_std_teams, uncert_shap_without_team)
 
-        upper_limit_real_shap = mean_real_shap + uncert_shap
-        lower_limit_real_shap = mean_real_shap - uncert_shap
-        mean_real_shap_prob = convert_shap_logodds_to_prob(mean_real_shap, x_offset)
+        upper_limit_real_shap = real_shap + uncert_shap
+        lower_limit_real_shap = real_shap - uncert_shap
+        real_shap_prob = convert_shap_logodds_to_prob(real_shap, x_offset)
         upper_limit_real_shap_prob = convert_shap_logodds_to_prob(upper_limit_real_shap, x_offset)
         lower_limit_real_shap_prob = convert_shap_logodds_to_prob(lower_limit_real_shap, x_offset)
 
@@ -315,11 +362,11 @@ def calculate_uncertainties_for_all_teams_from_test_data(stroke_teams_list, df_s
         # lower_limit_shap_prob = convert_shap_logodds_to_prob(lower_limit_shap, x_offset)
 
         row = [
-            mean_real_shap,
+            real_shap,
             uncert_shap,
             upper_limit_real_shap,
             lower_limit_real_shap,
-            mean_real_shap_prob,
+            real_shap_prob,
             upper_limit_real_shap_prob,
             lower_limit_real_shap_prob,
             # mean_shap,
@@ -334,11 +381,11 @@ def calculate_uncertainties_for_all_teams_from_test_data(stroke_teams_list, df_s
     df_uncert = pd.DataFrame(
         arr,
         columns=[
-            'mean_real_shap',
+            'real_shap',
             'uncert_shap',
             'upper_limit_real_shap',
             'lower_limit_real_shap',
-            'mean_real_shap_prob',
+            'real_shap_prob',
             'upper_limit_real_shap_prob',
             'lower_limit_real_shap_prob',
             # 'mean_shap',
@@ -349,8 +396,8 @@ def calculate_uncertainties_for_all_teams_from_test_data(stroke_teams_list, df_s
             # 'lower_limit_shap_prob',
         ]
         )
-    df_uncert = df_uncert.sort_values('mean_real_shap_prob', ascending=False)
-    df_uncert['rank'] = np.arange(len(df_uncert))
+    df_uncert = df_uncert.sort_values('real_shap_prob', ascending=False)
+    df_uncert['rank'] = 1 + np.arange(len(df_uncert))
     return df_uncert
 
 
@@ -387,16 +434,16 @@ def calculate_uncertainties_for_all_teams(stroke_teams_list, df_std_teams, X, x_
         ind = (X[f'team_{team}'] == 1)
         # X_here = X[ind]
         shap_values = shap_values_all_teams[ind, :]
-        mean_real_shap = np.sum(shap_values)
+        real_shap = np.sum(shap_values)
 
         # This adds on the uncertainty from the stroke team ID
         # based on the variation in SHAP for this stroke team feature
         # across all of the test data.
         uncert_shap = make_shap_uncert(team, df_std_teams, uncert_shap_without_team)
 
-        upper_limit_real_shap = mean_real_shap + uncert_shap
-        lower_limit_real_shap = mean_real_shap - uncert_shap
-        mean_real_shap_prob = convert_shap_logodds_to_prob(mean_real_shap, x_offset)
+        upper_limit_real_shap = real_shap + uncert_shap
+        lower_limit_real_shap = real_shap - uncert_shap
+        real_shap_prob = convert_shap_logodds_to_prob(real_shap, x_offset)
         upper_limit_real_shap_prob = convert_shap_logodds_to_prob(upper_limit_real_shap, x_offset)
         lower_limit_real_shap_prob = convert_shap_logodds_to_prob(lower_limit_real_shap, x_offset)
 
@@ -407,11 +454,11 @@ def calculate_uncertainties_for_all_teams(stroke_teams_list, df_std_teams, X, x_
         # lower_limit_shap_prob = convert_shap_logodds_to_prob(lower_limit_shap, x_offset)
 
         row = [
-            mean_real_shap,
+            real_shap,
             uncert_shap,
             upper_limit_real_shap,
             lower_limit_real_shap,
-            mean_real_shap_prob,
+            real_shap_prob,
             upper_limit_real_shap_prob,
             lower_limit_real_shap_prob,
             # mean_shap,
@@ -426,11 +473,11 @@ def calculate_uncertainties_for_all_teams(stroke_teams_list, df_std_teams, X, x_
     df_uncert = pd.DataFrame(
         arr,
         columns=[
-            'mean_real_shap',
+            'real_shap',
             'uncert_shap',
             'upper_limit_real_shap',
             'lower_limit_real_shap',
-            'mean_real_shap_prob',
+            'real_shap_prob',
             'upper_limit_real_shap_prob',
             'lower_limit_real_shap_prob',
             # 'mean_shap',
@@ -441,6 +488,6 @@ def calculate_uncertainties_for_all_teams(stroke_teams_list, df_std_teams, X, x_
             # 'lower_limit_shap_prob',
         ]
         )
-    df_uncert = df_uncert.sort_values('mean_real_shap_prob', ascending=False)
-    df_uncert['rank'] = np.arange(len(df_uncert))
+    df_uncert = df_uncert.sort_values('real_shap_prob', ascending=False)
+    df_uncert['rank'] = np.arange(len(df_uncert)) + 1
     return df_uncert

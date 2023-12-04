@@ -114,13 +114,13 @@ def main(sorted_results, hb_teams_input, use_plotly_events,
 
     # Uncertainty
     fig.add_trace(go.Scatter(
-        x=1+df_uncert['rank'],
-        y=100.0*df_uncert['mean_real_shap_prob'],
+        x=df_uncert['rank'],
+        y=100.0*df_uncert['real_shap_prob'],
         error_y=dict(
             type='data',
             symmetric=False,
-            array=100.0*(df_uncert['upper_limit_real_shap_prob'] - df_uncert['mean_real_shap_prob']),
-            arrayminus=100.0*(df_uncert['mean_real_shap_prob'] - df_uncert['lower_limit_real_shap_prob']),
+            array=100.0*(df_uncert['upper_limit_real_shap_prob'] - df_uncert['real_shap_prob']),
+            arrayminus=100.0*(df_uncert['real_shap_prob'] - df_uncert['lower_limit_real_shap_prob']),
         )
     ))
 
