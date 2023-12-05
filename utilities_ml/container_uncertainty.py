@@ -283,7 +283,7 @@ def find_similar_test_patients(user_inputs_dict):
     test_probs = all_probs[mask]
     test_reals = all_reals[mask]
 
-    return all_probs, all_reals, test_probs, test_reals
+    return all_probs, all_reals, test_probs, test_reals, mask_number
 
 
 def get_std_from_df(df, col, value):

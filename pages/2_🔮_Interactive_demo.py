@@ -250,6 +250,7 @@ def main():
 
     # Uncertainty:
     import pandas as pd
+    # UPDATE THIS PATH LATER FOR COMBO APP ---------------------------------------------
     df_std = pd.read_csv(f'./data_ml/shap_std.csv')
     # Pick out just the teams:
     df_std_teams = df_std[df_std['feature'].str.contains('team')]
@@ -265,6 +266,11 @@ def main():
     # Calculate uncertainties for all teams:
     # df_uncert = calculate_uncertainties_for_all_teams_from_test_data(stroke_teams_list, df_std_teams, df_std_this_patient, X, x_offset)
     df_uncert = calculate_uncertainties_for_all_teams(stroke_teams_list, df_std_teams, X, x_offset)
+
+    # Import training data group sizes.
+    # UPDATE THIS PATH LATER FOR COMBO APP ---------------------------------------------
+    df_training_groups = pd.read_csv(f'./data_ml/train_group_sizes.csv')
+
 
     # ###########################
     # ######### RESULTS #########
@@ -368,8 +374,12 @@ def main():
     # patients, the other only patients who are similar to the selected
     # patient details.
     # TO DO - detail what "similar" means.
-    all_probs, all_reals, similar_probs, similar_reals = (
+    all_probs, all_reals, similar_probs, similar_reals, mask_number = (
         find_similar_test_patients(user_inputs_dict))
+    
+    # How many patients like this were in the training data?
+    n_train_all_patients = df_training_groups['number_of_patients'].sum()
+    n_train_similar_patients = df_training_groups[df_training_groups['mask_number'] == mask_number]['number_of_patients'].values[0]
 
     cols_acc = st.columns(2, gap='large')
     # All test patients:
@@ -381,6 +391,8 @@ def main():
         st.markdown(
             f'''
             __All patients__
+
+            There are {n_train_all_patients} patients in total in the training data.
 
             There are {all_n_total} patients in total in the test data.
             '''
@@ -401,6 +413,8 @@ def main():
         st.markdown(
             f'''
             __Similar patients__
+
+            There are {n_train_similar_patients} patients like this in the training data.
 
             There are {similar_n_total} patients like this in the test data.
             '''
