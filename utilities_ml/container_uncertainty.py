@@ -102,7 +102,10 @@ def fudge_100_test_patients(pr_dict):
             # Of these, pick out the value with the largest
             # fractional part.
             largest_frac = np.max(arr[inds_min_change, 2])
-            ind_largest_frac = np.where(arr[:, 2] == largest_frac)
+            ind_largest_frac = np.where(
+                (arr[:, 2] == largest_frac) &
+                (arr[:, 3] == min_change)
+                )
             if len(ind_largest_frac[0]) > 1:
                 # Arbitrarily pick the first if multiple options.
                 ind_largest_frac = ind_largest_frac[0][0]
@@ -118,7 +121,10 @@ def fudge_100_test_patients(pr_dict):
             # Of these, pick out the value with the smallest
             # fractional part.
             smallest_frac = np.min(arr[inds_min_change, 2])
-            ind_smallest_frac = np.where(arr[:, 2] == smallest_frac)
+            ind_smallest_frac = np.where(
+                (arr[:, 2] == smallest_frac) &
+                (arr[:, 4] == min_change)
+                )
             if len(ind_smallest_frac[0]) > 1:
                 # Arbitrarily pick the first if multiple options.
                 ind_smallest_frac = ind_smallest_frac[0][0]
