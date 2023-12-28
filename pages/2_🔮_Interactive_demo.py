@@ -248,27 +248,9 @@ def main():
                           highlighted_teams_list, benchmark_rank_list,
                           hb_teams_list)
 
-    # Uncertainty:
-    import pandas as pd
-    # UPDATE THIS PATH LATER FOR COMBO APP ---------------------------------------------
-    df_std = pd.read_csv(f'./data_ml/shap_std.csv')
-    # Pick out just the teams:
-    df_std_teams = df_std[df_std['feature'].str.contains('team')]
-
-    # What are +/- values for each of the features?
-    from utilities_ml.container_uncertainty import calculate_uncertainties_for_all_teams
-
-
-    # Convert values to probability:
-    # y_offset = 0.3926216513057263
-    x_offset = -0.85  # eyeballed - see notebook where expit defined
-
-    # Calculate uncertainties for all teams:
-    # df_uncert = calculate_uncertainties_for_all_teams_from_test_data(stroke_teams_list, df_std_teams, df_std_this_patient, X, x_offset)
-    df_uncert = calculate_uncertainties_for_all_teams(stroke_teams_list, df_std_teams, X, x_offset)
-
     # Import training data group sizes.
     # UPDATE THIS PATH LATER FOR COMBO APP ---------------------------------------------
+    import pandas as pd
     df_training_groups = pd.read_csv(f'./data_ml/train_group_sizes.csv')
 
 
@@ -351,7 +333,6 @@ def main():
             use_plotly_events,
             default_highlighted_team,
             display_name_of_default_highlighted_team,
-            df_uncert
             )
 
 
@@ -367,7 +348,7 @@ def main():
     from utilities_ml.container_uncertainty import find_similar_test_patients, get_numbers_each_accuracy_band, write_accuracy, write_confusion_matrix, fudge_100_test_patients
 
     st.markdown('--------')
-    st.markdown('## ❓ Accuracy and uncertainty')
+    st.markdown('## ❓ Accuracy')
     st.markdown('### How accurate is the model?')
     # Predicted probabilities and the true thrombolysis yes/no results
     # for "test data" patients. Two lists - one contains all test
@@ -446,97 +427,6 @@ def main():
                 # Similar test patients:
                 st.markdown(f'For the {similar_n_total} similar test patients, the results are:')
                 write_confusion_matrix(similar_pr_dict)
-
-
-
-
-    # ###############################
-    # ######### UNCERTAINTY #########
-    # ###############################
-
-    st.markdown('### Uncertainty')
-    
-    # # Plot these errorbars:
-    # import plotly.graph_objects as go
-    # fig = go.Figure()
-    # fig.add_trace(go.Scatter(
-    #     x=df_uncert['rank'],
-    #     y=df_uncert['real_shap_prob'],
-    #     error_y=dict(
-    #         type='data',
-    #         symmetric=False,
-    #         array=df_uncert['upper_limit_real_shap_prob'] - df_uncert['real_shap_prob'],
-    #         arrayminus=df_uncert['real_shap_prob'] - df_uncert['lower_limit_real_shap_prob'],
-    #     )
-    # ))
-    # fig.update_yaxes(range=[0.0, 1.0])
-    # st.plotly_chart(fig)
-
-    st.write(df_uncert)
-
-    st.write('### Testing - variation in SHAP across teams')
-    # Get SHAP:
-    from utilities_ml.inputs import load_explainer
-    explainer = load_explainer()
-    shap_values_all_teams = explainer.shap_values(X)
-
-    from utilities_ml.container_uncertainty import get_this_patient_std_df
-    df_std_this_patient = get_this_patient_std_df(user_inputs_dict, df_std)
-    st.write(df_std_this_patient)
-
-    # Get all SHAP values for this feature:
-    std_list = []
-
-    import plotly.graph_objects as go
-    fig = go.Figure()
-    fig.update_layout(
-        height=800,
-        # width=690
-        )
-    for i, feature in enumerate(headers_X[:9]):
-        vals = shap_values_all_teams[:, i]
-        std = np.std(vals)
-        std_list.append(std)
-        fig.add_trace(go.Violin(
-            y=vals,
-            x=[feature for v in vals],
-            showlegend=False,
-            line=dict(color='grey'),
-        ))
-        fig.add_trace(go.Scatter(
-            y=[np.mean(vals)],
-            x=[feature],
-            error_y=dict(
-                type='data',
-                array=[std],
-                visible=True
-            ),
-            marker_color='black',
-            showlegend=False
-        ))
-
-        # Get reference value:
-        df_here = df_std_this_patient[df_std_this_patient['feature'] == feature]
-        mean_ref = df_here['mean_shap'].values[0]
-        std_ref = df_here['std_shap'].values[0]
-        fig.add_trace(go.Scatter(
-            y=[mean_ref],
-            x=[feature],
-            error_y=dict(
-                type='data',
-                array=[std_ref],
-                visible=True
-            ),
-            marker_color='red',
-            showlegend=False
-        ))
-
-        # fig.update_layout(title_text=feature)
-        
-    fig.update_yaxes(range=[-2.5, 2.5])
-    st.plotly_chart(fig)
-
-    st.write(pd.DataFrame(np.array(std_list).reshape(1, 9), columns=headers_X[:9]))
 
 
     # ----- The end! -----
