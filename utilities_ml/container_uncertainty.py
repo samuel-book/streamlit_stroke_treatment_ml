@@ -147,15 +147,14 @@ def fudge_100_test_patients(pr_dict):
     return copy_dict
 
 
-def write_accuracy(pr_dict):
+def find_accuracy(pr_dict):
     n_total = np.sum(list(pr_dict.values()))
 
     n_true_pos = pr_dict['yy'] + pr_dict['myy']
     n_true_neg = pr_dict['nn'] + pr_dict['mnn']
 
     acc = 100.0 * (n_true_pos + n_true_neg) / n_total
-
-    st.markdown(f'The model predicts correctly __{acc:.1f}%__ of the time for these patients.')
+    return acc
 
 
 def write_confusion_matrix(pr_dict):
