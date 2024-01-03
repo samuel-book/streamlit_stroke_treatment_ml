@@ -147,12 +147,26 @@ def main(sorted_results, n_benchmark_teams):
     else:
         extra_str = ' would not'
         decision_emoji = ':x:'
-    st.error(
-        f'''
-        __Benchmark decision:__ {decision_emoji}{extra_str} thrombolyse
-        '''  # this patient.'
-    )
+    
+    cols_text = st.columns([1, 2])
+    with cols_text[0]:
+        st.error(
+            f'''
+            __Benchmark decision:__  
+            {decision_emoji}{extra_str} thrombolyse
+            '''  # this patient.'
+        )
+    with cols_text[1]:
+        # How treatable is this patient:
 
+        st.markdown(
+            f'''
+            ## 
+            
+            The mean probability of thrombolysis across all teams is
+            __{sorted_results["Probability_perc"].mean():.0f}%__.
+            '''
+            )
 
 def make_marker_grid(n_yes, n_maybe, n_no):
     # Format the string so ten markers appear per row.

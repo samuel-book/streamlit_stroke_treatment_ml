@@ -61,7 +61,7 @@ def main():
 
     st.markdown(
         '''
-        The SAMueL-2 model gives the probability of
+        The SAMueL-2 model finds the probability of
         any stroke team thrombolysing any patient.
         '''
         )
@@ -76,7 +76,8 @@ def main():
     st.markdown(
         '''
         We can use the same patient details
-        for all stroke teams to compare the decisions of different teams.
+        for all stroke teams
+        to compare their decision-making.
         ''',
         help=''.join([
             '🔍 - [Which stroke teams are included?]',
@@ -86,76 +87,86 @@ def main():
             f'({path_to_details}what-do-the-probabilities-mean)'
         ])
         )
+
+    # DATA USED
+    st.markdown('')  # Breathing room
     st.subheader('Data used to make the model')
-    st.markdown(
-        '''
-        We use data sets called __🔮 Training data__ (110,000 patients)
-        and __🔮 Testing data__ (10,000 patients)
-        which have these properties:
-        ''',
-        help=''.join([
-            '🔍 - [What data is used?]',
-            f'({path_to_details}what-data-is-used)',
-        ])
-    )
-    st.markdown(
-        '''
-        | | |
-        | --- | --- |
-        | ✨ Cleaned | ⏰ Onset time known |
-        | 🚑 Ambulance arrivals | ⏳🩻 Onset to scan under 4 hours |
-        | 👥 Teams with over 250 admissions | 🪚 Only 10 features |
-        | 💉 Teams with at least 10 thrombolysis |  |
-
-        '''
-    )
-
-    st.subheader('How we categorise the results')
-    cols_method = st.columns(3)
-    with cols_method[0]:
-        st.info(
+    cols_data_etc = st.columns([1, 2])
+    with cols_data_etc[0]:
+        st.markdown(
             '''
-            __Thrombolysis: yes or no?__
+            There are two data sets:
+            ''',
+            help=''.join([
+                '🔍 - [What data is used?]',
+                f'({path_to_details}what-data-is-used)',
+            ])
+        )
+        st.markdown(
+            '''            
+            __🔮 Training__ (110,000 patients)  
+            __🔮 Testing__ (10,000 patients)
 
-            If probability is at least 66.6%:  
-            ✔️ would thrombolyse
+            The patients cover England and Wales from 2016 to 2021
+            and meet the conditions in this box.
+            '''
+        )
 
-            If probability is between 33.3% and 66.6%:  
-            ❓ might thrombolyse
-
-            If probability is below 33.3%:  
-            ❌ would not thrombolyse
+    with cols_data_etc[1]:
+        container_data = st.container(border=True)
+    with container_data:
+        cols_data = st.columns(2)
+    with cols_data[0]:
+        st.markdown(
+            '''
+            ✨ Impossible data cleaned.  
+            🚑 Arrived by ambulance.  
+            🪚 Data limited to 10 details.  
+            ⏰ Onset time known.  
+            🩻 Onset to scan under 4 hours.  
             '''
             )
-    with cols_method[1]:
-        container_bench = st.container(border=True)
-        with container_bench:
-            st.markdown('__Benchmark teams__')
-            st.markdown(
-                '''
-                These teams are more likely than average to give
-                thrombolysis to most patients.
-                ''',
-                help=''.join([
-                    '🔍 - [What are benchmark teams?]',
-                    f'({path_to_details}what-are-benchmark-teams)',
-                    '\n\n',
-                    '🔍 - [How are they picked?]',
-                    f'({path_to_details}how-are-the-benchmark-teams-picked)'
-                    ])
-                )
-    with cols_method[2]:
-        st.error(
+    with cols_data[1]:
+        st.markdown(
             '''
-            __Benchmark decision__
+            👥 Admission team had over 250 admissions.  
+            💉 Admission team thrombolysed at least 10 patients.  
+            '''
+            )
+    # ⏳🩻 Alternative emoji for onset to scan
 
-            Each benchmark team can pick one of:  
-            ✔️ would thrombolyse  
-            ❓ might thrombolyse  
-            ❌ would not thrombolyse
+    st.markdown('')  # Breathing room
+    st.subheader('How we categorise the results')
+    cols_method = st.columns([6, 4])
+    with cols_method[0]:
+        st.markdown(
+            '''
+            | Probability | Decision |
+            | --- | --- |
+            | At least 66.6% | ✔️ would thrombolyse |
+            | From 33.3% to 66.6% | ❓ might thrombolyse |
+            | Below 33.3% | ❌ would not thrombolyse |
+            '''
+            )
 
-            The overall benchmark decision is the
-            option picked by the biggest number of benchmark teams.
+    with cols_method[1]:
+        st.markdown(
+            '''
+            :red[__Benchmark teams__] are more likely than average to choose
+            thrombolysis.
+            ''',
+            help=''.join([
+                '🔍 - [What are benchmark teams?]',
+                f'({path_to_details}what-are-benchmark-teams)',
+                '\n\n',
+                '🔍 - [How are they picked?]',
+                f'({path_to_details}how-are-the-benchmark-teams-picked)'
+                ])
+            )
+        st.markdown(
+            '''
+            The :red[__benchmark decision__] is the
+            option picked by most of the benchmark teams.
             '''
             )
 
@@ -164,24 +175,21 @@ def main():
         use_plotly_events, container_input_patient_details = (
             set_up_sidebar(path_to_details))
 
-    st.header(':abacus: Predictions for this patient', divider='blue')
-    st.info(
-        'The patient details can be viewed and changed in the left sidebar.',
-        icon='ℹ️'
-        )
+    st.markdown('#')  # Breathing room
+    st.markdown('#')  # Breathing room
+    st.header(':abacus: Results for this patient', divider='blue')
+    st.markdown(''':blue[The patient details can be viewed and
+                changed in the left sidebar.]''')
 
     # Draw some empty containers on the page.
     # They'll appear in this order, but we'll fill them in another order.
-    st.subheader('How many teams would thrombolyse this patient?')
+    st.markdown('')  # Breathing room
+    st.subheader('How many teams would choose thrombolysis?')
     container_metrics = st.container(border=True)
 
-    container_propensity = st.container()
-    with container_propensity:
-        st.subheader('How treatable is this patient?')
-
+    st.markdown('')  # Breathing room
     container_highlighted_summary = st.container()
     with container_highlighted_summary:
-        # st.header('')  # Breathing room
         st.subheader('What would your team do?')
         st.caption(
             '''
@@ -206,6 +214,8 @@ def main():
         with cols_highlighted_summary[0]:
             container_input_highlighted_teams = st.container()
 
+    st.markdown(' ')  # Breathing room
+    st.markdown('')  # Breathing room
     container_bar_chart = st.container()
     with container_bar_chart:
         st.subheader('How likely is thrombolysis for each team?')
@@ -261,16 +271,6 @@ def main():
         # Print metrics for how many teams would thrombolyse:
         utilities_ml.container_metrics.main(sorted_results, n_benchmark_teams)
 
-    with container_propensity:
-        # How treatable is this patient:
-        st.markdown(
-            f'''
-            The mean probability of thrombolysis across all teams is
-            __{sorted_results["Probability_perc"].mean():.0f}%__.
-            '''
-            )
-
-    line_str = ''
     with container_highlighted_summary:
         highlighted_teams_colours = \
             st.session_state['highlighted_teams_colours']
@@ -285,12 +285,6 @@ def main():
                     # Start a new row:
                     i = 1
                     col = cols[i]
-                    line_str = (
-                        '''
-                        --------------
-
-                        '''
-                        )
                 i += 1
 
                 df_here = sorted_results[sorted_results['HB team'] == team]
@@ -300,29 +294,29 @@ def main():
                 # else:
                     # team = 'Team ' + team
                 with col:
-                    if len(line_str) > 0:
-                        st.markdown(line_str)
-                    write_markdown_in_colour(
-                        '<strong> Team ' + team + '</strong>',
-                        colour=colour_here)
-                    prob_here = df_here['Probability_perc'].values[0]
-                    thromb_here = df_here['Thrombolyse_str'].values[0]
-                    if 'Yes' in thromb_here:
-                        emoji_here = '✔️ '
-                        extra_str = 'would '
-                    elif 'No' in thromb_here:
-                        emoji_here = '❌ '
-                        extra_str = 'would not '
-                    else:
-                        emoji_here = '❓ '
-                        extra_str = 'might '
-                    st.markdown(
-                        f'''
-                        Probability: {prob_here:.2f}%  
-                        {emoji_here}{extra_str}thrombolyse
-                        '''
-                    )
-                    # HTML horizontal rule is <hr> but appears in grey.
+                    con = st.container(border=True)
+                    with con:
+                        write_markdown_in_colour(
+                            '<strong> Team ' + team + '</strong>',
+                            colour=colour_here)
+                        prob_here = df_here['Probability_perc'].values[0]
+                        thromb_here = df_here['Thrombolyse_str'].values[0]
+                        if 'Yes' in thromb_here:
+                            emoji_here = '✔️ '
+                            extra_str = 'would '
+                        elif 'No' in thromb_here:
+                            emoji_here = '❌ '
+                            extra_str = 'would not '
+                        else:
+                            emoji_here = '❓ '
+                            extra_str = 'might '
+                        st.markdown(
+                            f'''
+                            {prob_here:.2f}% chance
+
+                            {emoji_here}{extra_str}thrombolyse
+                            '''
+                        )
 
     with container_bar_chart:
         # Top interactive bar chart:
@@ -346,16 +340,32 @@ def main():
     # Test data accuracy.
     from utilities_ml.container_uncertainty import find_similar_test_patients, get_numbers_each_accuracy_band, find_accuracy, write_confusion_matrix, fudge_100_test_patients
 
+    st.markdown('#')  # Breathing room
+    st.markdown('#')  # Breathing room
     st.header('❓ Accuracy', divider='red')
     st.markdown(
         '''
-        We can measure the accuracy of the model using real-life data.
-        We can predict whether each of the real patients should receive
-        thrombolysis, and then compare the prediction with the real-life
-        decision.
-        The 🔮 __Testing data__ is used for this accuracy test.
+        We can measure the accuracy of the model using the real-life
+        🔮 __Testing data__.  
+        We check whether the real-life treatment decision for each
+        patient matches the model decision.
         '''
         )
+    st.markdown(
+        '''
+        The real decision may be either
+        thrombolysis or not.
+        There is no "❓ might thrombolyse" option.
+
+        | Probability | Decision |
+        | --- | --- |
+        | At least 66.6% | ✔️ would thrombolyse |
+        | From 50.0% to 66.6% | ❓✔️ would thrombolyse |
+        | From 33.3% to 50.0% | ❓❌ would not thrombolyse |
+        | Below 33.3% | ❌ would not thrombolyse |
+        '''
+        )
+    st.markdown(' ')  # Breathing room
     st.subheader('How often do the predictions match reality?')
     # Predicted probabilities and the true thrombolysis yes/no results
     # for "test data" patients. Two lists - one contains all test
@@ -392,19 +402,23 @@ def main():
     else:
         similar_acc = np.NaN
 
+    st.markdown(
+        f'''
+        The model's accuracy is __{all_acc:.1f}%__ for all patients
+        and __{similar_acc:.1f}%__ for patients similar to the given details.
 
-    # st.markdown(f'The model predicts correctly __{acc:.1f}%__ of the time for these patients.')
-    
-    df_patient_numbers = pd.DataFrame(
-        np.array([
-            ['🔮 Training data: number of patients', f'{n_train_all_patients:,}', f'{n_train_similar_patients:,}'],
-            ['🔮 Testing data: number of patients', f'{all_n_total:,}', f'{similar_n_total:,}'],
-            ['Testing accuracy: ', f'{all_acc:.1f}%', f'{similar_acc:.1f}%']
-        ]),
-        columns=['Dataset', 'All patients', 'Similar patients']
+        The number of patients in the __🔮 Training data__ is how many
+        examples the model had to learn from.
+        The number of patients in the __🔮 Testing data__ is how many
+        patients were used to calculate the accuracy rate.
+
+        | | All patients | Similar to this patient |
+        | --- | --- | --- |
+        | 🔮 Training data | {n_train_all_patients:,} | {n_train_similar_patients:,} | 
+        | 🔮 Testing data | {all_n_total:,} | {similar_n_total:,} |
+        '''
     )
-    df_patient_numbers = df_patient_numbers.set_index('Dataset')
-    st.table(df_patient_numbers)
+    st.markdown(' ')  # Breathing room
 
     # Confusion matrix.
     st.subheader('How similar are the predictions to reality?')
@@ -412,11 +426,9 @@ def main():
         '''
         We can show all of the combinations of predicted and
         real-life thrombolysis decisions using the confusion matrix below.
-
-        The model is correct when the prediction of thrombolysis
-        matches the real-life decision.
         '''
         )
+
     tabs_matrix = st.tabs(['Scaled to 100 patients', 'True numbers of patients'])
     with tabs_matrix[0]:
         cols_100 = st.columns(2, gap='large')
