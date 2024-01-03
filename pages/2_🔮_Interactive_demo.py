@@ -338,7 +338,7 @@ def main():
     import numpy as np
 
     # Test data accuracy.
-    from utilities_ml.container_uncertainty import find_similar_test_patients, get_numbers_each_accuracy_band, find_accuracy, write_confusion_matrix, fudge_100_test_patients
+    from utilities_ml.container_uncertainty import find_similar_test_patients, get_numbers_each_accuracy_band, find_accuracy, write_confusion_matrix, write_confusion_matrix_maybe, fudge_100_test_patients
 
     st.markdown('#')  # Breathing room
     st.markdown('#')  # Breathing room
@@ -436,11 +436,13 @@ def main():
             # All test patients, scaled to 100:
             st.markdown('All test patients (out of 100)')
             write_confusion_matrix(all_pr_dict_100)
+            write_confusion_matrix_maybe(all_pr_dict_100)
         with cols_100[1]:
             if similar_n_total > 0:
                 # Similar test patients, scaled to 100:
                 st.markdown('Similar test patients (out of 100)')
                 write_confusion_matrix(similar_pr_dict_100)
+                write_confusion_matrix_maybe(similar_pr_dict_100)
     with tabs_matrix[1]:
         cols_all = st.columns(2, gap='large')
         with cols_all[0]:

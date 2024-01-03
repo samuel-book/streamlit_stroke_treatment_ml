@@ -158,6 +158,91 @@ def find_accuracy(pr_dict):
 
 
 def write_confusion_matrix(pr_dict):
+
+    n_yy = pr_dict['yy'] + pr_dict['myy']
+    n_yn = pr_dict['yn'] + pr_dict['myn']
+    n_ny = pr_dict['ny'] + pr_dict['mny']
+    n_nn = pr_dict['nn'] + pr_dict['mnn']
+
+    table = np.array([
+        [f"{n_yy} ({pr_dict['yy']} ✔️, {pr_dict['myy']} ❓✔️)",
+         f"{n_ny} ({pr_dict['ny']} ❌, {pr_dict['mny']} ❓❌)"],
+        [f"{n_yn} ({pr_dict['yn']} ✔️, {pr_dict['myn']} ❓✔️)",
+         f"{n_nn} ({pr_dict['nn']} ❌, {pr_dict['mnn']} ❓❌)"]
+    ], dtype=object)
+
+    table = np.array([
+        [f"{n_yy}",
+         f"{n_ny}"],
+        # [f"({pr_dict['yy']} ✔️, {pr_dict['myy']} ❓✔️)",
+        #  f"({pr_dict['ny']} ❌, {pr_dict['mny']} ❓❌)"],
+        [f"({pr_dict['yy']} ✔️)", f"({pr_dict['ny']} ❌)"],
+        [f"({pr_dict['myy']} ❓✔️)", f"({pr_dict['mny']} ❓❌)"],
+        [f"{n_yn}",
+         f"{n_nn}"],
+        # [f"({pr_dict['yn']} ✔️, {pr_dict['myn']} ❓✔️)",
+        #  f"({pr_dict['nn']} ❌, {pr_dict['mnn']} ❓❌)"]
+        [f"({pr_dict['yn']} ✔️)", f"{pr_dict['mnn']} ❓❌)",],
+        [f"({pr_dict['myn']} ❓✔️)", f"{pr_dict['nn']} ❌)"]
+    ], dtype=object)
+
+    df = pd.DataFrame(
+        table,
+        columns=['Predict ✔️', 'Predict ❌']
+    )
+    # df['Actual'] = ['Real ✔️', 'Real ✔️', 'Real ❌', 'Real ❌']
+    # df = df.set_index('Actual')
+    df = df.set_index([
+        np.array(['Real ✔️', 'Real ✔️', 'Real ✔️', 'Real ❌', 'Real ❌', 'Real ❌']),
+        np.array(['', '', '', '', '', ''])
+    ])
+
+    # Apply styles to colour the backgrounds:
+    styles=[]
+    # Change the background colour "background-color" of the box
+    # and the colour of the text "color".
+    # Use these colours...
+    # colour_true = 'rgba(127, 255, 127, 0.2)'
+    # colour_false = 'rgba(255, 127, 127, 0.2)'
+    colour_true = 'rgba(0, 209, 152, 0.2)'
+    colour_false = 'rgba(255, 116, 0, 0.2)'
+    colour_blank = 'rgba(0, 0, 0, 0)'
+    # ... in this pattern:
+    colour_grid = [
+        [colour_true, colour_false],
+        [colour_true, colour_false],
+        [colour_true, colour_false],
+        [colour_false, colour_true],
+        [colour_false, colour_true],
+        [colour_false, colour_true]
+    ]
+    # Update each cell individually:
+    for r, row in enumerate(colour_grid):
+        for c, col in enumerate(row):
+            colour = colour_grid[r][c]
+            # Correct for multiindex shift
+            # (who knows why this happens anyway)
+            if r % 3 == 0:
+                c += 1
+            # elif r % 2 == 0:
+            #     c -= 1
+            # c+2 because HTML has one-indexing,
+            # and the "first" header is the one above the index.
+            # nth-child(2) is the header for the first proper column,
+            # the one that's 0th in the list according to pandas.
+            # (Working this out has displeased me greatly.)
+            styles.append({
+                'selector': f"tr:nth-child({r+1}) td:nth-child({c+2})",
+                'props': [("background-color", f"{colour}")],
+                        # ("color", "black")]
+                })
+    # Apply these styles to the pandas DataFrame:
+    df_to_show = df.style.set_table_styles(styles)
+
+    st.write(df_to_show.to_html(), unsafe_allow_html=True)
+
+
+def write_confusion_matrix_maybe(pr_dict):
     table = np.array([
         [pr_dict['yy'], pr_dict['myy'], pr_dict['mny'], pr_dict['ny']],
         [pr_dict['yn'], pr_dict['myn'], pr_dict['mnn'], pr_dict['nn']]
@@ -211,7 +296,6 @@ def write_confusion_matrix(pr_dict):
     df_to_show = df.style.set_table_styles(styles)
 
     st.table(df_to_show)
-
 
 
 def find_similar_test_patients(user_inputs_dict):
