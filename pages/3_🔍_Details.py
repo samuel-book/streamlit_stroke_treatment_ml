@@ -208,7 +208,8 @@ def main():
             inds_benchmark,
             highlighted_teams_list,
             hb_teams_list,
-            hb_teams_input
+            hb_teams_input,
+            user_inputs_dict
         ) = setup_for_app(
             container_input_highlighted_teams,
             container_input_patient_details,
