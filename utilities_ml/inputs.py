@@ -262,12 +262,12 @@ def load_pretrained_model(model_file='model.p'):
 
 
 # @st.cache_resource()  #hash_funcs={'builtins.dict': lambda _: None})
-# def load_explainer():
-#     # Load SHAP explainers
-#     filename = (dir + 'data_ml/shap_explainer.p')
-#     with open(filename, 'rb') as filehandler:
-#         explainer = pickle.load(filehandler)
-#     return explainer
+def load_explainer():
+    # Load SHAP explainers
+    filename = (dir + 'data_ml/shap_explainer.p')
+    with open(filename, 'rb') as filehandler:
+        explainer = pickle.load(filehandler)
+    return explainer
 
 
 # @st.cache_resource()  #hash_funcs={'builtins.dict': lambda _: None})
@@ -428,7 +428,8 @@ def setup_for_app(
         inds_benchmark,
         highlighted_teams_list,
         hb_teams_list,
-        hb_teams_input
+        hb_teams_input,
+        user_inputs_dict
     )
 
 

@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
+import pandas as pd
 
 # For clickable plotly events:
 from streamlit_plotly_events import plotly_events
