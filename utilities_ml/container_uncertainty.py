@@ -14,58 +14,113 @@ except FileNotFoundError:
     dir = 'streamlit_stroke_treatment_ml/'
 
 
-def make_emoji_lists(test_probs, test_reals):
-    # WARNING - thresholds are hard-coded at the moment! 02/DEC/23
-    test_probs_emoji = np.full(test_probs.shape, '')
-    test_probs_emoji[test_probs > 0.66] = '✔️'
-    test_probs_emoji[(test_probs <= 0.66) & (test_probs >= 0.33)] = '❓'
-    test_probs_emoji[test_probs < 0.33] = '❌'
+def get_numbers_each_accuracy_band(test_probs: np.array,
+                                   test_reals: np.array):
+    """
+    Find dict of values for confusion matrix.
 
-    test_reals_emoji = np.full(test_reals.shape, '')
-    test_reals_emoji[test_reals == 1] = '✔️'
-    test_reals_emoji[test_reals != 1] = '❌'
-    return test_probs_emoji, test_reals_emoji
+    Find how many patients fall into each combination of
+    predicted and real-life thrombolysis decision.
+    The prediction may be:
+    + yes - over 66%
+    + maybe yes - 50 to 66%
+    + maybe no - 33 to 50%
+    + no - under 33%.
 
+    Initials examples:
+    + pr - predicted-real.
+    + yy - yes predicted, yes real.
+    + yn - yes predicted, no real.
+    + myy - maybe yes predicted, yes real.
+    etc.
 
-def get_numbers_each_accuracy_band(test_probs, test_reals):
-    # WARNING - thresholds are hard-coded at the moment! 02/DEC/23
-    pr_yy = len(np.where((test_probs > 0.66) & (test_reals == 1))[0])
-    pr_yn = len(np.where((test_probs > 0.66) & (test_reals == 0))[0])
-    pr_myy = len(np.where((test_probs <= 0.66) & (test_probs > 0.50) & (test_reals == 1))[0])
-    pr_myn = len(np.where((test_probs <= 0.66) & (test_probs > 0.50) & (test_reals == 0))[0])
-    pr_mny = len(np.where((test_probs <= 0.50) & (test_probs >= 0.33) & (test_reals == 1))[0])
-    pr_mnn = len(np.where((test_probs <= 0.50) & (test_probs >= 0.33) & (test_reals == 0))[0])
-    pr_ny = len(np.where((test_probs < 0.33) & (test_reals == 1))[0])
-    pr_nn = len(np.where((test_probs < 0.33) & (test_reals == 0))[0])
+    Predicted -->  |  y |  my |  mn |  n |
+    ---------------+----+-----+-----+----+
+            Real y | yy | myy | mny | ny |
+            Real n | yn | myn | mnn | nn |
+
+    WARNING - thresholds are hard-coded at the moment! 02/DEC/23
+
+    Inputs
+    ------
+    test_probs - np.array. Model-predicted probability of thrombolysis
+                 for each patient in the test data.
+    test_reals - np.array. Real thrombolysis decision for each
+                 patient in the test data.
+
+    Returns
+    -------
+    pr_dict - dict. Contains numbers of patients in each part of
+              the confusion matrix.
+    """
+    # How many patients are in each prediction/real category?
+    yy = len(np.where((test_probs > 0.66) & (test_reals == 1))[0])
+    yn = len(np.where((test_probs > 0.66) & (test_reals == 0))[0])
+    myy = len(np.where(
+        (test_probs <= 0.66) & (test_probs > 0.50) & (test_reals == 1))[0])
+    myn = len(np.where(
+        (test_probs <= 0.66) & (test_probs > 0.50) & (test_reals == 0))[0])
+    mny = len(np.where(
+        (test_probs <= 0.50) & (test_probs >= 0.33) & (test_reals == 1))[0])
+    mnn = len(np.where(
+        (test_probs <= 0.50) & (test_probs >= 0.33) & (test_reals == 0))[0])
+    ny = len(np.where((test_probs < 0.33) & (test_reals == 1))[0])
+    nn = len(np.where((test_probs < 0.33) & (test_reals == 0))[0])
 
     pr_dict = {
-        'yy':pr_yy,
-        'yn':pr_yn,
-        'myy':pr_myy,
-        'myn':pr_myn,
-        'mny':pr_mny,
-        'mnn':pr_mnn,
-        'ny':pr_ny,
-        'nn':pr_nn,
+        'yy': yy,
+        'yn': yn,
+        'myy': myy,
+        'myn': myn,
+        'mny': mny,
+        'mnn': mnn,
+        'ny': ny,
+        'nn': nn,
     }
-
     return pr_dict
 
 
-def fudge_100_test_patients(pr_dict):
+def fudge_100_test_patients(pr_dict: dict):
+    """
+    Find confusion matrix values scaled to integers that sum to 100.
+
+    First scale the matrix values to sum to 100 and then convert
+    all values to integers. If the sum is now below 100 exactly,
+    then add 1 to the value with the largest fractional part.
+    Continue to add 1 to the value with the largest fractional part
+    out of the set of values with fewest additions so far.
+    Stop when the sum is 100 exactly.
+    A similar process is coded in for the initial sum being higher
+    than 100 and values being subtracted.
+
+    Inputs
+    ------
+    pr_dict - dict. Predicted / Real decision dictionary. Each value
+              is the number of patients with that combination of pr.
+
+    Returns
+    -------
+    copy_dict - dict. The same as pr_dict but with values scaled to
+                integer values that sum to 100.
+    """
+    # How many patients are there to start with?
     n_total = np.sum(list(pr_dict.values()))
 
     # First try the easy way.
+    # Scale everything to sum to 100 exactly and then take the integer
+    # parts.
     copy_dict = {}
     for key, val in zip(pr_dict.keys(), pr_dict.values()):
         # The double rounding looks stupid but is more likely to result in
         # exactly 100 patients. Rounding directly to 0d.p. sometimes gives
         # 99 patients or 101 patients.
         # Add 1e-5 to make 0.5 round up to 1.0 instead of down to 0.0.
-        copy_dict[key] = np.round(1e-5 + np.round(100.0 * val / n_total, 1), 0).astype(int)
+        copy_dict[key] = np.round(
+            1e-5 + np.round(100.0 * val / n_total, 1), 0).astype(int)
     # Check if this adds up to 100:
     sum_int = np.sum(list(copy_dict.values()))
     if sum_int == 100:
+        # Finished, don't do anything else.
         return copy_dict
     else:
         # Have to do the longer way.
@@ -78,20 +133,25 @@ def fudge_100_test_patients(pr_dict):
     # Start by adding to numbers with large fractional parts
     # or subtracting from numbers with small fractional parts.
 
+    # Put all value parts and change trackers in here:
     arr = []
     for key, val in zip(pr_dict.keys(), pr_dict.values()):
         # Get a proportion out of 100:
         v = 100.0 * val / n_total
-        # Store the integer part of v (int(v)),
-        # the bit after the decimal point (v%1),
-        # and values to track how many times the integer part
-        # has been fudged upwards and downwards.
-        row = [key, int(v), v % 1, 0, 0]
+        # Store the value and bits to keep track of changes.
+        row = [
+            key,     # Name of this value.
+            int(v),  # integer part of v.
+            v % 1,   # fractional part of v.
+            0,       # how many times we've added 1.
+            0        # how many times we've subtracted 1.
+            ]
         arr.append(row)
     arr = np.array(arr, dtype=object)
 
     # Cut off this process after 20 loops.
     loops = 0
+    # What do the integer parts sum to?
     sum_int = np.sum(arr[:, 1])
 
     while loops < 20:
@@ -130,15 +190,20 @@ def fudge_100_test_patients(pr_dict):
                 # Arbitrarily pick the first if multiple options.
                 ind_smallest_frac = ind_smallest_frac[0][0]
             # Subtract one from the integer part of this value
-            # and record the change in column 3.
+            # and record the change in column 4.
             arr[ind_smallest_frac, 1] -= 1
             arr[ind_smallest_frac, 4] += 1
+
+        # Check whether the values now sum to 100 as required.
         sum_int = np.sum(arr[:, 1])
         if sum_int == 100:
+            # Stop the while loop.
             loops = 20
         else:
+            # Restart the "while" loop.
             loops += 1
 
+    # Make a new dictionary to store the new scaled values in.
     copy_dict = {}
     for i in range(arr.shape[0]):
         key = arr[i, 0]
@@ -147,30 +212,51 @@ def fudge_100_test_patients(pr_dict):
     return copy_dict
 
 
-def find_accuracy(pr_dict):
+def find_accuracy(pr_dict: dict):
+    """
+    Find accuracy of model from confusion matrix dict.
+
+    Accuracy is number predicted correctly divided by total number.
+
+    Inputs
+    ------
+    pr_dict - dict. Predicted / Real decision dictionary. Each value
+              is the number of patients with that combination of pr.
+
+    Returns
+    -------
+    acc - float. Accuracy as a percentage.
+    """
+    # Total number of patients in the confusion matrix:
     n_total = np.sum(list(pr_dict.values()))
 
+    # Numbers of patients correctly predicted:
     n_true_pos = pr_dict['yy'] + pr_dict['myy']
     n_true_neg = pr_dict['nn'] + pr_dict['mnn']
 
+    # Accuracy as a percentage.
     acc = 100.0 * (n_true_pos + n_true_neg) / n_total
     return acc
 
 
-def write_confusion_matrix(pr_dict):
+def write_confusion_matrix(pr_dict: dict):
+    """
+    Style a confusion matrix and display with streamlit.
+
+    Display the values in this table...
+
+    Predicted -->   |  ✔️ | ❓✔️ |  ❌ | ❌ |
+    ----------------+----+-----+-----+----+
+            Real ✔️  | yy | myy | mny | ny |
+            Real ❌ | yn | myn | mnn | nn |
+
+    ... with correct cells (top left, lower right battenberg) in green
+    and incorrect cells (top right, lower left battenberg) in red.
+    """
     table = np.array([
         [pr_dict['yy'], pr_dict['myy'], pr_dict['mny'], pr_dict['ny']],
         [pr_dict['yn'], pr_dict['myn'], pr_dict['mnn'], pr_dict['nn']]
     ])
-    n_total = np.sum(table)
-
-    # # Scale values to match 100 patients.
-    # table = np.round(1e-5 + np.round(100.0 * table / n_total, 1), 0)
-    # table = np.round(table, 0)
-    # n_total = np.sum(table)
-    # st.write(n_total)
-    # st.write(table)
-
 
     df = pd.DataFrame(
         table,
@@ -179,15 +265,12 @@ def write_confusion_matrix(pr_dict):
     df['Actual'] = ['Real ✔️', 'Real ❌']
     df = df.set_index('Actual')
 
-    # Apply styles to colour the backgrounds:
-    styles=[]
-    # Change the background colour "background-color" of the box
-    # and the colour of the text "color".
-    # Use these colours...
-    # colour_true = 'rgba(127, 255, 127, 0.2)'
-    # colour_false = 'rgba(255, 127, 127, 0.2)'
-    colour_true = 'rgba(0, 209, 152, 0.2)'
-    colour_false = 'rgba(255, 116, 0, 0.2)'
+    # Collect styles to colour the backgrounds:
+    styles = []
+    # Change the background colour "background-color" of the box.
+    # Use these mostly-transparent seaborn colourblind colours...
+    colour_true = 'rgba(0, 209, 152, 0.2)'   # greenish
+    colour_false = 'rgba(255, 116, 0, 0.2)'  # reddish
     # ... in this pattern:
     colour_grid = [
         [colour_true, colour_true, colour_false, colour_false],
@@ -204,8 +287,7 @@ def write_confusion_matrix(pr_dict):
             # (Working this out has displeased me greatly.)
             styles.append({
                 'selector': f"tr:nth-child({r+1}) td:nth-child({c+2})",
-                'props': [("background-color", f"{colour}")],
-                        # ("color", "black")]
+                'props': [("background-color", f"{colour}")]
                 })
     # Apply these styles to the pandas DataFrame:
     df_to_show = df.style.set_table_styles(styles)
@@ -213,17 +295,49 @@ def write_confusion_matrix(pr_dict):
     st.table(df_to_show)
 
 
-def find_similar_test_patients(user_inputs_dict):
+def find_similar_test_patients(user_inputs_dict: dict):
+    """
+    Find data on test patients similar to the input dict values.
+
+    Use the same masks as were used to define the "similar patients"
+    when creating the data files.
+
+    Inputs
+    ------
+    user_inputs_dict - dict. Patient data dictionary for features
+                       to run through the model, e.g. from input
+                       from the streamlit app.
+
+    Returns
+    -------
+    all_probs       - np.array. Thrombolysis predicted probability
+                      for each patient.
+    all_reals       - np.array. Thrombolysis yes/no for each patient.
+    similar_probs   - np.array. Thrombolysis predicted probability
+                      for each patient for similar patients only.
+    similar_reals   - np.array. Thrombolysis yes/no for each patient
+                      for similar patients only.
+    all_n_train     - float. Number of patients in the training data.
+    similar_n_train - float. Number of patients in the training data
+                      that are similar to the input dict patient.
+    """
     # What are the inds to look up similar test patients?
+    # First check which masks are True and False for each
+    # feature. The masks must match the ones used to create
+    # the data files.
     masks_severity = [
         (user_inputs_dict['stroke_severity'] < 8),
-        ((user_inputs_dict['stroke_severity'] >= 8) & (user_inputs_dict['stroke_severity'] <= 32)),
+        ((user_inputs_dict['stroke_severity'] >= 8) &
+         (user_inputs_dict['stroke_severity'] <= 32)),
         (user_inputs_dict['stroke_severity'] > 32)
         ]
     masks_mrs = [
-        ((user_inputs_dict['prior_disability'] == 0) | (user_inputs_dict['prior_disability'] == 1)),
-        ((user_inputs_dict['prior_disability'] == 2) | (user_inputs_dict['prior_disability'] == 3)),
-        ((user_inputs_dict['prior_disability'] == 4) | (user_inputs_dict['prior_disability'] == 5)),
+        ((user_inputs_dict['prior_disability'] == 0) |
+         (user_inputs_dict['prior_disability'] == 1)),
+        ((user_inputs_dict['prior_disability'] == 2) |
+         (user_inputs_dict['prior_disability'] == 3)),
+        ((user_inputs_dict['prior_disability'] == 4) |
+         (user_inputs_dict['prior_disability'] == 5)),
         ]
     masks_age = [
         (user_inputs_dict['age'] < 80),
@@ -234,8 +348,10 @@ def find_similar_test_patients(user_inputs_dict):
         (user_inputs_dict['infarction'] != 0)
         ]
     masks_onset_scan = [
-        (user_inputs_dict['onset_to_arrival_time'] + user_inputs_dict['arrival_to_scan_time'] <= 4*60),
-        (user_inputs_dict['onset_to_arrival_time'] + user_inputs_dict['arrival_to_scan_time'] > 4*60)
+        (user_inputs_dict['onset_to_arrival_time'] +
+         user_inputs_dict['arrival_to_scan_time'] <= 4*60),
+        (user_inputs_dict['onset_to_arrival_time'] +
+         user_inputs_dict['arrival_to_scan_time'] > 4*60)
         ]
     masks_precise = [
         (user_inputs_dict['onset_time_precise'] == 0),
@@ -251,26 +367,25 @@ def find_similar_test_patients(user_inputs_dict):
         ]
 
     masks = {
-        'onset_scan':masks_onset_scan,
-        'severity':masks_severity,
-        'mrs':masks_mrs,
-        'age':masks_age,
-        'infarction':masks_infarction,
-        'precise':masks_precise,
-        'sleep':masks_sleep,
-        'anticoag':masks_anticoag
+        'onset_scan': masks_onset_scan,
+        'severity': masks_severity,
+        'mrs': masks_mrs,
+        'age': masks_age,
+        'infarction': masks_infarction,
+        'precise': masks_precise,
+        'sleep': masks_sleep,
+        'anticoag': masks_anticoag
     }
 
-    # masks_names = list(masks.keys())
-    # masks_lists = list(masks.values())
-
+    # Store which mask is True for each feature.
     inds = {}
     for key, val in zip(masks.keys(), masks.values()):
         for i, m in enumerate(val):
             if m == 1:
                 inds[key] = i
 
-    # Which mask number is this?
+    # Which mask number in the data file
+    # has True for all of these masks?
     df = pd.read_csv(f'{dir}data_ml/mask_numbers.csv')
     df_mask = df[
         (df['onset_scan_mask_number'] == inds['onset_scan']) &
@@ -288,10 +403,19 @@ def find_similar_test_patients(user_inputs_dict):
     df_all_accuracy = pd.read_csv(f'{dir}data_ml/masks_probabilities.csv')
     all_probs = df_all_accuracy['predicted_probs']
     all_reals = df_all_accuracy['thrombolysis']
-
-    # Mask for just this mask number:
+    # Limit to just "similar patients" (with this mask number):
     mask = (df_all_accuracy['mask_number'] == mask_number)
-    test_probs = all_probs[mask]
-    test_reals = all_reals[mask]
+    similar_probs = all_probs[mask]
+    similar_reals = all_reals[mask]
 
-    return all_probs, all_reals, test_probs, test_reals, mask_number
+    # How many patients like this were in the training data?
+    # Import training data group sizes.
+    df_training_groups = pd.read_csv(f'{dir}data_ml/train_group_sizes.csv')
+    all_n_train = df_training_groups['number_of_patients'].sum()
+    mask = (df_training_groups['mask_number'] == mask_number)
+    similar_n_train = (
+        df_training_groups[mask]['number_of_patients'].values[0])
+
+    return (all_probs, all_reals,
+            similar_probs, similar_reals,
+            all_n_train, similar_n_train)

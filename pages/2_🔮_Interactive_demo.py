@@ -11,6 +11,7 @@ done in functions stored in files named container_(something).py
 # ----- Imports -----
 import streamlit as st
 import pandas as pd
+import numpy as np
 
 # For compatibility with combo app,
 # add an extra bit to the path if we need to.
@@ -33,6 +34,10 @@ from utilities_ml.fixed_params import write_markdown_in_colour
 from utilities_ml.inputs import set_up_sidebar
 import utilities_ml.inputs
 import utilities_ml.main_calculations
+from utilities_ml.container_uncertainty import \
+    find_similar_test_patients, get_numbers_each_accuracy_band, \
+    find_accuracy, write_confusion_matrix, fudge_100_test_patients
+
 # Containers:
 import utilities_ml.container_inputs
 import utilities_ml.container_metrics
@@ -257,11 +262,6 @@ def main():
                           highlighted_teams_list, benchmark_rank_list,
                           hb_teams_list)
 
-    # Import training data group sizes.
-    # UPDATE THIS PATH LATER FOR COMBO APP ---------------------------------------------
-    import pandas as pd
-    df_training_groups = pd.read_csv(f'./data_ml/train_group_sizes.csv')
-
 
     # ###########################
     # ######### RESULTS #########
@@ -328,17 +328,9 @@ def main():
             display_name_of_default_highlighted_team,
             )
 
-
     # ############################
     # ######### ACCURACY #########
     # ############################
-
-    # Model accuracy
-    import pandas as pd
-    import numpy as np
-
-    # Test data accuracy.
-    from utilities_ml.container_uncertainty import find_similar_test_patients, get_numbers_each_accuracy_band, find_accuracy, write_confusion_matrix, fudge_100_test_patients
 
     st.markdown('#')  # Breathing room
     st.markdown('#')  # Breathing room
@@ -372,12 +364,9 @@ def main():
     # patients, the other only patients who are similar to the selected
     # patient details.
     # TO DO - detail what "similar" means.
-    all_probs, all_reals, similar_probs, similar_reals, mask_number = (
+    (all_probs, all_reals, similar_probs, similar_reals,
+     all_n_train, similar_n_train) = (
         find_similar_test_patients(user_inputs_dict))
-
-    # How many patients like this were in the training data?
-    n_train_all_patients = df_training_groups['number_of_patients'].sum()
-    n_train_similar_patients = df_training_groups[df_training_groups['mask_number'] == mask_number]['number_of_patients'].values[0]
 
     # All test patients:
     # Calculations:
@@ -414,7 +403,7 @@ def main():
 
         | | All patients | Similar to this patient |
         | --- | --- | --- |
-        | 🔮 Training data | {n_train_all_patients:,} | {n_train_similar_patients:,} | 
+        | 🔮 Training data | {all_n_train:,} | {similar_n_train:,} |
         | 🔮 Testing data | {all_n_total:,} | {similar_n_total:,} |
         '''
     )
@@ -429,7 +418,8 @@ def main():
         '''
         )
 
-    tabs_matrix = st.tabs(['Scaled to 100 patients', 'True numbers of patients'])
+    tabs_matrix = st.tabs([
+        'Scaled to 100 patients', 'True numbers of patients'])
     with tabs_matrix[0]:
         cols_100 = st.columns(2, gap='large')
         with cols_100[0]:
@@ -450,9 +440,9 @@ def main():
         with cols_all[1]:
             if similar_n_total > 0:
                 # Similar test patients:
-                st.markdown(f'Similar test patients (out of {similar_n_total})')
+                st.markdown(
+                    f'Similar test patients (out of {similar_n_total})')
                 write_confusion_matrix(similar_pr_dict)
-
 
     # ----- The end! -----
 
