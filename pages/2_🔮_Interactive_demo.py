@@ -62,7 +62,7 @@ def main():
 
     # Background info
     # Title:
-    st.title(':crystal_ball: :rainbow[Thrombolysis decisions]')
+    st.title(':crystal_ball: Thrombolysis decisions')
 
     st.markdown(
         '''
@@ -177,7 +177,8 @@ def main():
 
     # User inputs
     with st.sidebar:
-        use_plotly_events, container_input_patient_details = (
+        # use_plotly_events,
+        container_input_patient_details = (
             set_up_sidebar(path_to_details))
 
     st.markdown('#')  # Breathing room
@@ -323,9 +324,9 @@ def main():
         utilities_ml.container_bars.main(
             sorted_results,
             hb_teams_input,
-            use_plotly_events,
             default_highlighted_team,
             display_name_of_default_highlighted_team,
+            # use_plotly_events,
             )
 
     # ############################

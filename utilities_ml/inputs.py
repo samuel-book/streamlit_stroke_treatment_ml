@@ -450,15 +450,16 @@ def set_up_sidebar(path_to_details):
     # Add an option for removing plotly_events()
     # which doesn't play well on skinny screens / touch devices.
 
-    st.markdown('-'*50)
-    st.markdown('## Advanced options')
-    if st.checkbox('Disable interactive plots'):
-        use_plotly_events = False
-    else:
-        use_plotly_events = True
-    st.caption(''.join([
-        'The clickable plots sometimes appear strange ',
-        'on small screens and touch devices, ',
-        'so select this option to convert them to normal plots.'
-    ]))
-    return use_plotly_events, container_input_patient_details
+    # st.markdown('-'*50)
+    # st.markdown('## Advanced options')
+    # if st.checkbox('Disable interactive plots'):
+    #     use_plotly_events = False
+    # else:
+    #     use_plotly_events = True
+    # st.caption(''.join([
+    #     'The clickable plots sometimes appear strange ',
+    #     'on small screens and touch devices, ',
+    #     'so select this option to convert them to normal plots.'
+    # ]))
+    return container_input_patient_details
+    # return use_plotly_events, container_input_patient_details
