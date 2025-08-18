@@ -16,6 +16,9 @@ def main(
         default_highlighted_team,
         display_name_of_default_highlighted_team,
         # use_plotly_events, 
+        allow_maybe=False,
+        prob_maybe_min=0.333,
+        prob_maybe_max=0.666,
         ):
     """
     Plot sorted probability bar chart
@@ -50,7 +53,7 @@ def main(
                 # Nothing to update.
                 pass
 
-        
+
         # Add bar(s) to the chart for this highlighted team:
         fig.add_trace(go.Bar(
             x=results_here['Sorted rank'],
@@ -108,9 +111,15 @@ def main(
             )
         )
 
-    # Add horizontal line at prob=0.5, the decision to thrombolyse:
-    fig.add_hline(y=33.3, line=dict(color='black'), layer='below')
-    fig.add_hline(y=66.6, line=dict(color='black'), layer='below')
+    # Add horizontal line at borders of decision to thrombolyse:
+    if allow_maybe:
+        # note: probs currently hard-coded.
+        fig.add_hline(y=prob_maybe_min*100.0,
+                      line=dict(color='black'), layer='below')
+        fig.add_hline(y=prob_maybe_max*100.0,
+                      line=dict(color='black'), layer='below')
+    else:
+        fig.add_hline(y=50.0, line=dict(color='black'), layer='below')
     # # Update y ticks:
     fig.update_layout(yaxis=dict(
         tickmode='array',
@@ -137,11 +146,32 @@ def main(
     x_no = (0.5 * n_no) + n_yes + n_maybe + 0.5
     y_labels = 140
 
+    label_yes = f'{n_yes} team' + ('s' if n_yes != 1 else '') + '<br>✔️ would<br>thrombolyse'
+    label_maybe = f'{n_maybe} team' + ('s' if n_maybe != 1 else '') + '<br>❓ might<br>thrombolyse'
+    label_no = f'{n_no} team' + ('s' if n_no != 1 else '') + '<br>❌ would not<br>thrombolyse'
 
+    if allow_maybe:
+        y_label_yes = np.mean([100.0*prob_maybe_max, 100.0])
+        y_label_maybe = np.mean([100.0*prob_maybe_min, 100.0*prob_maybe_max])
+        y_label_no = np.mean([0.0, 100.0*prob_maybe_min])
+        # Squidge label if necessary:
+        if prob_maybe_max > 0.7:
+            # label_yes = label_yes.replace('<br>', '')#.replace(' teams', '')
+            label_yes = label_yes.replace('<br>thr', ' thr').replace('<br>', ' ').replace(' wou', '<br>wou')
+        if prob_maybe_min < 0.3:
+            # label_no = label_no.replace('<br>', '')#.replace(' teams', '')
+            label_no = label_no.replace('<br>thr', ' thr').replace('<br>', ' ').replace(' wou', '<br>wou')
+        if (prob_maybe_max < 0.666) & (prob_maybe_min > 0.333):
+            # label_maybe = label_maybe.replace('<br>', ' ')#.replace(' teams', '')
+            label_maybe = label_maybe.replace('<br>thr', ' thr').replace('<br>', ' ').replace(' mig', '<br>mig')
+
+    else:
+        y_label_yes = np.mean([50.0, 100.0])
+        y_label_no = np.mean([0.0, 50.0])
     # Right-hand-side label:
     fig.add_annotation(
-        x=n_teams*1.1, y=np.mean([66.6, 100.0]),
-        text=f'{n_yes} team' + ('s' if n_yes != 1 else '') + '<br>✔️ would<br>thrombolyse',
+        x=n_teams*1.1, y=y_label_yes,
+        text=label_yes,
         showarrow=False,
         yshift=0,
         align='center',
@@ -162,36 +192,37 @@ def main(
             align='center',
             xref='x', yref='y'
             )
-    
-    # Right-hand-side label:
-    fig.add_annotation(
-        x=n_teams*1.1, y=np.mean([33.3, 66.6]),
-        text=f'{n_maybe} team' + ('s' if n_maybe != 1 else '') + '<br>❓ might<br>thrombolyse',
-        showarrow=False,
-        yshift=0,
-        align='center',
-        xref='x', yref='y'
-        )
-    if n_maybe > 0:
-        # Arrow:
+
+    if allow_maybe:
+        # Right-hand-side label:
         fig.add_annotation(
-            x=n_yes+0.5, y=y_arrows, ax=n_yes+n_maybe+0.5, ay=y_arrows, text='',
-            showarrow=True, axref='x', ayref='y', arrowside='end+start'
-        )
-        # Arrow label:
-        fig.add_annotation(
-            x=x_maybe, y=y_arrows+10,
-            text='❓',
+            x=n_teams*1.1, y=y_label_maybe,
+            text=label_maybe,
             showarrow=False,
             yshift=0,
             align='center',
             xref='x', yref='y'
             )
-    
+        if n_maybe > 0:
+            # Arrow:
+            fig.add_annotation(
+                x=n_yes+0.5, y=y_arrows, ax=n_yes+n_maybe+0.5, ay=y_arrows, text='',
+                showarrow=True, axref='x', ayref='y', arrowside='end+start'
+            )
+            # Arrow label:
+            fig.add_annotation(
+                x=x_maybe, y=y_arrows+10,
+                text='❓',
+                showarrow=False,
+                yshift=0,
+                align='center',
+                xref='x', yref='y'
+                )
+
     # Right-hand-side label:
     fig.add_annotation(
-        x=n_teams*1.1, y=np.mean([0.0, 33.3]),
-        text=f'{n_no} team' + ('s' if n_no != 1 else '') + '<br>❌ would not<br>thrombolyse',
+        x=n_teams*1.1, y=y_label_no,
+        text=label_no,
         showarrow=False,
         yshift=0,
         align='center',
@@ -211,7 +242,7 @@ def main(
             align='center',
             xref='x', yref='y'
             )
-    
+
 
 
     # Move legend to bottom

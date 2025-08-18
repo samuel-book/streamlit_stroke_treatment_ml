@@ -13,7 +13,8 @@ from utilities_ml.fixed_params import plain_str, bench_str, model_version, n_ben
 
 def predict_treatment(
         X, model, stroke_teams_list, highlighted_teams_list,
-        benchmark_rank_list, hb_teams_list
+        benchmark_rank_list, hb_teams_list,
+        allow_maybe=False, prob_maybe_min=0.1, prob_maybe_max=0.9
         ):
     probs_list = model.predict_proba(X)[:, 1]
 
@@ -27,10 +28,14 @@ def predict_treatment(
     results['Probability_perc'] = probs_list*100.0
 
     thromb_decision = np.full(probs_list.shape, 0)
-    thromb_decision[probs_list >= (2.0/3.0)] = 2       # Yes
-    thromb_decision[((probs_list < (2.0/3.0)) &
-                     (probs_list > (1.0/3.0)))] = 1    # Maybe
-    thromb_decision[probs_list <= (1.0/3.0)] = 0       # No
+    if allow_maybe:
+        thromb_decision[probs_list >= prob_maybe_max] = 2       # Yes
+        thromb_decision[((probs_list < prob_maybe_max) &
+                        (probs_list > prob_maybe_min))] = 1     # Maybe
+        thromb_decision[probs_list <= prob_maybe_min] = 0       # No
+    else:
+        thromb_decision[probs_list >= 0.5] = 2             # Yes
+        thromb_decision[probs_list < 0.5] = 0              # No
 
     results['Thrombolyse'] = thromb_decision
     results['Index'] = np.arange(len(results))

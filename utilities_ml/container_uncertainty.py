@@ -15,7 +15,11 @@ except FileNotFoundError:
 
 
 def get_numbers_each_accuracy_band(test_probs: np.array,
-                                   test_reals: np.array):
+                                   test_reals: np.array,
+                                   allow_maybe=False,
+                                   mn_min=0.333,
+                                   my_max=0.666,
+                                   ):
     """
     Find dict of values for confusion matrix.
 
@@ -53,19 +57,32 @@ def get_numbers_each_accuracy_band(test_probs: np.array,
     pr_dict - dict. Contains numbers of patients in each part of
               the confusion matrix.
     """
-    # How many patients are in each prediction/real category?
-    yy = len(np.where((test_probs > 0.66) & (test_reals == 1))[0])
-    yn = len(np.where((test_probs > 0.66) & (test_reals == 0))[0])
-    myy = len(np.where(
-        (test_probs <= 0.66) & (test_probs > 0.50) & (test_reals == 1))[0])
-    myn = len(np.where(
-        (test_probs <= 0.66) & (test_probs > 0.50) & (test_reals == 0))[0])
-    mny = len(np.where(
-        (test_probs <= 0.50) & (test_probs >= 0.33) & (test_reals == 1))[0])
-    mnn = len(np.where(
-        (test_probs <= 0.50) & (test_probs >= 0.33) & (test_reals == 0))[0])
-    ny = len(np.where((test_probs < 0.33) & (test_reals == 1))[0])
-    nn = len(np.where((test_probs < 0.33) & (test_reals == 0))[0])
+    if allow_maybe:
+        my_min = 0.50
+        mn_max = 0.50
+        # How many patients are in each prediction/real category?
+        yy = len(np.where((test_probs > my_max) & (test_reals == 1))[0])
+        yn = len(np.where((test_probs > my_max) & (test_reals == 0))[0])
+        myy = len(np.where(
+            (test_probs <= my_max) & (test_probs > my_min) & (test_reals == 1))[0])
+        myn = len(np.where(
+            (test_probs <= my_max) & (test_probs > my_min) & (test_reals == 0))[0])
+        mny = len(np.where(
+            (test_probs <= mn_max) & (test_probs >= mn_min) & (test_reals == 1))[0])
+        mnn = len(np.where(
+            (test_probs <= mn_max) & (test_probs >= mn_min) & (test_reals == 0))[0])
+        ny = len(np.where((test_probs < mn_min) & (test_reals == 1))[0])
+        nn = len(np.where((test_probs < mn_min) & (test_reals == 0))[0])
+    else:
+        yy = len(np.where((test_probs >= 0.5) & (test_reals == 1))[0])
+        yn = len(np.where((test_probs >= 0.5) & (test_reals == 0))[0])
+        ny = len(np.where((test_probs < 0.5) & (test_reals == 1))[0])
+        nn = len(np.where((test_probs < 0.5) & (test_reals == 0))[0])
+        # Set "maybe" data to zero:
+        myy = 0
+        myn = 0
+        mny = 0
+        mnn = 0
 
     pr_dict = {
         'yy': yy,
@@ -80,7 +97,7 @@ def get_numbers_each_accuracy_band(test_probs: np.array,
     return pr_dict
 
 
-def fudge_100_test_patients(pr_dict: dict):
+def fudge_100_test_patients(pr_dict: dict, allow_maybe=False):
     """
     Find confusion matrix values scaled to integers that sum to 100.
 
@@ -103,6 +120,22 @@ def fudge_100_test_patients(pr_dict: dict):
     copy_dict - dict. The same as pr_dict but with values scaled to
                 integer values that sum to 100.
     """
+    # If we're not allowing "maybe" prediction then remove those
+    # values from the dict:
+    if allow_maybe:
+        pass
+    else:
+        pr_dict_yn = dict(zip(
+            pr_dict.keys(), [0 for i in range(len(pr_dict))]))
+        keys_zeroed = []
+        for k, v in pr_dict.items():
+            if 'm' in k:
+                keys_zeroed.append(k)
+            else:
+                pr_dict_yn[k] += v
+        # Overwrite input dict:
+        pr_dict = pr_dict_yn
+
     # How many patients are there to start with?
     n_total = np.sum(list(pr_dict.values()))
 
@@ -110,7 +143,7 @@ def fudge_100_test_patients(pr_dict: dict):
     # Scale everything to sum to 100 exactly and then take the integer
     # parts.
     copy_dict = {}
-    for key, val in zip(pr_dict.keys(), pr_dict.values()):
+    for key, val in pr_dict.items():
         # The double rounding looks stupid but is more likely to result in
         # exactly 100 patients. Rounding directly to 0d.p. sometimes gives
         # 99 patients or 101 patients.
@@ -135,7 +168,7 @@ def fudge_100_test_patients(pr_dict: dict):
 
     # Put all value parts and change trackers in here:
     arr = []
-    for key, val in zip(pr_dict.keys(), pr_dict.values()):
+    for key, val in pr_dict.items():
         # Get a proportion out of 100:
         v = 100.0 * val / n_total
         # Store the value and bits to keep track of changes.
@@ -208,6 +241,12 @@ def fudge_100_test_patients(pr_dict: dict):
     for i in range(arr.shape[0]):
         key = arr[i, 0]
         copy_dict[key] = arr[i, 1]
+    # If necessary, add back in "maybe" placeholders:
+    if allow_maybe:
+        pass
+    else:
+        for k in keys_zeroed:
+            copy_dict[k] = 0
 
     return copy_dict
 
@@ -239,7 +278,7 @@ def find_accuracy(pr_dict: dict):
     return acc
 
 
-def write_confusion_matrix(pr_dict: dict):
+def write_confusion_matrix(pr_dict: dict, allow_maybe=False):
     """
     Style a confusion matrix and display with streamlit.
 
@@ -253,14 +292,21 @@ def write_confusion_matrix(pr_dict: dict):
     ... with correct cells (top left, lower right battenberg) in green
     and incorrect cells (top right, lower left battenberg) in red.
     """
-    table = np.array([
-        [pr_dict['yy'], pr_dict['myy'], pr_dict['mny'], pr_dict['ny']],
-        [pr_dict['yn'], pr_dict['myn'], pr_dict['mnn'], pr_dict['nn']]
-    ])
-
+    if allow_maybe:
+        table = np.array([
+            [pr_dict['yy'], pr_dict['myy'], pr_dict['mny'], pr_dict['ny']],
+            [pr_dict['yn'], pr_dict['myn'], pr_dict['mnn'], pr_dict['nn']]
+        ])
+        cols = ['Predict ✔️', 'Predict ❓✔️', 'Predict ❓❌', 'Predict ❌']
+    else:
+        table = np.array([
+            [pr_dict['yy'], pr_dict['ny']],
+            [pr_dict['yn'], pr_dict['nn']]
+        ])
+        cols = ['Predict ✔️', 'Predict ❌']
     df = pd.DataFrame(
         table,
-        columns=['Predict ✔️', 'Predict ❓✔️', 'Predict ❓❌', 'Predict ❌']
+        columns=cols
     )
     df['Actual'] = ['Real ✔️', 'Real ❌']
     df = df.set_index('Actual')
@@ -272,10 +318,16 @@ def write_confusion_matrix(pr_dict: dict):
     colour_true = 'rgba(0, 209, 152, 0.2)'   # greenish
     colour_false = 'rgba(255, 116, 0, 0.2)'  # reddish
     # ... in this pattern:
-    colour_grid = [
-        [colour_true, colour_true, colour_false, colour_false],
-        [colour_false, colour_false, colour_true, colour_true]
-    ]
+    if allow_maybe:
+        colour_grid = [
+            [colour_true, colour_true, colour_false, colour_false],
+            [colour_false, colour_false, colour_true, colour_true]
+        ]
+    else:
+        colour_grid = [
+            [colour_true, colour_false],
+            [colour_false, colour_true]
+        ]
     # Update each cell individually:
     for r, row in enumerate(colour_grid):
         for c, col in enumerate(row):

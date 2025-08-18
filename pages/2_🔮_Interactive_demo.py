@@ -93,6 +93,43 @@ def main():
         ])
         )
 
+    # User inputs
+    with st.sidebar:
+        # use_plotly_events,
+        container_input_patient_details = (
+            set_up_sidebar(path_to_details))
+        with st.expander('Advanced options'):
+            allow_maybe = st.checkbox(
+                'Allow teams to decide to "maybe" thrombolyse.'
+            )
+            if allow_maybe:
+                prob_maybe_min = st.number_input(
+                    '"Maybe" minimum (%)',
+                    min_value=0.0,
+                    max_value=50.0,
+                    value=33.3,
+                    step=0.1,
+                    format="%0.1f",
+                    ) / 100.0
+                prob_maybe_max = st.number_input(
+                    '"Maybe" maximum (%)',
+                    min_value=50.0,
+                    max_value=100.0,
+                    value=66.6,
+                    step=0.1,
+                    format="%0.1f",
+                    ) / 100.0
+                # Don't allow 50% exactly in case it messes with
+                # inequalities later.
+                if prob_maybe_max == 0.5:
+                    prob_maybe_max += 1e-7
+                if prob_maybe_min == 0.5:
+                    prob_maybe_min -= 1e-7
+            else:
+                # Placeholder values.
+                prob_maybe_min = 0.1
+                prob_maybe_max = 0.9
+
     # DATA USED
     st.markdown('')  # Breathing room
     st.subheader('Data used to make the model')
@@ -144,15 +181,26 @@ def main():
     st.subheader('How we categorise the results')
     cols_method = st.columns([6, 4])
     with cols_method[0]:
-        st.markdown(
-            '''
-            | Probability | Decision |
-            | --- | --- |
-            | At least 66.6% | ✔️ would thrombolyse |
-            | From 33.3% to 66.6% | ❓ might thrombolyse |
-            | Below 33.3% | ❌ would not thrombolyse |
-            '''
+        if allow_maybe:
+            method_str = (
+                '''
+                | Probability | Decision |
+                | --- | --- |
+                | At least ''' + f'{100.0*prob_maybe_max:.1f}' + '''% | ✔️ would thrombolyse |
+                | From ''' + f'{100.0*prob_maybe_min:.1f}' + '''% to ''' + f'{100.0*prob_maybe_max:.1f}' + '''% | ❓ might thrombolyse |
+                | Below ''' + f'{100.0*prob_maybe_min:.1f}' + '''% | ❌ would not thrombolyse |
+                '''
             )
+        else:
+            method_str = (
+                '''
+                | Probability | Decision |
+                | --- | --- |
+                | At least 50% | ✔️ would thrombolyse |
+                | Below 50% | ❌ would not thrombolyse |
+                '''
+            )
+        st.markdown(method_str)
 
     with cols_method[1]:
         st.markdown(
@@ -174,12 +222,6 @@ def main():
             option picked by most of the benchmark teams.
             '''
             )
-
-    # User inputs
-    with st.sidebar:
-        # use_plotly_events,
-        container_input_patient_details = (
-            set_up_sidebar(path_to_details))
 
     st.markdown('#')  # Breathing room
     st.markdown('#')  # Breathing room
@@ -261,7 +303,8 @@ def main():
     sorted_results = utilities_ml.main_calculations.\
         predict_treatment(X, model, stroke_teams_list,
                           highlighted_teams_list, benchmark_rank_list,
-                          hb_teams_list)
+                          hb_teams_list, allow_maybe, prob_maybe_min,
+                          prob_maybe_max)
 
 
     # ###########################
@@ -270,7 +313,7 @@ def main():
 
     with container_metrics:
         # Print metrics for how many teams would thrombolyse:
-        utilities_ml.container_metrics.main(sorted_results, n_benchmark_teams)
+        utilities_ml.container_metrics.main(sorted_results, n_benchmark_teams, allow_maybe)
 
     with container_highlighted_summary:
         highlighted_teams_colours = \
@@ -327,6 +370,9 @@ def main():
             default_highlighted_team,
             display_name_of_default_highlighted_team,
             # use_plotly_events,
+            allow_maybe,
+            prob_maybe_min,
+            prob_maybe_max
             )
 
     # ############################
@@ -344,20 +390,33 @@ def main():
         patient matches the model decision.
         '''
         )
-    st.markdown(
-        '''
-        The real decision may be either
-        thrombolysis or not.
-        There is no "❓ might thrombolyse" option.
+    if allow_maybe:
+        st.markdown(
+            '''
+            The real decision may be either
+            thrombolysis or not.
+            There is no "❓ might thrombolyse" option.
 
-        | Probability | Decision |
-        | --- | --- |
-        | At least 66.6% | ✔️ would thrombolyse |
-        | From 50.0% to 66.6% | ❓✔️ would thrombolyse |
-        | From 33.3% to 50.0% | ❓❌ would not thrombolyse |
-        | Below 33.3% | ❌ would not thrombolyse |
-        '''
-        )
+            | Probability | Decision |
+            | --- | --- |
+            | At least ''' + f'{100.0*prob_maybe_max:.1f}' + '''% | ✔️ would thrombolyse |
+            | From 50.0% to ''' + f'{100.0*prob_maybe_max:.1f}' + '''% | ❓✔️ would thrombolyse |
+            | From ''' + f'{100.0*prob_maybe_min:.1f}' + '''% to 50.0% | ❓❌ would not thrombolyse |
+            | Below ''' + f'{100.0*prob_maybe_min:.1f}' + '''% | ❌ would not thrombolyse |
+            '''
+            )
+    else:
+        st.markdown(
+            '''
+            The real decision may be either
+            thrombolysis or not.
+
+            | Probability | Decision |
+            | --- | --- |
+            | At least 50% | ✔️ would thrombolyse |
+            | Below 50% | ❌ would not thrombolyse |
+            '''
+            )
     st.markdown(' ')  # Breathing room
     st.subheader('How often do the predictions match reality?')
     # Predicted probabilities and the true thrombolysis yes/no results
@@ -371,11 +430,12 @@ def main():
 
     # All test patients:
     # Calculations:
-    all_pr_dict = get_numbers_each_accuracy_band(all_probs, all_reals)
+    all_pr_dict = get_numbers_each_accuracy_band(
+        all_probs, all_reals, allow_maybe, prob_maybe_min, prob_maybe_max)
     all_n_total = len(all_probs)
 
     if all_n_total > 0:
-        all_pr_dict_100 = fudge_100_test_patients(all_pr_dict)
+        all_pr_dict_100 = fudge_100_test_patients(all_pr_dict, allow_maybe)
         all_acc = find_accuracy(all_pr_dict)
     else:
         all_acc = np.NaN
@@ -383,11 +443,14 @@ def main():
     # Similar test patients:
     # Calculations:
     similar_pr_dict = get_numbers_each_accuracy_band(
-        similar_probs, similar_reals)
+        similar_probs, similar_reals,
+        allow_maybe, prob_maybe_min, prob_maybe_max
+        )
     similar_n_total = len(similar_probs)
 
     if similar_n_total > 0:
-        similar_pr_dict_100 = fudge_100_test_patients(similar_pr_dict)
+        similar_pr_dict_100 = fudge_100_test_patients(
+            similar_pr_dict, allow_maybe)
         similar_acc = find_accuracy(similar_pr_dict)
     else:
         similar_acc = np.NaN
@@ -426,24 +489,24 @@ def main():
         with cols_100[0]:
             # All test patients, scaled to 100:
             st.markdown('All test patients (out of 100)')
-            write_confusion_matrix(all_pr_dict_100)
+            write_confusion_matrix(all_pr_dict_100, allow_maybe)
         with cols_100[1]:
             if similar_n_total > 0:
                 # Similar test patients, scaled to 100:
                 st.markdown('Similar test patients (out of 100)')
-                write_confusion_matrix(similar_pr_dict_100)
+                write_confusion_matrix(similar_pr_dict_100, allow_maybe)
     with tabs_matrix[1]:
         cols_all = st.columns(2, gap='large')
         with cols_all[0]:
             # All test patients:
             st.markdown(f'All test patients (out of {all_n_total})')
-            write_confusion_matrix(all_pr_dict)
+            write_confusion_matrix(all_pr_dict, allow_maybe)
         with cols_all[1]:
             if similar_n_total > 0:
                 # Similar test patients:
                 st.markdown(
                     f'Similar test patients (out of {similar_n_total})')
-                write_confusion_matrix(similar_pr_dict)
+                write_confusion_matrix(similar_pr_dict, allow_maybe)
 
     # ----- The end! -----
 

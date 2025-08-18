@@ -1,7 +1,7 @@
 import streamlit as st
 
 
-def main(sorted_results, n_benchmark_teams):
+def main(sorted_results, n_benchmark_teams, allow_maybe=False):
     # Show metrics for all, benchmark, non-bench teams.
 
     # Benchmark teams:
@@ -76,15 +76,23 @@ def main(sorted_results, n_benchmark_teams):
             ('s' if n_all - (n_thrombolyse_all + n_maybe_all) != 1
              else '')
         )
-        st.markdown(
-            f'''
-            All teams  
-            {yes_str}  
-            {maybe_str}  
-            {no_str}
-            '''
-        )
-
+        if allow_maybe:
+            st.markdown(
+                f'''
+                All teams  
+                {yes_str}  
+                {maybe_str}  
+                {no_str}
+                '''
+            )
+        else:
+            st.markdown(
+                f'''
+                All teams  
+                {yes_str}  
+                {no_str}
+                '''
+            )
         yes_str = (
             ':heavy_check_mark:' +
             f' {n_thrombolyse_benchmark} team' +
@@ -101,14 +109,23 @@ def main(sorted_results, n_benchmark_teams):
             ('s' if n_benchmark - (n_thrombolyse_benchmark + n_maybe_benchmark) != 1
              else '')
         )
-        st.markdown(
-            f'''
-            Benchmark teams  
-            {yes_str}  
-            {maybe_str}  
-            {no_str}
-            '''
-        )
+        if allow_maybe:
+            st.markdown(
+                f'''
+                Benchmark teams  
+                {yes_str}  
+                {maybe_str}  
+                {no_str}
+                '''
+            )
+        else:
+            st.markdown(
+                f'''
+                Benchmark teams  
+                {yes_str}  
+                {no_str}
+                '''
+            )
 
         yes_str = (
             ':heavy_check_mark:' +
@@ -126,14 +143,23 @@ def main(sorted_results, n_benchmark_teams):
             ('s' if n_non_benchmark - (n_thrombolyse_non_benchmark + n_maybe_non_benchmark) != 1
              else '')
         )
-        st.markdown(
-            f'''
-            Non-benchmark teams  
-            {yes_str}  
-            {maybe_str}  
-            {no_str}
-            '''
-        )
+        if allow_maybe:
+            st.markdown(
+                f'''
+                Non-benchmark teams  
+                {yes_str}  
+                {maybe_str}  
+                {no_str}
+                '''
+            )
+        else:
+            st.markdown(
+                f'''
+                Non-benchmark teams  
+                {yes_str}  
+                {no_str}
+                '''
+            )
 
     # Write benchmark decision:
     percs = [perc_thrombolyse_benchmark, perc_maybe_benchmark, perc_no_benchmark]
@@ -147,7 +173,7 @@ def main(sorted_results, n_benchmark_teams):
     else:
         extra_str = ' would not'
         decision_emoji = ':x:'
-    
+
     cols_text = st.columns([1, 2])
     with cols_text[0]:
         st.error(
@@ -162,7 +188,7 @@ def main(sorted_results, n_benchmark_teams):
         st.markdown(
             f'''
             ## 
-            
+
             The mean probability of thrombolysis across all teams is
             __{sorted_results["Probability_perc"].mean():.0f}%__.
             '''
