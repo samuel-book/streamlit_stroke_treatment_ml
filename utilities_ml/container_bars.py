@@ -113,13 +113,12 @@ def main(
 
     # Add horizontal line at borders of decision to thrombolyse:
     if allow_maybe:
-        # note: probs currently hard-coded.
         fig.add_hline(y=prob_maybe_min*100.0,
-                      line=dict(color='black'), layer='below')
+                      line=dict(color='grey'), layer='below')
         fig.add_hline(y=prob_maybe_max*100.0,
-                      line=dict(color='black'), layer='below')
+                      line=dict(color='grey'), layer='below')
     else:
-        fig.add_hline(y=50.0, line=dict(color='black'), layer='below')
+        fig.add_hline(y=50.0, line=dict(color='grey'), layer='below')
     # # Update y ticks:
     fig.update_layout(yaxis=dict(
         tickmode='array',
