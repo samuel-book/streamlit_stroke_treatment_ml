@@ -481,7 +481,7 @@ def setup_for_app(
     cols = ['onset_to_arrival_time', 'onset_during_sleep',
             'arrival_to_scan_time', 'infarction', 'stroke_severity',
             'onset_time_precise', 'prior_disability', 'anticoag', 'age']
-    row = ['This patient', np.NaN] + [user_inputs_dict[k] for k in cols]
+    row = ['This patient', np.nan] + [user_inputs_dict[k] for k in cols]
     df_here = pd.DataFrame(pd.Series(row, index=df_proto.columns)).T
     df_proto = pd.concat((df_here, df_proto), axis='rows', ignore_index=True)
     # Names of prototype patients:
