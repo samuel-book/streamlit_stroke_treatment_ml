@@ -7,7 +7,7 @@ import streamlit as st
 # from utilities_ml.fixed_params import \
 #     display_name_of_default_highlighted_team, default_highlighted_team
 
-def user_inputs():
+def user_inputs(choose_infarction=False):
     st.markdown('### ')  # Breathing room
     st.markdown('### Clinical data')
     # Prior disability level
@@ -51,17 +51,21 @@ def user_inputs():
     # age_input = round(age_input, 2)
 
     # Infarction
-    # String input for user friendliness.
-    # We convert to integer for use with the model.
-    infarction_input_str = st.radio(
-        'Infarction',
-        options=['Yes', 'No'],
-        index=0,
-        horizontal=True,
-        key='infarction_input_str',
-        help='Whether the stroke is caused by a blood clot.'
-    )
-    infarction_input = 1 if infarction_input_str == 'Yes' else 0
+    if choose_infarction:
+        # String input for user friendliness.
+        # We convert to integer for use with the model.
+        infarction_input_str = st.radio(
+            'Infarction',
+            options=['Yes', 'No'],
+            index=0,
+            horizontal=True,
+            key='infarction_input_str',
+            help='Whether the stroke is caused by a blood clot.'
+        )
+        infarction_input = 1 if infarction_input_str == 'Yes' else 0
+    else:
+        infarction_input = 1
+        infarction_input_str = 'Yes'
 
     # Use of AF anticoagulants
     # String input for user friendliness.
@@ -106,15 +110,15 @@ def user_inputs():
     # String input for user friendliness.
     # We convert to integer for use with the model.
     onset_time_precise_input_str = st.radio(
-        'Precise onset time',
-        options=['Yes', 'No'],
+        'Onset time',
+        options=['Precise', 'Estimated'],
         index=0,
         horizontal=True,
         key='onset_time_precise_input_str',
         help='Whether the onset time is known precisely.'
     )
-    onset_time_precise_input = 1 \
-        if onset_time_precise_input_str == 'Yes' else 0
+    onset_time_precise_input = (1 
+        if onset_time_precise_input_str == 'Precise' else 0)
 
     # Onset during sleep
     # String input for user friendliness.
