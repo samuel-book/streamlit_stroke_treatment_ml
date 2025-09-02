@@ -61,6 +61,41 @@ def predict_treatment(
     return sorted_results
 
 
+def predict_treatment_proto(
+        df_proto, X_proto, model,
+        allow_maybe=False, prob_maybe_min=0.1, prob_maybe_max=0.9
+        ):
+    probs_list = model.predict_proba(X_proto)[:, 1]
+
+    # Put everything into a DataFrame:
+    results = pd.DataFrame()
+    results['Patient prototype'] = df_proto['Patient prototype']
+    results['Stroke team'] = df_proto['stroke_team']
+    results['HB team'] = df_proto['hb_team']
+    results['Probability'] = probs_list
+    results['Probability_perc'] = probs_list*100.0
+
+    thromb_decision = np.full(probs_list.shape, 0)
+    if allow_maybe:
+        thromb_decision[probs_list >= prob_maybe_max] = 2       # Yes
+        thromb_decision[((probs_list < prob_maybe_max) &
+                        (probs_list > prob_maybe_min))] = 1     # Maybe
+        thromb_decision[probs_list <= prob_maybe_min] = 0       # No
+    else:
+        thromb_decision[probs_list >= 0.5] = 2             # Yes
+        thromb_decision[probs_list < 0.5] = 0              # No
+
+    results['Thrombolyse'] = thromb_decision
+
+    # Add column of str to print when thrombolysed or not
+    thrombolyse_str = np.full(len(results), 'Maybe')
+    thrombolyse_str[np.where(results['Thrombolyse'] == 2)] = 'Yes  '
+    thrombolyse_str[np.where(results['Thrombolyse'] == 0)] = 'No   '
+    results['Thrombolyse_str'] = thrombolyse_str
+
+    return results
+
+
 def find_shapley_values(explainer_probability, X):
     """
     Inputs:

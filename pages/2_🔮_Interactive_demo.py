@@ -30,7 +30,7 @@ except ModuleNotFoundError:
     from utilities_ml.fixed_params import page_setup
 
 # Custom functions:
-from utilities_ml.fixed_params import write_markdown_in_colour
+from utilities_ml.fixed_params import write_markdown_in_colour, bench_str
 from utilities_ml.inputs import set_up_sidebar
 import utilities_ml.inputs
 import utilities_ml.main_calculations
@@ -42,6 +42,7 @@ from utilities_ml.container_uncertainty import \
 import utilities_ml.container_inputs
 import utilities_ml.container_metrics
 import utilities_ml.container_bars
+import utilities_ml.container_proto
 import utilities_ml.container_waterfalls
 import utilities_ml.container_combo_waterfall
 import utilities_ml.container_results
@@ -269,6 +270,11 @@ def main():
         st.subheader('How likely is thrombolysis for each team?')
         st.caption('To see the team names, hover or click on a bar.')
 
+    container_proto = st.container()
+    with container_proto:
+        st.subheader('Prototype patients')
+        # st.caption('.')
+
     # ###########################
     # ########## SETUP ##########
     # ###########################
@@ -286,7 +292,10 @@ def main():
         highlighted_teams_list,
         hb_teams_list,
         hb_teams_input,
-        user_inputs_dict
+        user_inputs_dict,
+        df_proto,
+        X_proto,
+        proto_names,
     ) = setup_for_app(
         container_input_highlighted_teams,
         container_input_patient_details,
@@ -305,7 +314,10 @@ def main():
                           highlighted_teams_list, benchmark_rank_list,
                           hb_teams_list, allow_maybe, prob_maybe_min,
                           prob_maybe_max)
-
+    # Prototype patients:
+    proto_results = utilities_ml.main_calculations.\
+        predict_treatment_proto(df_proto, X_proto, model, allow_maybe,
+                                prob_maybe_min, prob_maybe_max)
 
     # ###########################
     # ######### RESULTS #########
@@ -374,6 +386,57 @@ def main():
             prob_maybe_min,
             prob_maybe_max
             )
+
+    with container_proto:
+        # Prototype patients bar chart.
+        # For each prototype, average the benchmark decisions:
+        # teams_bench_only = proto_results.loc[proto_results['HB team'].str.contains('enchmark'), 'Stroke team'].unique()
+        # Pick out team names that contain a star:
+        mask_bench = proto_results['HB team'].str.contains('\U00002605')
+        teams_bench = proto_results.loc[mask_bench, 'Stroke team'].unique()
+        rows_bench = []
+        for proto_patient in proto_names:
+            df_here = proto_results.loc[(
+                (proto_results['Patient prototype'] == proto_patient) &
+                (proto_results['Stroke team'].isin(teams_bench))
+            )]
+            prob_here = df_here['Probability'].mean()
+            prob_perc_here = df_here['Probability_perc'].mean()
+            thromb_here = df_here['Thrombolyse'].mode().values
+            thromb_str_here = df_here['Thrombolyse_str'].mode().values
+            # If there are multiple modes, arbitrarily pick the biggest
+            # (= most likely to treat).
+            if len(thromb_here) > 1:
+                ind = np.where(thromb_here == max(thromb_here))[0]
+                thromb_here = thromb_here[ind]
+                thromb_str_here = thromb_str_here[ind]
+            else:
+                thromb_here = thromb_here[0]
+                thromb_str_here = thromb_str_here[0]
+            rows_bench.append([
+                proto_patient, 'Benchmark average', 'Benchmark average',
+                prob_here, prob_perc_here, thromb_here, thromb_str_here,
+            ])
+        df_bench = pd.DataFrame(rows_bench, columns=proto_results.columns)
+        # Now add in the highlighted teams:
+        teams_highlighted = proto_results.loc[~proto_results['HB team'].str.contains('enchmark'), 'Stroke team'].unique()
+        mask_highlighted = proto_results['Stroke team'].isin(teams_highlighted)
+        df_proto_results = pd.concat((df_bench,
+                                      proto_results.loc[mask_highlighted]))
+
+        utilities_ml.container_proto.main(
+            df_proto_results,
+            proto_names,
+            ['Benchmark average'] + list(teams_highlighted),
+            default_highlighted_team,
+            display_name_of_default_highlighted_team,
+            # use_plotly_events,
+            allow_maybe,
+            prob_maybe_min,
+            prob_maybe_max
+            )
+
+
 
     # ############################
     # ######### ACCURACY #########

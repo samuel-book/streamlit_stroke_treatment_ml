@@ -86,6 +86,11 @@ def import_benchmark_data(filename='hospital_10k_thrombolysis.csv',
     return all_teams_and_probs
 
 
+def import_proto_patients(filename='prototype_patients.csv'):
+    df_proto = pd.read_csv(dir + 'data_ml/' + filename)
+    return df_proto
+
+
 def build_X(
         user_inputs_dict,
         stroke_teams_list,
@@ -252,6 +257,59 @@ def build_dataframe_from_inputs(dict, stroke_teams_list, model_type):
     return df
 
 
+def build_dataframe_proto(df_proto, all_teams):
+    df_proto = df_proto.copy()
+    df_proto = df_proto.rename(columns={
+        'stroke_team': 'stroke_team_id',
+    })
+    teams_here = df_proto['stroke_team_id'].unique()
+    # First build a 2D array where each row is the patient details.
+    # Column headings:
+    headers = np.array([
+        'stroke_team_id',
+        'stroke_severity',
+        'prior_disability',
+        'age',
+        'infarction',
+        'onset_to_arrival_time',
+        'precise_onset_known',
+        'onset_during_sleep',
+        'arrival_to_scan_time',
+        'afib_anticoagulant'
+        # 'thrombolysis'
+    ])
+
+    # Turn this array into a DataFrame with labelled columns.
+    # Make stroke team ID integers for later sorting -
+    # we want team_1, team_2, team_3, ...
+    # instead of team_1, team_10, team_100, ...
+    df = df_proto[headers].copy().astype(dtype={
+        'stroke_team_id': int,
+        'stroke_severity': int,
+        'prior_disability': int,
+        'age': float,
+        'infarction': bool,
+        'onset_to_arrival_time': float,
+        'precise_onset_known': int,
+        'onset_during_sleep': int,
+        'arrival_to_scan_time': float,
+        'afib_anticoagulant': bool
+        # 'thrombolysis'
+    })
+
+    # Make a copy of this data that is ready for the model.
+    # The same data except the Stroke Team column is one-hot-encoded.
+    X = one_hot_encode_data(df, one_hot_column='stroke_team_id')
+    # Add in ohe columns of the missing teams:
+    teams_missing = [f'team_{t}' for t in list(set(all_teams.astype(int)) - set(teams_here.astype(int)))]
+    X[teams_missing] = 0
+
+    # Place columns in the order expected by the model:
+    column_order = list(headers[1:]) + [f'team_{t}' for t in all_teams]
+    X = X[column_order]
+    return X
+
+
 # @st.cache_resource()  #hash_funcs={'builtins.dict': lambda _: None})
 def load_pretrained_model(model_file='model.p'):
     # Load XGB Model
@@ -343,7 +401,6 @@ def locate_benchmarks(
         benchmark_df.sort_values(benchmark_team_column)['Rank'].to_numpy()
     # Find indices of benchmark data at the moment
     # for making a combined benchmark-highlighted team list.
-    n_benchmark_teams = 25
     inds_benchmark = np.where(benchmark_rank_list <= n_benchmark_teams)[0]
     return benchmark_df, benchmark_rank_list, inds_benchmark
 
@@ -418,6 +475,41 @@ def setup_for_app(
     remove_old_colours_for_highlights(hb_teams_input)
     choose_colours_for_highlights(hb_teams_input)
 
+    # Prototype patients:
+    df_proto = import_proto_patients()
+    # Add in "this patient" from user selections:
+    cols = ['onset_to_arrival_time', 'onset_during_sleep',
+            'arrival_to_scan_time', 'infarction', 'stroke_severity',
+            'onset_time_precise', 'prior_disability', 'anticoag', 'age']
+    row = ['This patient', np.NaN] + [user_inputs_dict[k] for k in cols]
+    df_here = pd.DataFrame(pd.Series(row, index=df_proto.columns)).T
+    df_proto = pd.concat((df_here, df_proto), axis='rows', ignore_index=True)
+    # Names of prototype patients:
+    proto_names = df_proto['Patient prototype'].values
+    # Gather all team names for highlighted and benchmark teams:
+    highlighted_teams = [int(t) for t in highlighted_teams_input]
+    benchmark_teams = benchmark_df.loc[
+        benchmark_df['Rank'] < n_benchmark_teams, 'stroke_team_id'].values
+    teams_proto = list(set(np.append(highlighted_teams, benchmark_teams)))
+
+    # Make a copy of these patients for each benchmark
+    # and highlighted team:
+    dfs_proto = []
+    for team in teams_proto:
+        df_here = df_proto.copy()
+        if team in highlighted_teams:
+            hb_name = hb_teams_list[
+                np.where(highlighted_teams_list == f'{team}')][0]
+        else:
+            hb_name = bench_str
+        df_here['stroke_team'] = team
+        df_here['hb_team'] = hb_name
+        dfs_proto.append(df_here)
+    # Stack these resulting data:
+    df_proto = pd.concat(dfs_proto, axis='rows', ignore_index=True)
+    # Prepare for predictions:
+    X_proto = build_dataframe_proto(df_proto, stroke_teams_list)
+
     return (
         stroke_teams_list,
         highlighted_teams_input,
@@ -429,7 +521,10 @@ def setup_for_app(
         highlighted_teams_list,
         hb_teams_list,
         hb_teams_input,
-        user_inputs_dict
+        user_inputs_dict,
+        df_proto,
+        X_proto,
+        proto_names,
     )
 
 
