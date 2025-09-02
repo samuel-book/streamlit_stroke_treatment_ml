@@ -1,0 +1,18 @@
+Patient prototype,stroke_team,onset_to_arrival_time,onset_during_sleep,arrival_to_scan_time,infarction,stroke_severity,precise_onset_known,prior_disability,afib_anticoagulant,age
+Ideal,NA,90,0,15,1,15,1,0,0,72.5
+Late arrival,NA,225,0,15,1,15,1,0,0,72.5
+Mild,NA,90,0,15,1,3,1,0,0,72.5
+Prior disability,NA,90,0,15,1,15,1,3,0,72.5
+Imprecise,NA,90,0,15,1,15,0,0,0,72.5
+Age,NA,90,0,15,1,15,1,0,0,87.5
+Mild + Prior disability,NA,90,0,15,1,3,1,3,0,72.5
+Mild + Imprecise,NA,90,0,15,1,3,0,0,0,72.5
+Mild + Age,NA,90,0,15,1,3,1,0,0,87.5
+Mild + Late,NA,225,0,15,1,3,1,0,0,72.5
+Imprecise + Prior disability,NA,90,0,15,1,15,0,3,0,72.5
+Imprecise + Age,NA,90,0,15,1,15,0,0,0,87.5
+Imprecise + Late,NA,225,0,15,1,15,0,0,0,72.5
+Prior disability + Age,NA,90,0,15,1,15,1,3,0,87.5
+Prior disability + Late,NA,225,0,15,1,15,1,3,0,72.5
+Mild + Prior disability + Imprecise,NA,90,0,15,1,3,0,3,0,72.5
+Prior disability + Imprecise + Late,NA,225,0,15,1,15,0,3,0,72.5
