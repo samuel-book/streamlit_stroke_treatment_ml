@@ -69,13 +69,13 @@ def main(
 
         # Add bar(s) to the chart for this highlighted team:
         fig.add_trace(go.Bar(
-            x=x_vals + x_offsets[i], #results_here['Patient prototype'],
+            x=x_vals + x_offsets[i],
             y=results_here['Probability_perc'],
             # Extra data for hover popup:
             customdata=np.stack([
                 name_list,
                 results_here['Thrombolyse_str'],
-                # results_here['Benchmark']
+                results_here['Patient prototype'],
                 ], axis=-1),
             # Name for the legend:
             name=display_name,
@@ -91,8 +91,9 @@ def main(
     fig.update_xaxes(range=[-1.0, (xmax+1)*1.2])
     fig.update_layout(xaxis=dict(
         tickmode='array',
-        tickvals=x_vals,  #np.arange(0, proto_results.shape[0], 10),
+        tickvals=x_vals,
         ticktext=proto_names,
+        tickangle=90,
         ))
 
     # Update titles and labels:
@@ -110,6 +111,9 @@ def main(
     # Update the information that appears on hover:
     fig.update_traces(
         hovertemplate=(
+            # Patient prototype:
+            '%{customdata[2]}' +
+            '<br>' +
             # Stroke team:
             'Team %{customdata[0]}' +
             '<br>' +
