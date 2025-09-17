@@ -43,7 +43,6 @@ import utilities_ml.container_inputs
 import utilities_ml.container_metrics
 import utilities_ml.container_bars
 import utilities_ml.container_proto
-import utilities_ml.container_outcomes
 import utilities_ml.container_waterfalls
 import utilities_ml.container_combo_waterfall
 import utilities_ml.container_results
@@ -276,11 +275,6 @@ def main():
         st.subheader('Prototype patients')
         # st.caption('.')
 
-    container_outcomes = st.container()
-    with container_outcomes:
-        st.subheader('Outcomes')
-        st.write('XGBoost model(s).')
-        # st.caption('.')
 
     # ###########################
     # ########## SETUP ##########
