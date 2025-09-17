@@ -5,6 +5,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import pickle
+import os
 
 import utilities_ml.container_inputs
 
@@ -89,6 +90,12 @@ def import_benchmark_data(filename='hospital_10k_thrombolysis.csv',
 def import_proto_patients(filename='prototype_patients.csv'):
     df_proto = pd.read_csv(dir + 'data_ml/' + filename)
     return df_proto
+
+
+def import_hospital_data():
+    df_hosp = pd.read_csv(dir + 'data_ml/' + 'data_for_sim_anon.csv')
+    # df_hosp['stroke_team'] = df_hosp['stroke_team'].astype(str)
+    return df_hosp.set_index('stroke_team')
 
 
 def build_X(
@@ -334,6 +341,13 @@ def load_explainer_probability(model_file='shap_explainer_probability.p'):
     with open(filename, 'rb') as filehandler:
         explainer_probability = pickle.load(filehandler)
     return explainer_probability
+
+
+def load_outcomes_ml():
+    filename = os.path.join(dir, 'data_ml/', 'outcome_model_single.pkl')
+    with open(filename, 'rb') as filehandler:
+        outcome_model = pickle.load(filehandler)
+    return outcome_model
 
 
 def find_highlighted_hb_teams(
