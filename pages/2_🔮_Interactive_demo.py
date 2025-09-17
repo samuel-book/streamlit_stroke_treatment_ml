@@ -429,6 +429,8 @@ def main():
         utilities_ml.container_proto.main(
             df_proto_results,
             proto_names,
+            # NOTE - following line changed for bug fix for highlighted
+            # teams colour selection - comment just for this commit:
             ['Benchmark average'] + hb_teams_input,  # list(teams_highlighted),
             default_highlighted_team,
             display_name_of_default_highlighted_team,
