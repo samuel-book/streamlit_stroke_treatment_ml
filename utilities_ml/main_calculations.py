@@ -96,6 +96,42 @@ def predict_treatment_proto(
     return results
 
 
+def predict_outcomes_proto(
+        df_proto, X_outcomes, model,
+        ):
+    p_treated = X_outcomes
+    p_untreated = p_treated.copy()
+    p_untreated['onset_to_thrombolysis'] = 99999
+
+    dict_dists = {}
+    for t in ['treated', 'untreated']:
+        # Get untreated and treated distributions
+        p_arr = p_untreated if t == 'untreated' else p_treated
+        dist = model.predict_proba(p_arr)
+        # dict_dists[f'dist_{t}'] = dist
+        # Get weighted average of mRS scores
+        weighted_dist = np.sum(dist * np.arange(7), axis=1)
+        dict_dists[f'weighted_mrs_{t}'] = weighted_dist
+        # Distributions for independent, dependent, and dead:
+        dict_dists[f'independent_{t}'] = np.sum(dist[:, :3], axis=1)
+        dict_dists[f'dependent_{t}'] = np.sum(dist[:, 3:6], axis=1)
+        dict_dists[f'dead_{t}'] = dist[:, 6]
+
+    dict_dists['improvement'] = (
+        np.array(dict_dists['weighted_mrs_untreated']) -
+        np.array(dict_dists['weighted_mrs_treated'])
+        )
+
+    # Put everything into a DataFrame:
+    results = pd.DataFrame()
+    results['Patient prototype'] = df_proto['Patient prototype']
+    results['Stroke team'] = df_proto['stroke_team']
+    results['HB team'] = df_proto['hb_team']
+    for k, v in dict_dists.items():
+        results[k] = v
+    return results
+
+
 def find_shapley_values(explainer_probability, X):
     """
     Inputs:

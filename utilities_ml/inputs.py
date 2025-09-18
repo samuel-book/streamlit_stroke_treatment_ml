@@ -317,6 +317,55 @@ def build_dataframe_proto(df_proto, all_teams):
     return X
 
 
+def build_dataframe_outcomes(df_proto, all_teams):
+    df_proto = df_proto.copy()
+    df_proto = df_proto.rename(columns={
+        'stroke_team': 'stroke_team_id',
+        'onset_to_thrombolysis_time': 'onset_to_thrombolysis',
+        'afib_anticoagulant': 'any_afib_diagnosis',
+    })
+    teams_here = df_proto['stroke_team_id'].unique()
+    # First build a 2D array where each row is the patient details.
+    # Column headings:
+    headers = np.array([
+        'stroke_team_id',
+        'prior_disability',
+        'stroke_severity',
+        'onset_to_thrombolysis',
+        'age',
+        'precise_onset_known',
+        'any_afib_diagnosis',
+        # 'discharge_disability'
+    ])
+
+    # Turn this array into a DataFrame with labelled columns.
+    # Make stroke team ID integers for later sorting -
+    # we want team_1, team_2, team_3, ...
+    # instead of team_1, team_10, team_100, ...
+    df = df_proto[headers].copy().astype(dtype={
+        'stroke_team_id': int,
+        'stroke_severity': int,
+        'prior_disability': int,
+        'age': float,
+        'onset_to_thrombolysis': float,
+        'precise_onset_known': int,
+        'any_afib_diagnosis': bool
+        # 'discharge_disability'
+    })
+
+    # Make a copy of this data that is ready for the model.
+    # The same data except the Stroke Team column is one-hot-encoded.
+    X = one_hot_encode_data(df, one_hot_column='stroke_team_id')
+    # Add in ohe columns of the missing teams:
+    teams_missing = [f'team_{t}' for t in list(set(all_teams.astype(int)) - set(teams_here.astype(int)))]
+    X[teams_missing] = 0
+
+    # Place columns in the order expected by the model:
+    column_order = list(headers[1:]) + [f'team_{t}' for t in all_teams]
+    X = X[column_order]
+    return X
+
+
 # @st.cache_resource()  #hash_funcs={'builtins.dict': lambda _: None})
 def load_pretrained_model(model_file='model.p'):
     # Load XGB Model
@@ -344,7 +393,7 @@ def load_explainer_probability(model_file='shap_explainer_probability.p'):
 
 
 def load_outcomes_ml():
-    filename = os.path.join(dir, 'data_ml/', 'outcome_model_single.pkl')
+    filename = (dir + 'data_ml/' + 'outcome_model.p')
     with open(filename, 'rb') as filehandler:
         outcome_model = pickle.load(filehandler)
     return outcome_model
@@ -498,6 +547,9 @@ def setup_for_app(
     row = ['This patient', np.nan] + [user_inputs_dict[k] for k in cols]
     df_here = pd.DataFrame(pd.Series(row, index=df_proto.columns)).T
     df_proto = pd.concat((df_here, df_proto), axis='rows', ignore_index=True)
+    # Create onset to thrombolysis time:
+    df_proto['onset_to_thrombolysis_time'] = (
+        df_proto['onset_to_arrival_time'] + df_proto['arrival_to_scan_time'])
     # Names of prototype patients:
     proto_names = df_proto['Patient prototype'].values
     # Gather all team names for highlighted and benchmark teams:
@@ -523,6 +575,7 @@ def setup_for_app(
     df_proto = pd.concat(dfs_proto, axis='rows', ignore_index=True)
     # Prepare for predictions:
     X_proto = build_dataframe_proto(df_proto, stroke_teams_list)
+    X_outcomes = build_dataframe_outcomes(df_proto, stroke_teams_list)
 
     return (
         stroke_teams_list,
@@ -539,6 +592,7 @@ def setup_for_app(
         df_proto,
         X_proto,
         proto_names,
+        X_outcomes,
     )
 
 

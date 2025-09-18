@@ -25,6 +25,9 @@ def main(
     # Add the bars to the chart in the same order as the highlighted
     # teams list.
     highlighted_teams_list = hb_teams_input  # st.session_state['hb_teams_input']
+    # Remove benchmark entries:
+    highlighted_teams_list = [t for t in highlighted_teams_list if
+                              (('ench' not in t) | ('average' in t))]
     highlighted_teams_colours = st.session_state['highlighted_teams_colours']
     # Copy the benchmark colour for the new average benchmark entry:
     bench_key = [k for k in highlighted_teams_colours.keys() if 'Bench' in k][0]

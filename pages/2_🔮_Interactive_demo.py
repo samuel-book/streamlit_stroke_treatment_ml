@@ -43,6 +43,7 @@ import utilities_ml.container_inputs
 import utilities_ml.container_metrics
 import utilities_ml.container_bars
 import utilities_ml.container_proto
+import utilities_ml.container_outcomes
 import utilities_ml.container_waterfalls
 import utilities_ml.container_combo_waterfall
 import utilities_ml.container_results
@@ -275,6 +276,12 @@ def main():
         st.subheader('Prototype patients')
         # st.caption('.')
 
+    container_outcomes = st.container()
+    with container_outcomes:
+        st.subheader('Outcomes')
+        # st.write('XGBoost model(s).')
+        # st.caption('.')
+
 
     # ###########################
     # ########## SETUP ##########
@@ -297,6 +304,7 @@ def main():
         df_proto,
         X_proto,
         proto_names,
+        X_outcomes,
     ) = setup_for_app(
         container_input_highlighted_teams,
         container_input_patient_details,
@@ -309,6 +317,7 @@ def main():
     # Load in the model:
     from utilities_ml.fixed_params import ml_model_file
     model = utilities_ml.inputs.load_pretrained_model(ml_model_file)
+    outcome_model = utilities_ml.inputs.load_outcomes_ml()
     # Main useful array:
     sorted_results = utilities_ml.main_calculations.\
         predict_treatment(X, model, stroke_teams_list,
@@ -319,6 +328,9 @@ def main():
     proto_results = utilities_ml.main_calculations.\
         predict_treatment_proto(df_proto, X_proto, model, allow_maybe,
                                 prob_maybe_min, prob_maybe_max)
+    # Outcomes:
+    outcome_results = utilities_ml.main_calculations.\
+        predict_outcomes_proto(df_proto, X_outcomes, outcome_model)
 
 
     # ###########################
@@ -429,15 +441,45 @@ def main():
         utilities_ml.container_proto.main(
             df_proto_results,
             proto_names,
-            # NOTE - following line changed for bug fix for highlighted
-            # teams colour selection - comment just for this commit:
-            ['Benchmark average'] + hb_teams_input,  # list(teams_highlighted),
+            ['Benchmark average'] + hb_teams_input,
             default_highlighted_team,
             display_name_of_default_highlighted_team,
             # use_plotly_events,
             allow_maybe,
             prob_maybe_min,
             prob_maybe_max
+            )
+
+    with container_outcomes:
+        # Create benchmark average results:
+        cols = [c for c in outcome_results if (('treated' in c) | (c == 'improvement'))]
+        rows_bench = []
+        for proto_patient in proto_names:
+            df_here = outcome_results.loc[(
+                (outcome_results['Patient prototype'] == proto_patient) &
+                (outcome_results['Stroke team'].isin(teams_bench))
+            )]
+            vals = [df_here[c].mean() for c in cols]
+            rows_bench.append([
+                proto_patient, 'Benchmark average', 'Benchmark average',
+                *vals
+            ])
+        df_bench = pd.DataFrame(rows_bench, columns=outcome_results.columns)
+        # Now add in the highlighted teams:
+        mask_highlighted = outcome_results['Stroke team'].isin(teams_highlighted)
+        df_outcome_results = pd.concat(
+            (df_bench, outcome_results.loc[mask_highlighted]))
+        # Plot bars:
+        proto_name = st.selectbox(
+            'Prototype patient for outcome bar chart', proto_names)
+
+        utilities_ml.container_outcomes.main(
+            df_outcome_results,
+            ['Benchmark average'] + hb_teams_input,
+            proto_name,
+            default_highlighted_team,
+            display_name_of_default_highlighted_team,
+            # use_plotly_events,
             )
 
 
