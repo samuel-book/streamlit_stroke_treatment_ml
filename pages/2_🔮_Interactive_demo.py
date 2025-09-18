@@ -332,6 +332,7 @@ def main():
     outcome_results = utilities_ml.main_calculations.\
         predict_outcomes_proto(df_proto, X_outcomes, outcome_model)
 
+
     # ###########################
     # ######### RESULTS #########
     # ###########################
@@ -437,7 +438,6 @@ def main():
         mask_highlighted = proto_results['Stroke team'].isin(teams_highlighted)
         df_proto_results = pd.concat((df_bench,
                                       proto_results.loc[mask_highlighted]))
-
         utilities_ml.container_proto.main(
             df_proto_results,
             proto_names,
@@ -481,6 +481,7 @@ def main():
             display_name_of_default_highlighted_team,
             # use_plotly_events,
             )
+
 
     # ############################
     # ######### ACCURACY #########
