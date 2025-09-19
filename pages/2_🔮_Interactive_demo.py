@@ -39,14 +39,10 @@ from utilities_ml.container_uncertainty import \
     find_accuracy, write_confusion_matrix, fudge_100_test_patients
 
 # Containers:
-import utilities_ml.container_inputs
 import utilities_ml.container_metrics
 import utilities_ml.container_bars
 import utilities_ml.container_proto
 import utilities_ml.container_outcomes
-import utilities_ml.container_waterfalls
-import utilities_ml.container_combo_waterfall
-import utilities_ml.container_results
 
 
 def main():
@@ -226,7 +222,6 @@ def main():
             )
 
     st.markdown('#')  # Breathing room
-    st.markdown('#')  # Breathing room
     st.header(':abacus: Results for this patient', divider='blue')
     st.markdown(''':blue[The patient details can be viewed and
                 changed in the left sidebar.]''')
@@ -271,7 +266,6 @@ def main():
         st.subheader('How likely is thrombolysis for each team?')
         st.caption('To see the team names, hover or click on a bar.')
 
-    st.markdown('#')  # Breathing room
     st.markdown('#')  # Breathing room
     st.header(':dolls: Results for patient prototypes', divider='green')
     st.markdown(
@@ -565,142 +559,6 @@ def main():
                     display_name_of_default_highlighted_team,
                     # use_plotly_events,
                     )
-
-
-    # ############################
-    # ######### ACCURACY #########
-    # ############################
-
-    st.markdown('#')  # Breathing room
-    st.markdown('#')  # Breathing room
-    st.header('❓ Accuracy', divider='red')
-    st.markdown(
-        '''
-        We can measure the accuracy of the thrombolysis prediction model
-        using the real-life 🔮 __Testing data__.  
-        We check whether the real-life treatment decision for each
-        patient matches the model decision.
-        '''
-        )
-    if allow_maybe:
-        st.markdown(
-            '''
-            The real decision may be either
-            thrombolysis or not.
-            There is no "❓ might thrombolyse" option.
-
-            | Probability | Decision |
-            | --- | --- |
-            | At least ''' + f'{100.0*prob_maybe_max:.1f}' + '''% | ✔️ would thrombolyse |
-            | From 50.0% to ''' + f'{100.0*prob_maybe_max:.1f}' + '''% | ❓✔️ would thrombolyse |
-            | From ''' + f'{100.0*prob_maybe_min:.1f}' + '''% to 50.0% | ❓❌ would not thrombolyse |
-            | Below ''' + f'{100.0*prob_maybe_min:.1f}' + '''% | ❌ would not thrombolyse |
-            '''
-            )
-    else:
-        st.markdown(
-            '''
-            The real decision may be either
-            thrombolysis or not.
-
-            | Probability | Decision |
-            | --- | --- |
-            | At least 50% | ✔️ would thrombolyse |
-            | Below 50% | ❌ would not thrombolyse |
-            '''
-            )
-    st.markdown(' ')  # Breathing room
-    st.subheader('How often do the predictions match reality?')
-    # Predicted probabilities and the true thrombolysis yes/no results
-    # for "test data" patients. Two lists - one contains all test
-    # patients, the other only patients who are similar to the selected
-    # patient details.
-    # TO DO - detail what "similar" means.
-    (all_probs, all_reals, similar_probs, similar_reals,
-     all_n_train, similar_n_train) = (
-        find_similar_test_patients(user_inputs_dict))
-
-    # All test patients:
-    # Calculations:
-    all_pr_dict = get_numbers_each_accuracy_band(
-        all_probs, all_reals, allow_maybe, prob_maybe_min, prob_maybe_max)
-    all_n_total = len(all_probs)
-
-    if all_n_total > 0:
-        all_pr_dict_100 = fudge_100_test_patients(all_pr_dict, allow_maybe)
-        all_acc = find_accuracy(all_pr_dict)
-    else:
-        all_acc = np.NaN
-
-    # Similar test patients:
-    # Calculations:
-    similar_pr_dict = get_numbers_each_accuracy_band(
-        similar_probs, similar_reals,
-        allow_maybe, prob_maybe_min, prob_maybe_max
-        )
-    similar_n_total = len(similar_probs)
-
-    if similar_n_total > 0:
-        similar_pr_dict_100 = fudge_100_test_patients(
-            similar_pr_dict, allow_maybe)
-        similar_acc = find_accuracy(similar_pr_dict)
-    else:
-        similar_acc = np.NaN
-
-    st.markdown(
-        f'''
-        The model's accuracy is __{all_acc:.1f}%__ for all patients
-        and __{similar_acc:.1f}%__ for patients similar to the given details.
-
-        The number of patients in the __🔮 Training data__ is how many
-        examples the model had to learn from.
-        The number of patients in the __🔮 Testing data__ is how many
-        patients were used to calculate the accuracy rate.
-
-        | | All patients | Similar to this patient |
-        | --- | --- | --- |
-        | 🔮 Training data | {all_n_train:,} | {similar_n_train:,} |
-        | 🔮 Testing data | {all_n_total:,} | {similar_n_total:,} |
-        '''
-    )
-    st.markdown(' ')  # Breathing room
-
-    # Confusion matrix.
-    st.subheader('How similar are the predictions to reality?')
-    st.markdown(
-        '''
-        We can show all of the combinations of predicted and
-        real-life thrombolysis decisions using the confusion matrix below.
-        '''
-        )
-
-    tabs_matrix = st.tabs([
-        'Scaled to 100 patients', 'True numbers of patients'])
-    with tabs_matrix[0]:
-        cols_100 = st.columns(2, gap='large')
-        with cols_100[0]:
-            # All test patients, scaled to 100:
-            st.markdown('All test patients (out of 100)')
-            write_confusion_matrix(all_pr_dict_100, allow_maybe)
-        with cols_100[1]:
-            if similar_n_total > 0:
-                # Similar test patients, scaled to 100:
-                st.markdown('Similar test patients (out of 100)')
-                write_confusion_matrix(similar_pr_dict_100, allow_maybe)
-    with tabs_matrix[1]:
-        cols_all = st.columns(2, gap='large')
-        with cols_all[0]:
-            # All test patients:
-            st.markdown(f'All test patients (out of {all_n_total})')
-            write_confusion_matrix(all_pr_dict, allow_maybe)
-        with cols_all[1]:
-            if similar_n_total > 0:
-                # Similar test patients:
-                st.markdown(
-                    f'Similar test patients (out of {similar_n_total})')
-                write_confusion_matrix(similar_pr_dict, allow_maybe)
-
-    # ----- The end! -----
 
 
 if __name__ == '__main__':
