@@ -78,7 +78,7 @@ def main(
             customdata=np.stack([
                 name_list,
                 results_here['Thrombolyse_str'],
-                results_here['Patient prototype'],
+                results_here['proto_display'],
                 ], axis=-1),
             # Name for the legend:
             name=display_name,
@@ -89,7 +89,7 @@ def main(
 
     # Figure title:
     # Change axis:
-    fig.update_yaxes(range=[0.0, 120.0])
+    fig.update_yaxes(range=[0.0, 105.0])
     xmax = len(proto_names)
     fig.update_xaxes(range=[-1.0, (xmax+1)*1.2])
     fig.update_layout(xaxis=dict(
@@ -205,20 +205,20 @@ def main(
     fig.update_layout(legend=dict(
         orientation='h', #'h',
         yanchor='top',
-        y=-0.4,
+        y=-1.2,
         # xanchor='right',
         # x=1.03,
         # itemwidth=50
     ))
 
     # Reduce size of figure by adjusting margins:
-    fig_height = 600 + 20 * ((len(highlighted_teams_list) -2)//3)
+    fig_height = 550 + 20 * ((len(highlighted_teams_list) -2)//3)
     fig.update_layout(
         margin=dict(
             # l=50,
             r=5,
             b=80,
-            t=20,
+            t=00,
             # pad=4
         ),
         height=fig_height,

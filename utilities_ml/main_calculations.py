@@ -70,6 +70,7 @@ def predict_treatment_proto(
     # Put everything into a DataFrame:
     results = pd.DataFrame()
     results['Patient prototype'] = df_proto['Patient prototype']
+    results['proto_display'] = df_proto['proto_display']
     results['Stroke team'] = df_proto['stroke_team']
     results['HB team'] = df_proto['hb_team']
     results['Probability'] = probs_list
@@ -125,6 +126,7 @@ def predict_outcomes_proto(
     # Put everything into a DataFrame:
     results = pd.DataFrame()
     results['Patient prototype'] = df_proto['Patient prototype']
+    results['proto_display'] = df_proto['proto_display']
     results['Stroke team'] = df_proto['stroke_team']
     results['HB team'] = df_proto['hb_team']
     for k, v in dict_dists.items():

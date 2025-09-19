@@ -552,6 +552,36 @@ def setup_for_app(
         df_proto['onset_to_arrival_time'] + df_proto['arrival_to_scan_time'])
     # Names of prototype patients:
     proto_names = df_proto['Patient prototype'].values
+    # Add in display names for proto patients:
+    proto_display_names = {
+        'This patient': 'This patient',
+        'Ideal': 'Ideal',
+        'Late': 'Late arrival',
+        'Late arrival': 'Late arrival',
+        'Mild': 'Mild stroke',
+        'Prior disability': 'Prior disability',
+        'Imprecise': 'Imprecise onset time',
+        'Age': 'Age 80+'
+    }
+    # Build up the combo proto names:
+    for p in proto_names:
+        if p in proto_display_names.keys():
+            pass
+        else:
+            bits = p.split(' + ')
+            d = []
+            for b in bits:
+                d.append(proto_display_names[b])
+            d = ' + '.join(d)
+            proto_display_names[p] = d
+    # Convert to series and merge into df:
+    df_proto_display_names = pd.DataFrame(
+        np.vstack([list(proto_display_names.keys()), list(proto_display_names.values())]).T,
+        columns=['Patient prototype', 'proto_display']
+    )
+    df_proto = pd.merge(df_proto, df_proto_display_names,
+                        on='Patient prototype', how='left')
+    proto_display_names = df_proto['proto_display'].values
     # Gather all team names for highlighted and benchmark teams:
     highlighted_teams = [int(t) for t in highlighted_teams_input]
     benchmark_teams = benchmark_df.loc[
@@ -592,6 +622,7 @@ def setup_for_app(
         df_proto,
         X_proto,
         proto_names,
+        proto_display_names,
         X_outcomes,
     )
 
