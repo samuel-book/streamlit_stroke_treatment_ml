@@ -279,8 +279,40 @@ def main():
     container_outcomes = st.container()
     with container_outcomes:
         st.subheader('Outcomes')
-        # st.write('XGBoost model(s).')
-        # st.caption('.')
+        st.markdown(
+            '''
+            Most patients in the real data have data on their
+            discharge disability. This is a modified
+            Rankin scale (mRS) score between 0 (no disability) and 6
+            (dead).
+            '''
+        )
+        cols_outcomes = st.columns([0.35, 0.65])
+        with cols_outcomes[1]:
+            st.markdown(
+                '''
+                We train a second model to predict discharge disability.
+                This model uses a subset of the patient data from the
+                thrombolysis prediction model. The subset contains only
+                patients who did not receive thrombectomy
+                and whose discharge disability levels are known.
+                '''
+            )
+            # # The results show the expected distribution of discharge
+            # # disability levels for 100 similar patients who receive
+            # # no treatment (left graph) or thrombolysis only (right graph).
+            # '''
+            # )
+        with cols_outcomes[0]:
+            st.markdown(
+                '''
+                | Disability | mRS scores |
+                | --- | --- |
+                | Independent | 0, 1, 2 |
+                | Dependent | 3, 4, 5 |
+                | Dead | 6 |
+                '''
+            )
 
 
     # ###########################
@@ -470,8 +502,9 @@ def main():
         df_outcome_results = pd.concat(
             (df_bench, outcome_results.loc[mask_highlighted]))
         # Plot bars:
-        proto_name = st.selectbox(
-            'Prototype patient for outcome bar chart', proto_names)
+        with cols_outcomes[1]:
+            proto_name = st.selectbox(
+                'Prototype patient for outcome bar chart', proto_names)
 
         utilities_ml.container_outcomes.main(
             df_outcome_results,

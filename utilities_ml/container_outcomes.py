@@ -99,7 +99,7 @@ def main(
 
     # Figure title:
     # Change axis:
-    fig.update_yaxes(range=[0.0, 120.0])
+    fig.update_yaxes(range=[0.0, 105.0])
     # xmax = len(bar_labels)
     # fig.update_xaxes(range=[-1.0, (xmax)*1.2])
     fig.update_layout(xaxis=dict(
@@ -116,8 +116,9 @@ def main(
         ))
 
     # Update titles and labels:
+    proto_label = f'"{proto_name}" patients'
     fig.update_layout(
-        # title='Effect on probability by feature',
+        title=f'Discharge disability probability distribution: {proto_label}',
         yaxis_title='Probability of outcome (%)',
         legend_title='Highlighted team',
         xaxis_title='No treatment',
@@ -171,12 +172,12 @@ def main(
     ))
 
     # Reduce size of figure by adjusting margins:
-    fig_height = 600 + 20 * ((len(highlighted_teams_list) -2)//3)
+    fig_height = 400 + 20 * ((len(highlighted_teams_list) -2)//3)
     fig.update_layout(
         margin=dict(
             # l=50,
             r=5,
-            b=80,
+            b=0,
             t=20,
             # pad=4
         ),
