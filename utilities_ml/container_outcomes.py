@@ -333,9 +333,8 @@ def main2(
     fig.update_layout(
         title=title,
         yaxis_title='Probability of outcome (%)',
-        legend_title='Highlighted team',
-        xaxis_title='No treatment',
-        xaxis2_title='Treated',
+        # legend_title='Highlighted team',
+        xaxis_title='Discharge disability',
         )
 
     # Hover settings:
@@ -378,7 +377,7 @@ def main2(
     fig.update_layout(legend=dict(
         orientation='h', #'h',
         yanchor='top',
-        y=-0.4,
+        y=-0.45,
         # xanchor='right',
         # x=1.03,
         # itemwidth=50

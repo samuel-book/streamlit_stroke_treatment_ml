@@ -550,7 +550,6 @@ def main():
             'Patient prototype'
             ].values[0]
 
-        st.write('Discharge disability probability distribution')
         cols_plots = st.columns(2)
         teams_to_plot = ['Benchmark average'] + hb_teams_input
         # Remove benchmark entries:
