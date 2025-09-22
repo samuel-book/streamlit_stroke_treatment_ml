@@ -323,8 +323,8 @@ def main():
                 patients who did not receive thrombectomy
                 and whose discharge disability levels are known.
 
-                We assume that the time to thrombolysis is the same as
-                the time from stroke onset to scan.
+                We assume that the time to thrombolysis is
+                the time from stroke onset to scan plus 15 minutes.
                 '''
             )
             # # The results show the expected distribution of discharge

@@ -549,7 +549,10 @@ def setup_for_app(
     df_proto = pd.concat((df_here, df_proto), axis='rows', ignore_index=True)
     # Create onset to thrombolysis time:
     df_proto['onset_to_thrombolysis_time'] = (
-        df_proto['onset_to_arrival_time'] + df_proto['arrival_to_scan_time'])
+        df_proto['onset_to_arrival_time'] +
+        df_proto['arrival_to_scan_time'] +
+        15.0  # fixed extra scan-to-thrombolysis time
+        )
     # Names of prototype patients:
     proto_names = df_proto['Patient prototype'].values
     # Add in display names for proto patients:
