@@ -1,4 +1,4 @@
-matplotlib==3.10.
+matplotlib==3.10.6
 numpy
 pandas
 #markdown
