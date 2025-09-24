@@ -3,7 +3,7 @@ numpy
 pandas
 #markdown
 pip
-shap=0.43.0
+shap==0.43.0
 importlib-metadata
 importlib_resources
 pickleshare
