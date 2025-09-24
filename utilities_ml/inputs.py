@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import os
+import xgboost as xgb  # to import models
 
 import utilities_ml.container_inputs
 
@@ -368,10 +369,9 @@ def build_dataframe_outcomes(df_proto, all_teams):
 
 # @st.cache_resource()  #hash_funcs={'builtins.dict': lambda _: None})
 def load_pretrained_model(model_file='model.p'):
-    # Load XGB Model
-    filename = (dir + 'data_ml/' + model_file)
-    with open(filename, 'rb') as filehandler:
-        model = pickle.load(filehandler)
+    filename = (dir + 'data_ml/' + 'model_resave.json')
+    model = xgb.XGBClassifier({'nthread': 4})  # init model
+    model.load_model(filename)
     return model
 
 
@@ -393,9 +393,9 @@ def load_explainer_probability(model_file='shap_explainer_probability.p'):
 
 
 def load_outcomes_ml():
-    filename = (dir + 'data_ml/' + 'outcome_model.p')
-    with open(filename, 'rb') as filehandler:
-        outcome_model = pickle.load(filehandler)
+    filename = (dir + 'data_ml/' + 'outcome_model_resave.json')
+    outcome_model = xgb.XGBClassifier({'nthread': 4})  # init model
+    outcome_model.load_model(filename)
     return outcome_model
 
 
