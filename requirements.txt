@@ -12,7 +12,7 @@ xgboost==2.0.2
 scipy
 plotly
 # streamlit-plotly-events
-numba>=0.57
+# numba>=0.57
 # Don't give a version for streamlit 
 # to ensure the app has the latest security updates. 
 streamlit
