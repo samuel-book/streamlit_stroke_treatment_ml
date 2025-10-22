@@ -232,6 +232,8 @@ def main2(
         default_highlighted_team,
         display_name_of_default_highlighted_team,
         # use_plotly_events,
+        show_spread='',
+        spread_vals=None,
         ):
     """
     Other way round
@@ -289,15 +291,34 @@ def main2(
     label_dict = {'untreated': 'No treatment', 'treated': 'Treated'}
     for t, treated in enumerate(['untreated', 'treated']):
         dists = [f'{c}_{treated}' for c in ['independent', 'dependent', 'dead']]
+
+        # vals_err = 100.0*results_here[dists_err].values.flatten()
         # Add bar(s) to the chart for this highlighted team:
         # showlegend = True if t == 0 else False
+        # Only show error bars when all bars are not NaN,
+        # which is the case for the benchmark average
+        # but not for any individual team.
+
+        # if (('ench' in leg_entry) & (show_spread == 'Mean')):
+        #     vals_err = np.array([np.std(100.0*spread_vals[dist].values.flatten()) for dist in dists])
+        #     error_y=dict(
+        #         type='data',  # coordinates
+        #         array=vals_err,
+        #         # visible=bool(~np.isnan(vals_err).all()),
+        #         )
+        # else:
+        #     vals_err = np.array([None]*len(dists))  # np.full(len(dists), None)
+        #     error_y=dict()
 
         customdata = np.stack([
             np.array([name_list]*len(dists)),
+            # vals_err.reshape(len(dists), 1),
             ], axis=-1)
         fig.add_trace(go.Bar(
             x=x_vals + x_offsets[t],
             y=100.0*results_here[dists].values.flatten(),
+            # # Error bars:
+            # error_y=error_y,
             # Extra data for hover popup:
             customdata=customdata,
             # Name for the legend:
@@ -307,7 +328,52 @@ def main2(
             marker=dict(color=colour),
             marker_pattern_shape=marker_pattern_shapes[t]
             ))
-        fig.update_traces(width=bar_width)
+        fig.update_traces(width=bar_width, selector=({'type': 'bar'}))
+
+        if 'ench' in leg_entry:
+            if show_spread == 'Mean':
+                vals_mean = 100.0*results_here[dists].values.flatten()
+                vals_std = np.std(100.0*spread_vals[dists].values, axis=0)
+
+                fig.add_trace(go.Scatter(
+                    x=x_vals + x_offsets[t],
+                    y=vals_mean,
+                    error_y=dict(type='data', array=vals_std, visible=True),
+                    showlegend=False,
+                    name=label_dict[treated],
+                    marker_color='grey',
+                    mode='markers',
+                    # hovertemplate=(
+                    #     # # Patient prototype:
+                    #     # Probability to two decimal places:
+                    #     '%{y:>.2f}% \U000000B1 %{errory:>.2f}%' +
+                    #     '<br>' +
+                    #     '<extra></extra>'
+                    #     )
+                ))
+                # fig.update_traces(
+                #     hovertemplate=(
+                #         # # Patient prototype:
+                #         # Probability to two decimal places:
+                #         '%{y:>.2f}% \U000000B1 %{errory:>.2f}%' +
+                #         '<br>' +
+                #         '<extra></extra>'
+                #         ),
+                #         selector=({'type': 'scatter'})
+                #     )
+            elif show_spread == 'Median':
+                for d, dist in enumerate(dists):
+                    fig.add_trace(go.Box(
+                        x0=x_vals[d] + x_offsets[t],
+                        y=100.0*spread_vals[dist].values,
+                        showlegend=False,
+                        name=label_dict[treated],
+                        marker_color='grey',
+                        ))
+                fig.update_traces(width=bar_width*0.5, selector=({'type': 'box'}))
+            else:
+                pass
+
 
     # Figure title:
     # Change axis:
@@ -352,7 +418,7 @@ def main2(
             # 'Team %{customdata[0]}' +
             # '<br>' +
             # Probability to two decimal places:
-            '%{y:>.2f}%' +
+            '%{y:>.2f}%'
             '<br>' +
             # # Yes/no whether to thrombolyse:
             # 'Treated: %{customdata[1]}' +
@@ -363,7 +429,8 @@ def main2(
             # Yes/no whether it's a benchmark team:
             # '%{customdata[2]}'
             '<extra></extra>'
-            )
+            ),
+            selector=({'type': 'bar'})
         )
 
     # # Update y ticks:

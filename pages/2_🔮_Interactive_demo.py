@@ -390,6 +390,9 @@ def main():
     proto_results = utilities_ml.main_calculations.\
         predict_treatment_proto(df_proto, X_proto, model, allow_maybe,
                                 prob_maybe_min, prob_maybe_max)
+    # Pick out team names that contain a star:
+    mask_bench = proto_results['HB team'].str.contains('\U00002605')
+    teams_bench = proto_results.loc[mask_bench, 'Stroke team'].unique()
     # Outcomes:
     outcome_results = utilities_ml.main_calculations.\
         predict_outcomes_proto(df_proto, X_outcomes, outcome_model)
@@ -468,9 +471,7 @@ def main():
         # Prototype patients bar chart.
         # For each prototype, average the benchmark decisions:
         # teams_bench_only = proto_results.loc[proto_results['HB team'].str.contains('enchmark'), 'Stroke team'].unique()
-        # Pick out team names that contain a star:
-        mask_bench = proto_results['HB team'].str.contains('\U00002605')
-        teams_bench = proto_results.loc[mask_bench, 'Stroke team'].unique()
+
         rows_bench = []
         for proto_patient in proto_names:
             df_here = proto_results.loc[(
@@ -514,25 +515,46 @@ def main():
             )
 
     with container_outcomes:
+        # Choose whether to show benchmark mean or median:
+        bench_av_type_str = st.radio('Benchmark average data', options=['Mean', 'Median'])
+        bench_show_range = st.checkbox('Show range of benchmark values')
         # Create benchmark average results:
         cols = [c for c in outcome_results if (('treated' in c) | (c == 'improvement'))]
+        other_cols = [c for c in outcome_results if c not in cols]
+        # all_cols = sum([
+        #     [f'{c}_mean' for c in cols],
+        #     [f'{c}_std' for c in cols],
+        #     [f'{c}_q1' for c in cols],
+        #     [f'{c}_q3' for c in cols],
+        #     [f'{c}_min' for c in cols],
+        #     [f'{c}_max' for c in cols],
+        # ], [])
+
         rows_bench = []
         for proto_patient in proto_names:
             df_here = outcome_results.loc[(
                 (outcome_results['Patient prototype'] == proto_patient) &
                 (outcome_results['Stroke team'].isin(teams_bench))
             )]
-            vals = [df_here[c].mean() for c in cols]
+            if bench_av_type_str == 'Mean':
+                vals = [df_here[c].mean() for c in cols]
+            else:
+                vals = [df_here[c].median() for c in cols]
+            # vals_s = [df_here[c].std() for c in cols]
             rows_bench.append([
                 proto_patient, df_here['proto_display'].values[0],
                 'Benchmark average', 'Benchmark average',
-                *vals
+                *vals#, *vals_s
             ])
-        df_bench = pd.DataFrame(rows_bench, columns=outcome_results.columns)
+        df_bench = pd.DataFrame(
+            rows_bench,
+            columns=other_cols + cols  #+ all_cols
+            )
         # Now add in the highlighted teams:
         mask_highlighted = outcome_results['Stroke team'].isin(teams_highlighted)
         df_outcome_results = pd.concat(
             (df_bench, outcome_results.loc[mask_highlighted]))
+
         # Plot bars:
         with cols_outcomes[1]:
             proto_display_name = st.selectbox(
@@ -550,6 +572,15 @@ def main():
         teams_to_plot = [t for t in teams_to_plot if
                          (('ench' not in t) | ('average' in t))]
         for t, team in enumerate(teams_to_plot):
+            if (('ench' in team) & (bench_show_range)):
+                show_spread = bench_av_type_str
+                df_spread = outcome_results.loc[(
+                    (outcome_results['Patient prototype'] == proto_name) &
+                    (outcome_results['Stroke team'].isin(teams_bench))
+                )]
+            else:
+                show_spread = ''
+                df_spread = None
             with cols_plots[t % 2]:
                 utilities_ml.container_outcomes.main2(
                     df_outcome_results,
@@ -558,6 +589,8 @@ def main():
                     default_highlighted_team,
                     display_name_of_default_highlighted_team,
                     # use_plotly_events,
+                    show_spread=show_spread,
+                    spread_vals=df_spread,
                     )
 
 
