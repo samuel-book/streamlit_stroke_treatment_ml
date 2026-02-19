@@ -64,18 +64,18 @@ def main():
 
     st.markdown(
         '''
-        The SAMueL-2 model finds the probability of
+        The SAMueL model finds the probability of
         any stroke team thrombolysing any patient.
         '''
         )
     # Draw the image with the basic model summary.
     try:
-        st.image('./utilities_ml/SAMueL2_model_wide.png')
+        st.image('./utilities_ml/samuel_model_main.png')
     except (FileNotFoundError,
             st.runtime.media_file_storage.MediaFileStorageError):
         # Add an extra bit to the path for the combo app.
         st.image('./streamlit_stroke_treatment_ml/' +
-                 'utilities_ml/SAMueL2_model_wide.png')
+                 'utilities_ml/samuel_model_main.png')
     st.markdown(
         '''
         We can use the same patient details
