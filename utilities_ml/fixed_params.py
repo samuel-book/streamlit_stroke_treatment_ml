@@ -12,8 +12,18 @@ def page_setup():
         page_title='Thrombolysis decisions',
         page_icon='🔮',
         # layout='wide'
+        initial_sidebar_state='expanded',  # show now for hide later
         )
     # n.b. this can be set separately for each separate page if you like.
+    # Hides the collapse button so the user is no longer able
+    # to close the sidebar:
+    st.html("""
+        <style>
+            [data-testid="stSidebarCollapseButton"] {
+                display: none;
+            }
+        </style>
+    """)
 
 
 def draw_sneaky_bar():
